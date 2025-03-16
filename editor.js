@@ -61,13 +61,20 @@ window.onload = function() {
     const backToGameLink = document.getElementById('back-to-game-link');
     if (backToGameLink) {
         backToGameLink.addEventListener('click', function(e) {
+            // Altijd standaard navigatie voorkomen
+            e.preventDefault();
+            
             // Controleer of er niet-opgeslagen wijzigingen zijn
             if (editorState.hasUnsavedChanges) {
                 // Als er onopgeslagen wijzigingen zijn, vraag bevestiging
-                if (!confirm('Je hebt niet-opgeslagen wijzigingen. Weet je zeker dat je terug wilt naar het spel? Klik op Annuleren om terug te gaan en op te slaan.')) {
-                    // Voorkom navigatie als de gebruiker annuleert
-                    e.preventDefault();
+                if (confirm('Je hebt niet-opgeslagen wijzigingen. Weet je zeker dat je terug wilt naar het spel? Klik op Annuleren om terug te gaan en op te slaan.')) {
+                    // Gebruiker heeft bevestigd, navigeer naar game
+                    window.location.href = 'index.html';
                 }
+                // Anders, blijf op de pagina (doe niets)
+            } else {
+                // Geen onopgeslagen wijzigingen, navigeer direct naar game
+                window.location.href = 'index.html';
             }
         });
     }
