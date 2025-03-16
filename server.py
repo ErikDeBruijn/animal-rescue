@@ -401,6 +401,48 @@ def handle_player_ready(data):
                 # Start het spel als alle spelers klaar zijn
                 emit('game_starting', {'room_id': room_id, 'countdown': 3}, room=room_id)
 
+@socketio.on('player_input')
+def handle_player_input(data):
+    """Verwerk spelerinputs (toetsaanslagen)"""
+    client_id = request.sid
+    player_id = data.get('player_id', client_id)  # Default to client_id if not provided
+    player_index = data.get('player_index', 0)
+    keys = data.get('keys', {})
+    animal_type = data.get('animal_type')
+    
+    client_info = connected_clients.get(client_id)
+    if not client_info or not client_info['room']:
+        return
+    
+    room_id = client_info['room']
+    if room_id not in active_rooms:
+        return
+    
+    room = active_rooms[room_id]
+    if client_id not in room['players']:
+        return
+    
+    player = room['players'][client_id]
+    
+    # Update de diersoort informatie
+    if animal_type:
+        player['animal_type'] = animal_type
+        connected_clients[client_id]['animal_type'] = animal_type
+    
+    # Als de client input stuurt, sla dit op voor de host om te verwerken
+    # Deze informatie wordt niet bewaard in de room state, maar doorgestuurd
+    # naar de host om te verwerken (alleen de host doet de fysica berekeningen)
+    
+    # Zoek het hostID
+    host_id = room['host']
+    
+    # Broadcast de input naar de host
+    emit('remote_player_input', {
+        'player_id': client_id,
+        'player_index': player_index,
+        'keys': keys
+    }, room=host_id)  # Stuur alleen naar de host, niet naar andere spelers
+
 @socketio.on('update_player')
 def handle_update_player(data):
     """Verwerk spelerupdates voor positie, snelheid, etc."""
@@ -421,6 +463,11 @@ def handle_update_player(data):
     if client_id not in room['players']:
         return
     
+    # Alleen de host mag positie-updates verzenden
+    # Als dit niet de host is, negeer de update
+    if room['host'] != client_id:
+        return
+        
     player = room['players'][client_id]
     
     # Update de speler informatie

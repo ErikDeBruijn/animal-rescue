@@ -349,6 +349,33 @@ const gameMultiplayer = {
                 if ('game_over' in data) gameCore.gameState.gameOver = data.game_over;
                 if ('level_completed' in data) gameCore.levelCompleted = data.level_completed;
                 
+                // Update posities van lokale spelers (speler 1 en 2) wanneer we niet de host zijn
+                if (!this.isHost && 'local_players' in data && Array.isArray(data.local_players)) {
+                    data.local_players.forEach(playerData => {
+                        if (playerData.index === 0 && window.player1) {
+                            // Update player1
+                            player1.x = playerData.x;
+                            player1.y = playerData.y;
+                            player1.velX = playerData.velX;
+                            player1.velY = playerData.velY;
+                            if (playerData.animalType !== player1.animalType) {
+                                player1.animalType = playerData.animalType;
+                                player1.updateAnimalProperties();
+                            }
+                        } else if (playerData.index === 1 && window.player2) {
+                            // Update player2
+                            player2.x = playerData.x;
+                            player2.y = playerData.y;
+                            player2.velX = playerData.velX;
+                            player2.velY = playerData.velY;
+                            if (playerData.animalType !== player2.animalType) {
+                                player2.animalType = playerData.animalType;
+                                player2.updateAnimalProperties();
+                            }
+                        }
+                    });
+                }
+                
                 // Als de collectibles informatie wordt meegestuurd, update dan de lokale collectibles
                 const currentLevelData = window.levels[gameCore.currentLevel];
                 
@@ -365,23 +392,22 @@ const gameMultiplayer = {
                 } 
                 // Als er collectibles informatie wordt meegestuurd, update de lokale collectibles array
                 else if ('collectibles' in data && Array.isArray(data.collectibles)) {
-                    // Bijwerken van de collectibles (sterren) op basis van wat de host stuurt
-                    // We moeten de lokale collectibles vervangen door alleen die collectibles die 
-                    // nog bestaan volgens de host
-                    
-                    // Bewaar de eigenschappen van het originele collectible-object voor elk item
-                    // dat nog bestaat, en behoud alles behalve de positie (die is al meegestuurd)
-                    if (currentLevelData.collectibles && currentLevelData.collectibles.length > 0) {
+                    // Vervang alle collectibles met wat de host stuurt
+                    // Dit is eenvoudiger en voorkomt synchronisatieproblemen
+                    if (currentLevelData.collectibles) {
                         // Maak een nieuwe array met alleen de collectibles die de host nog heeft
                         const updatedCollectibles = [];
                         
                         // Voor elke collectible die de host heeft gestuurd
                         data.collectibles.forEach(hostCollectible => {
-                            // Probeer het volledige object uit de huidige level data te vinden
-                            // Voeg deze toe aan de nieuwe array met behoud van alle eigenschappen
-                            if (currentLevelData.collectibles[hostCollectible.index]) {
-                                updatedCollectibles.push(currentLevelData.collectibles[hostCollectible.index]);
-                            }
+                            // Maak een nieuwe collectible met de gegevens van de host
+                            updatedCollectibles.push({
+                                x: hostCollectible.x,
+                                y: hostCollectible.y,
+                                width: hostCollectible.width,
+                                height: hostCollectible.height,
+                                type: "STAR" // Assumption: all collectibles are stars
+                            });
                         });
                         
                         // Vervang de huidige collectibles met de bijgewerkte lijst
@@ -426,8 +452,31 @@ const gameMultiplayer = {
             }
         });
         
+        // Ontvang remote speler inputs (alleen voor de host)
+        this.socket.on('remote_player_input', (data) => {
+            if (!this.isHost) return; // Alleen de host verwerkt remote inputs
+            
+            const playerId = data.player_id;
+            const playerIndex = data.player_index;
+            const keys = data.keys;
+            
+            // Sla de input op voor verwerking in de game loop
+            // Dit zorgt ervoor dat de host de bewegingen berekent voor remote spelers
+            this.remotePlayerInputs = this.remotePlayerInputs || {};
+            this.remotePlayerInputs[playerId] = {
+                playerIndex: playerIndex,
+                keys: keys
+            };
+            
+            // De verwerking gebeurt in de game loop, omdat we daar de juiste context hebben
+        });
+
         // Speler positie/snelheid/dierstaat update
         this.socket.on('player_update', (data) => {
+            // Als we de host zijn, negeren we positie-updates
+            // De host berekent zelf de positie van alle spelers
+            if (this.isHost) return;
+            
             // Vind de speler in onze otherPlayers lijst
             const player = this.otherPlayers[data.player_id];
             if (!player) return;
@@ -1209,9 +1258,39 @@ const gameMultiplayer = {
         }, 1000);
     },
     
-    // Stuur positie updates naar de server
+    // Stuur speler inputs naar de server
+    sendPlayerInput: function(player, keys) {
+        if (!this.socket || !this.roomId) return;
+        
+        // Stuur alleen updates als het spel gestart is
+        if (!gameCore.gameState.running) return;
+        
+        // Stuur alleen de toetsaanslagen naar de server, niet de resulterende positie
+        // De host zal de bewegingen verwerken
+        this.socket.emit('player_input', {
+            player_id: this.clientId,
+            player_index: player.name === "Speler 1" ? 0 : 1,
+            keys: {
+                left: keys[player.controls.left] || keys[player.controls.left.toLowerCase()],
+                right: keys[player.controls.right] || keys[player.controls.right.toLowerCase()],
+                up: keys[player.controls.up] || keys[player.controls.up.toLowerCase()],
+                down: keys[player.controls.down] || keys[player.controls.down.toLowerCase()],
+                switch: player.isSwitchKeyPressed()
+            },
+            animal_type: player.animalType
+        });
+    },
+    
+    // Legacy: stuur positie updates naar de server
+    // Deze functie behouden we nog even voor backwards compatibiliteit
     sendPositionUpdate: function(player) {
         if (!this.socket || !this.roomId) return;
+        
+        // Bij niet-host clients, stuur inputs in plaats van posities
+        if (!this.isHost) {
+            this.sendPlayerInput(player, gameControls.keys);
+            return;
+        }
         
         // Stuur alleen updates als het spel gestart is
         if (!gameCore.gameState.running) return;
@@ -1362,6 +1441,29 @@ const gameMultiplayer = {
             });
         }
         
+        // Stuur posities van lokale spelers voor niet-host clients
+        const localPlayers = [];
+        if (window.player1) {
+            localPlayers.push({
+                index: 0,
+                x: player1.x,
+                y: player1.y,
+                velX: player1.velX,
+                velY: player1.velY,
+                animalType: player1.animalType
+            });
+        }
+        if (window.player2) {
+            localPlayers.push({
+                index: 1,
+                x: player2.x,
+                y: player2.y,
+                velX: player2.velX,
+                velY: player2.velY,
+                animalType: player2.animalType
+            });
+        }
+        
         // Stuur een update over de huidige game state
         this.socket.emit('update_game_state', {
             puppy_saved: puppySaved,
@@ -1369,7 +1471,8 @@ const gameMultiplayer = {
             level_completed: gameCore.levelCompleted || collectiblesStatus,
             current_level: gameCore.currentLevel,
             collectibles_completed: collectiblesStatus,
-            collectibles: activeCollectibles
+            collectibles: activeCollectibles,
+            local_players: localPlayers
         });
     }
 };

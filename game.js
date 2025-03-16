@@ -169,26 +169,91 @@ function gameLoop() {
         gameRendering.drawGround();
         
         // Spelers updaten en tekenen
-        player1.update(player2, currentLevelData.platforms, currentLevelData.traps, currentLevelData.collectibles);
-        player2.update(player1, currentLevelData.platforms, currentLevelData.traps, currentLevelData.collectibles);
+        // Als we in multiplayer modus zijn en NIET de host, dan updaten we alleen onze lokale spelers
+        // De positie-updates komen van de host via player_update events
+        if (window.gameMultiplayer && gameMultiplayer.roomId && !gameMultiplayer.isHost) {
+            // Toon alleen de spelers, update ze niet (om client-side prediction te voorkomen)
+            // In plaats daarvan sturen we alleen inputs naar de host
+        } else {
+            // Als we de host zijn of in singleplayer modus, update normaal
+            player1.update(player2, currentLevelData.platforms, currentLevelData.traps, currentLevelData.collectibles);
+            player2.update(player1, currentLevelData.platforms, currentLevelData.traps, currentLevelData.collectibles);
+        }
         
         gameRendering.drawPlayer(player1);
         gameRendering.drawPlayer(player2);
         
         // Multiplayer-specifieke spelers tekenen en updaten (andere spelers in het netwerk)
         if (window.gameMultiplayer && gameMultiplayer.roomId) {
-            // Stuur onze positie naar andere spelers (voor beide lokale spelers)
             if (gameMultiplayer.socket) {
-                // Stuur elke 3 frames een update (om netwerkverkeer te beperken)
-                if (frameCount % 3 === 0) {
-                    // Stuur updates van beide spelers om correcte synchronisatie te garanderen
-                    gameMultiplayer.sendPositionUpdate(player1);
-                    gameMultiplayer.sendPositionUpdate(player2);
-                }
-                
-                // Als we de host zijn, synchroniseer de game state (minder vaak)
-                if (gameMultiplayer.isHost && frameCount % 15 === 0) {
-                    gameMultiplayer.updateGameState();
+                // Verschillende gedrag voor host vs client
+                if (gameMultiplayer.isHost) {
+                    // HOST SPECIFIEKE CODE
+                    
+                    // Verwerk remote inputs van andere spelers
+                    if (gameMultiplayer.remotePlayerInputs) {
+                        for (const playerId in gameMultiplayer.remotePlayerInputs) {
+                            const inputData = gameMultiplayer.remotePlayerInputs[playerId];
+                            
+                            // Vind de remote speler object
+                            const otherPlayer = gameMultiplayer.otherPlayers[playerId];
+                            if (otherPlayer && otherPlayer.playerObj) {
+                                // Pas de gameControls.keys aan voor deze speler
+                                // We maken een tijdelijke kopie van de keys state voor deze verwerking
+                                const originalKeys = {...gameControls.keys}; // Backup huidige toetsenbord staat
+                                
+                                // Stel tijdelijk toetsen in op basis van remote input
+                                const remoteKeys = inputData.keys;
+                                const playerObj = otherPlayer.playerObj;
+                                
+                                // Update controls voor de simulatie - toepassen van de remote inputs
+                                gameControls.keys[playerObj.controls.left] = remoteKeys.left;
+                                gameControls.keys[playerObj.controls.right] = remoteKeys.right;
+                                gameControls.keys[playerObj.controls.up] = remoteKeys.up;
+                                gameControls.keys[playerObj.controls.down] = remoteKeys.down;
+                                
+                                // Verwerk deze inputs in de player update
+                                playerObj.update(player1, currentLevelData.platforms, currentLevelData.traps, currentLevelData.collectibles);
+                                
+                                // Herstel de originele toetsenbordsituatie
+                                gameControls.keys = originalKeys;
+                            }
+                        }
+                    }
+                    
+                    // Stuur elke 3 frames een positie-update voor ALLE spelers (ook remote)
+                    if (frameCount % 3 === 0) {
+                        // Stuur positie updates voor lokale spelers
+                        gameMultiplayer.sendPositionUpdate(player1);
+                        gameMultiplayer.sendPositionUpdate(player2);
+                        
+                        // Stuur ook updates voor remote spelers
+                        for (const playerId in gameMultiplayer.otherPlayers) {
+                            const otherPlayer = gameMultiplayer.otherPlayers[playerId];
+                            if (otherPlayer.playerObj) {
+                                // Gebruik de reeds berekende posities om terug te sturen naar de clients
+                                gameMultiplayer.socket.emit('player_update', {
+                                    player_id: playerId,
+                                    position: { x: otherPlayer.playerObj.x, y: otherPlayer.playerObj.y },
+                                    velocity: { x: otherPlayer.playerObj.velX, y: otherPlayer.playerObj.velY },
+                                    animal_type: otherPlayer.playerObj.animalType
+                                });
+                            }
+                        }
+                    }
+                    
+                    // Synchroniseer game state (minder vaak)
+                    if (frameCount % 15 === 0) {
+                        gameMultiplayer.updateGameState();
+                    }
+                } else {
+                    // CLIENT SPECIFIEKE CODE
+                    
+                    // Stuur lokale inputs naar de server voor verwerking door de host
+                    if (frameCount % 2 === 0) { // Iets vaker dan positie updates voor responsive besturing
+                        gameMultiplayer.sendPlayerInput(player1, gameControls.keys);
+                        gameMultiplayer.sendPlayerInput(player2, gameControls.keys);
+                    }
                 }
                 
                 // Update de spelernamen in de UI periodiek (elke 150 frames = ongeveer elke 2.5 seconden)

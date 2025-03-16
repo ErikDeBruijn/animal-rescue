@@ -396,6 +396,13 @@ class Player {
         });
         
         // Collectibles verzamelen
+        // In multiplayer modus, laat alleen de host collectibles verzamelen
+        // Clients krijgen updates via game_state_update events
+        if (window.gameMultiplayer && gameMultiplayer.roomId && !gameMultiplayer.isHost) {
+            // Skip collectible detection voor niet-host clients
+            return;
+        }
+        
         collectibles.forEach((collectible, index) => {
             if (this.collidesWithObject(collectible)) {
                 // Alleen verzamelen als de puppy is gered in het level
@@ -473,6 +480,16 @@ function updatePuppy() {
     if (!currentLevelData.puppy) return;
     
     const puppy = currentLevelData.puppy;
+    
+    // In multiplayer modus, laat alleen de host de puppy-redding detecteren
+    // Clients ontvangen de update via game_state_update events
+    if (window.gameMultiplayer && gameMultiplayer.roomId && !gameMultiplayer.isHost) {
+        // Alleen visuele updates voor niet-host clients
+        if (!puppy.saved && !gameCore.gameState.puppySaved) {
+            puppy.offsetX = Math.sin(Date.now() / 300) * 2; // Langzaam schudden
+        }
+        return;
+    }
     
     // Als de puppy nog niet gered is
     if (!puppy.saved && !gameCore.gameState.puppySaved) {
