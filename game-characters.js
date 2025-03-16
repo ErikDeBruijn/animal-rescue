@@ -497,44 +497,136 @@ function drawDragon(dragon) {
     
     gameCore.ctx.fill();
     
-    // Fire (if the dragon is breathing fire)
-    if (dragon.fireBreathing) {
+    // Fire breathing build-up or active flame
+    if ((dragon.fireBreathing || dragon.fireBreathingBuildUp) && dragon.fireBreathingIntensity > 0) {
         const time = Date.now() / 100;
         // Determine where the fire comes from based on direction
         const fireX = facingLeft ? dragon.x : dragon.x + dragon.width;
+        const fireDirection = facingLeft ? -1 : 1;
         
-        // Yellow outer flame
-        gameCore.ctx.fillStyle = 'yellow';
-        gameCore.ctx.beginPath();
-        gameCore.ctx.arc(
-            fireX, 
-            dragon.y + dragon.height * 0.3, 
-            dragon.width * 0.15, 
-            0, Math.PI * 2
-        );
-        gameCore.ctx.fill();
+        // If in build-up phase, show glowing mouth before fire
+        if (dragon.fireBreathingBuildUp) {
+            // Glowing mouth effect - pulsing red/orange to indicate build-up
+            const glowSize = dragon.width * 0.15 * (dragon.fireBreathingIntensity / 100);
+            const glowOpacity = 0.6 * (dragon.fireBreathingIntensity / 100);
+            
+            // Pulsating glow in dragon's mouth
+            gameCore.ctx.fillStyle = `rgba(255, ${120 + Math.sin(time*2) * 50}, 0, ${glowOpacity})`;
+            gameCore.ctx.beginPath();
+            gameCore.ctx.arc(
+                fireX, 
+                dragon.y + dragon.height * 0.3, 
+                glowSize * (0.8 + Math.sin(time*3) * 0.2), // Pulsating size
+                0, Math.PI * 2
+            );
+            gameCore.ctx.fill();
+            
+            // Small sparks around the mouth during build-up
+            if (dragon.fireBreathingIntensity > 30) {
+                const sparkCount = Math.floor(dragon.fireBreathingIntensity / 15);
+                for (let i = 0; i < sparkCount; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const distance = glowSize * (1 + Math.random() * 0.5);
+                    
+                    gameCore.ctx.fillStyle = `rgba(255, ${150 + Math.random() * 100}, 0, ${0.7 * Math.random()})`;
+                    gameCore.ctx.beginPath();
+                    gameCore.ctx.arc(
+                        fireX + Math.cos(angle) * distance, 
+                        dragon.y + dragon.height * 0.3 + Math.sin(angle) * distance, 
+                        1 + Math.random() * 2, 
+                        0, Math.PI * 2
+                    );
+                    gameCore.ctx.fill();
+                }
+            }
+        }
         
-        // Orange middle flame
-        gameCore.ctx.fillStyle = 'orange';
-        gameCore.ctx.beginPath();
-        gameCore.ctx.arc(
-            fireX, 
-            dragon.y + dragon.height * 0.3, 
-            dragon.width * 0.1, 
-            0, Math.PI * 2
-        );
-        gameCore.ctx.fill();
-        
-        // Red inner flame
-        gameCore.ctx.fillStyle = 'red';
-        gameCore.ctx.beginPath();
-        gameCore.ctx.arc(
-            fireX, 
-            dragon.y + dragon.height * 0.3, 
-            dragon.width * 0.05, 
-            0, Math.PI * 2
-        );
-        gameCore.ctx.fill();
+        // Active fire breathing (after build-up)
+        if (dragon.fireBreathing) {
+            // Get intensity factor
+            const intensityFactor = dragon.fireBreathingIntensity / 100;
+            
+            // Fire length and width parameters - modified by intensity
+            const fireLength = dragon.width * 1.5 * intensityFactor;
+            const fireWidth = dragon.height * 0.5 * intensityFactor;
+            const flickerOffset = Math.sin(time) * 4 * intensityFactor;
+            
+            // Draw fire flame - mimics the player flame but in dragon's direction
+            // Yellow outer flame
+            gameCore.ctx.fillStyle = `rgba(255, 255, 0, ${0.7 * intensityFactor})`;
+            gameCore.ctx.beginPath();
+            gameCore.ctx.moveTo(fireX, dragon.y + dragon.height * 0.3);
+            gameCore.ctx.quadraticCurveTo(
+                fireX + fireDirection * (fireLength * 0.6), 
+                dragon.y + dragon.height * 0.2 + flickerOffset,
+                fireX + fireDirection * fireLength, 
+                dragon.y + dragon.height * 0.3 + flickerOffset/2
+            );
+            gameCore.ctx.quadraticCurveTo(
+                fireX + fireDirection * (fireLength * 0.6), 
+                dragon.y + dragon.height * 0.4 - flickerOffset,
+                fireX, 
+                dragon.y + dragon.height * 0.3
+            );
+            gameCore.ctx.fill();
+            
+            // Orange middle flame
+            gameCore.ctx.fillStyle = `rgba(255, 165, 0, ${0.8 * intensityFactor})`;
+            gameCore.ctx.beginPath();
+            gameCore.ctx.moveTo(fireX, dragon.y + dragon.height * 0.3);
+            gameCore.ctx.quadraticCurveTo(
+                fireX + fireDirection * (fireLength * 0.4), 
+                dragon.y + dragon.height * 0.25 + flickerOffset/2,
+                fireX + fireDirection * (fireLength * 0.7), 
+                dragon.y + dragon.height * 0.3 + flickerOffset/3
+            );
+            gameCore.ctx.quadraticCurveTo(
+                fireX + fireDirection * (fireLength * 0.4), 
+                dragon.y + dragon.height * 0.35 - flickerOffset/2,
+                fireX, 
+                dragon.y + dragon.height * 0.3
+            );
+            gameCore.ctx.fill();
+            
+            // Red inner flame
+            gameCore.ctx.fillStyle = `rgba(255, 0, 0, ${0.9 * intensityFactor})`;
+            gameCore.ctx.beginPath();
+            gameCore.ctx.moveTo(fireX, dragon.y + dragon.height * 0.3);
+            gameCore.ctx.quadraticCurveTo(
+                fireX + fireDirection * (fireLength * 0.3), 
+                dragon.y + dragon.height * 0.28 + flickerOffset/3,
+                fireX + fireDirection * (fireLength * 0.5), 
+                dragon.y + dragon.height * 0.3
+            );
+            gameCore.ctx.quadraticCurveTo(
+                fireX + fireDirection * (fireLength * 0.3), 
+                dragon.y + dragon.height * 0.32 - flickerOffset/3,
+                fireX, 
+                dragon.y + dragon.height * 0.3
+            );
+            gameCore.ctx.fill();
+            
+            // Add fire particles for extra effect
+            const particleCount = Math.floor(5 + intensityFactor * 10);
+            for (let i = 0; i < particleCount; i++) {
+                const particleSize = (1 + Math.random() * 3) * intensityFactor;
+                const particleDistanceFactor = Math.random();
+                const particleX = fireX + fireDirection * (particleDistanceFactor * fireLength);
+                const particleY = dragon.y + dragon.height * 0.3 + (Math.random() - 0.5) * fireWidth * 0.8;
+                
+                // Particle color (yellow to red)
+                const colors = [
+                    `rgba(255,255,0,${0.7 * intensityFactor})`, 
+                    `rgba(255,165,0,${0.8 * intensityFactor})`, 
+                    `rgba(255,0,0,${0.9 * intensityFactor})`
+                ];
+                gameCore.ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
+                
+                gameCore.ctx.beginPath();
+                gameCore.ctx.arc(particleX, particleY, particleSize, 0, Math.PI * 2);
+                gameCore.ctx.fill();
+            }
+        }
     }
 }
 

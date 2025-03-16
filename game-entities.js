@@ -760,6 +760,38 @@ class Player {
                 }
             }
             
+            // Check if player is hit by dragon fire
+            if (enemy.type === "DRAGON" && enemy.fireBreathing && enemy.fireBreathingIntensity > 30) {
+                // Calculate fire breath hitbox - similar to player's fire but from dragon
+                const facingLeft = enemy.direction === -1;
+                const fireStartX = facingLeft ? enemy.x : enemy.x + enemy.width;
+                const fireDirection = enemy.direction;
+                
+                // Fire hitbox properties - scales with intensity
+                const fireLength = enemy.width * 1.5 * (enemy.fireBreathingIntensity / 100);
+                const fireWidth = enemy.height * 0.7;
+                
+                // Dragon's fire hitbox
+                const fireHitbox = {
+                    x: facingLeft ? fireStartX - fireLength : fireStartX,
+                    y: enemy.y + enemy.height * 0.3 - fireWidth/2,
+                    width: fireLength,
+                    height: fireWidth
+                };
+                
+                // Check if player is hit by fire
+                if (this.collidesWithObject(fireHitbox)) {
+                    // Player is hit by dragon fire - lose a life
+                    this.loseLife();
+                    gameCore.gameState.message = "Pas op voor drakenvuur!";
+                    setTimeout(() => {
+                        if (gameCore.gameState.message === "Pas op voor drakenvuur!") {
+                            gameCore.gameState.message = "";
+                        }
+                    }, 2000);
+                }
+            }
+            
             // Check if fire breath hits enemy
             if (this.isBreathingFire && this.fireBreathingIntensity > 30) {
                 // Calculate fire breath hitbox
@@ -1044,6 +1076,8 @@ function updateEnemies(players) {
             enemy.fireBreathingTimer = 0;
             enemy.fireBreathing = false;
             enemy.fireBreathCooldown = 0;
+            enemy.fireBreathingIntensity = 0; // Track fire intensity (0-100)
+            enemy.fireBreathingBuildUp = false; // Track if fire is building up
         }
         
         // Als deze vijand een patrolDistance heeft, update zijn positie
@@ -1154,11 +1188,11 @@ function updateEnemies(players) {
                     
                     // Dragon fire breathing at the end of patrol
                     if (enemy.type === "DRAGON" && enemy.fireBreathCooldown <= 0) {
-                        // Set fire state for the renderer to use
-                        enemy.fireBreathing = true;
+                        // Start the build-up phase
+                        enemy.fireBreathingBuildUp = true;
                         
-                        // Configure the duration of fire breathing
-                        enemy.fireBreathingTimer = 60; // Approximately 1 second of fire (60 frames)
+                        // Configure the duration of fire breathing + build-up
+                        enemy.fireBreathingTimer = 120; // Approximately 2 seconds total (60 frames build-up + 60 frames active fire)
                         
                         // Set cooldown before next fire breathing
                         enemy.fireBreathCooldown = 180; // Approximately 3 seconds cooldown
@@ -1171,11 +1205,11 @@ function updateEnemies(players) {
                     
                     // Dragon fire breathing at the end of patrol
                     if (enemy.type === "DRAGON" && enemy.fireBreathCooldown <= 0) {
-                        // Set fire state for the renderer to use
-                        enemy.fireBreathing = true;
+                        // Start the build-up phase
+                        enemy.fireBreathingBuildUp = true;
                         
-                        // Configure the duration of fire breathing
-                        enemy.fireBreathingTimer = 60; // Approximately 1 second of fire (60 frames)
+                        // Configure the duration of fire breathing + build-up
+                        enemy.fireBreathingTimer = 120; // Approximately 2 seconds total (60 frames build-up + 60 frames active fire)
                         
                         // Set cooldown before next fire breathing
                         enemy.fireBreathCooldown = 180; // Approximately 3 seconds cooldown
@@ -1201,8 +1235,28 @@ function updateEnemies(players) {
             if (enemy.type === "DRAGON") {
                 if (enemy.fireBreathingTimer > 0) {
                     enemy.fireBreathingTimer--;
+                    
+                    // Build-up phase - first half of the timer
+                    if (enemy.fireBreathingBuildUp) {
+                        // Calculate intensity based on how far into build-up we are
+                        const buildUpPhase = 60; // 60 frames (1 second) of build-up
+                        if (enemy.fireBreathingTimer > 60) {
+                            // Still in build-up phase
+                            const progress = (120 - enemy.fireBreathingTimer) / buildUpPhase;
+                            enemy.fireBreathingIntensity = 100 * progress; // Gradually increase from 0 to 100
+                        } else {
+                            // Transition to active fire
+                            enemy.fireBreathingBuildUp = false;
+                            enemy.fireBreathing = true;
+                            enemy.fireBreathingIntensity = 100; // Full intensity
+                        }
+                    }
+                    
+                    // When time's up, reset everything
                     if (enemy.fireBreathingTimer <= 0) {
                         enemy.fireBreathing = false;
+                        enemy.fireBreathingBuildUp = false;
+                        enemy.fireBreathingIntensity = 0;
                     }
                 }
                 
