@@ -75,6 +75,11 @@ function initEditor() {
     // Stel het huidige level in (gebruik de parameter of val terug op 0)
     editorState.currentLevel = lastLevelParam !== null ? parseInt(lastLevelParam) : 0;
     
+    // Zorg dat de level index geldig is
+    if (editorState.currentLevel >= levels.length) {
+        editorState.currentLevel = 0;
+    }
+    
     // Update de selector UI
     const levelSelect = document.getElementById('level-select');
     if (levelSelect.querySelector(`option[value="${editorState.currentLevel}"]`)) {
