@@ -14,7 +14,7 @@ function getLevels(GROUND_LEVEL) {    return [
     platforms: [
         {x: 582, y: 365, width: 140, height: 27, type: "TRAMPOLINE"},
         {x: 559, y: 73, width: 100, height: 20, type: "NORMAL"},
-        {x: 425, y: 231, width: 100, height: 20, type: "NORMAL"},
+        {x: 423, y: 227, width: 100, height: 20, type: "NORMAL"},
         {x: 175, y: 354, width: 100, height: 20, type: "TRAMPOLINE"},
         {x: 420, y: 303, width: 100, height: 20, type: "TRAMPOLINE"}
     ],
