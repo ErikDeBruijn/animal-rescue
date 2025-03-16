@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
 function initializeGameWhenReady() {
     if (!window.gameEntities || !window.gameCore || !window.gameControls || !window.gameRendering || !window.gameCharacters) {
         // Als nog niet alle componenten geladen zijn, wacht dan 100ms en probeer opnieuw
-        console.log("Wachten tot alle game componenten geladen zijn...");
+        // Geen console.log meer om spamming te voorkomen
         setTimeout(initializeGameWhenReady, 100);
         return;
     }
@@ -42,9 +42,15 @@ function initializeGameWhenReady() {
     // Levels inladen
     window.levels = getLevels(gameCore.GROUND_LEVEL);
     
+    // Maak loadLevel globaal beschikbaar
+    window.loadLevel = loadLevel;
+    
     // Level functions instellen
     gameCore.nextLevel = nextLevel;
     gameCore.resetCurrentLevel = resetCurrentLevel;
+    
+    // Dispatch een event dat levels geladen zijn
+    window.dispatchEvent(new Event('levelsLoaded'));
     
     // Besturing opzetten
     gameControls.setupInputListeners();

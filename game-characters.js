@@ -12,6 +12,17 @@ function drawPlayer(player) {
         }
     }
     
+    // Save the context for ice effect rotation if needed
+    if (player.onIce && Math.abs(player.velX) > 1) {
+        gameCore.ctx.save();
+        
+        // Wobble effect for slipping
+        const wobbleAmount = Math.sin(Date.now() / 100) * 2;
+        gameCore.ctx.translate(player.x + player.width/2, player.y + player.height/2);
+        gameCore.ctx.rotate(wobbleAmount * Math.PI / 180);
+        gameCore.ctx.translate(-(player.x + player.width/2), -(player.y + player.height/2));
+    }
+    
     // Draw the appropriate animal type
     if (player.animalType === "SQUIRREL") {
         drawSquirrel(player);
@@ -21,6 +32,36 @@ function drawPlayer(player) {
         drawUnicorn(player);
     } else if (player.animalType === "CAT") {
         drawCat(player);
+    }
+    
+    // Draw ice sliding effect - little motion lines behind the player
+    if (player.onIce && Math.abs(player.velX) > 1) {
+        // Draw small motion streaks to show sliding
+        const direction = player.velX > 0 ? -1 : 1;
+        gameCore.ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        
+        for (let i = 0; i < 3; i++) {
+            const startX = player.x + (player.velX > 0 ? 0 : player.width);
+            const startY = player.y + player.height * (0.4 + i * 0.2);
+            const length = Math.min(Math.abs(player.velX) * 3, 15) * direction;
+            
+            gameCore.ctx.fillRect(startX, startY, length, 2);
+        }
+        
+        // Draw some ice particles
+        const particleCount = Math.floor(Math.abs(player.velX));
+        for (let i = 0; i < particleCount; i++) {
+            const particleX = player.x + (player.velX > 0 ? 0 : player.width) + (Math.random() * 5 - 10) * direction;
+            const particleY = player.y + player.height * (0.3 + Math.random() * 0.7);
+            const particleSize = Math.random() * 2 + 1;
+            
+            gameCore.ctx.beginPath();
+            gameCore.ctx.arc(particleX, particleY, particleSize, 0, Math.PI * 2);
+            gameCore.ctx.fill();
+        }
+        
+        // Restore the context if we saved it for rotation
+        gameCore.ctx.restore();
     }
     
     // Draw fire breath if player is breathing fire

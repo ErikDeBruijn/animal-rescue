@@ -39,7 +39,8 @@ const objectColors = {
         CLOUD: '#ffffff',   // Wit voor wolken
         CLIMB: '#d3a87d',   // Lichter bruin voor klimoppervlakken
         TRAMPOLINE: '#ff4d4d', // Rood voor trampolines
-        LASER: '#ff0000'    // Rood voor lasers (deadly platform)
+        LASER: '#ff0000',   // Rood voor lasers (deadly platform)
+        ICE: '#A5F2F3'      // Lichtblauw voor ijs
     },
     enemy: {
         LION: '#ff9800',    // Oranje voor leeuwen

@@ -114,6 +114,48 @@ function drawTrap(trap) {
 // Platform rendering
 function drawPlatform(platform) {
     switch(platform.type) {
+        case "ICE":
+            // Base ice color - light blue for ice
+            gameCore.ctx.fillStyle = '#A5F2F3'; 
+            gameCore.ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+            
+            // Add glossy effect to make it look icy
+            gameCore.ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            gameCore.ctx.fillRect(platform.x, platform.y, platform.width, platform.height / 3);
+            
+            // Add some sparkle effects to make it look icy
+            const time = Date.now() / 500;
+            gameCore.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            
+            // Draw little sparkles at random positions
+            for (let i = 0; i < 5; i++) {
+                const sparkleX = platform.x + (Math.sin(time + i) * 0.5 + 0.5) * platform.width;
+                const sparkleY = platform.y + (Math.cos(time * 1.2 + i) * 0.5 + 0.5) * platform.height;
+                const sparkleSize = 2 + Math.sin(time * 2 + i) * 1;
+                
+                gameCore.ctx.beginPath();
+                gameCore.ctx.arc(sparkleX, sparkleY, sparkleSize, 0, Math.PI * 2);
+                gameCore.ctx.fill();
+            }
+            
+            // Draw small cracks in the ice
+            gameCore.ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+            gameCore.ctx.lineWidth = 1;
+            
+            // First crack
+            gameCore.ctx.beginPath();
+            gameCore.ctx.moveTo(platform.x + platform.width * 0.2, platform.y + platform.height * 0.3);
+            gameCore.ctx.lineTo(platform.x + platform.width * 0.4, platform.y + platform.height * 0.5);
+            gameCore.ctx.lineTo(platform.x + platform.width * 0.3, platform.y + platform.height * 0.7);
+            gameCore.ctx.stroke();
+            
+            // Second crack
+            gameCore.ctx.beginPath();
+            gameCore.ctx.moveTo(platform.x + platform.width * 0.6, platform.y + platform.height * 0.2);
+            gameCore.ctx.lineTo(platform.x + platform.width * 0.7, platform.y + platform.height * 0.4);
+            gameCore.ctx.lineTo(platform.x + platform.width * 0.9, platform.y + platform.height * 0.5);
+            gameCore.ctx.stroke();
+            break;
         case "TRAMPOLINE":
             // Determine the compression of the trampoline
             let trampolineHeight = platform.height;
@@ -177,7 +219,7 @@ function drawPlatform(platform) {
             gameCore.ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
             
             // Animate the waves with the game time
-            const time = Date.now() / 1000;
+            const waterTime = Date.now() / 1000;
             const waveHeight = 3;
             const waveFreq = 0.2;
             
@@ -188,7 +230,7 @@ function drawPlatform(platform) {
             // Top waves
             gameCore.ctx.beginPath();
             for (let i = 0; i < platform.width; i += 5) {
-                const y = platform.y + Math.sin((i + time * 50) * waveFreq) * waveHeight;
+                const y = platform.y + Math.sin((i + waterTime * 50) * waveFreq) * waveHeight;
                 if (i === 0) {
                     gameCore.ctx.moveTo(platform.x + i, y);
                 } else {
@@ -199,9 +241,9 @@ function drawPlatform(platform) {
             
             // Small bubbles
             for (let i = 0; i < 5; i++) {
-                const bubbleX = platform.x + Math.sin(time * (i+1)) * platform.width/4 + platform.width/2;
-                const bubbleY = platform.y + ((time * 20 + i * 30) % platform.height);
-                const size = 2 + Math.sin(time * 2) * 1;
+                const bubbleX = platform.x + Math.sin(waterTime * (i+1)) * platform.width/4 + platform.width/2;
+                const bubbleY = platform.y + ((waterTime * 20 + i * 30) % platform.height);
+                const size = 2 + Math.sin(waterTime * 2) * 1;
                 
                 gameCore.ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
                 gameCore.ctx.beginPath();

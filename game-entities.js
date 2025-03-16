@@ -44,6 +44,9 @@ class Player {
         this.clawTimer = 0;
         this.clawActive = false;
         
+        // Surface-specific properties
+        this.onIce = false;  // For ice physics
+        
         // Initialize animal-specific properties
         this.updateAnimalProperties();
     }
@@ -202,24 +205,33 @@ class Player {
         }
         
         // Beweging horizontaal met inertia
-        const acceleration = 0.8; // Acceleratie waarde
-        const friction = 0.85;    // Wrijving (lager = meer wrijving)
+        // Speciale waarden afhankelijk van ondergrond
+        let acceleration = 0.8; // Standaard acceleratie waarde
+        let friction = 0.85;    // Standaard wrijving (lager = meer wrijving)
+        let maxSpeed = this.speed; // Standaard maximum snelheid
+        
+        // Aangepaste waarden voor ijs (bijna geen wrijving, lagere acceleratie)
+        if (this.onIce) {
+            acceleration = 0.3;  // Langzamere acceleratie op ijs
+            friction = 0.98;     // Bijna geen wrijving op ijs
+            maxSpeed = this.speed * 1.3; // Hogere maximumsnelheid vanwege gebrek aan wrijving
+        }
         
         // Horizontale beweging
         if (gameControls.keys[this.controls.left] || gameControls.keys[this.controls.left.toLowerCase()]) {
             // Geleidelijke versnelling naar links (negatieve x)
             this.velX -= acceleration;
             // Begrens de maximale snelheid
-            if (this.velX < -this.speed) {
-                this.velX = -this.speed;
+            if (this.velX < -maxSpeed) {
+                this.velX = -maxSpeed;
             }
             this.facingRight = false; // Speler kijkt naar links
         } else if (gameControls.keys[this.controls.right] || gameControls.keys[this.controls.right.toLowerCase()]) {
             // Geleidelijke versnelling naar rechts (positieve x)
             this.velX += acceleration;
             // Begrens de maximale snelheid
-            if (this.velX > this.speed) {
-                this.velX = this.speed;
+            if (this.velX > maxSpeed) {
+                this.velX = maxSpeed;
             }
             this.facingRight = true; // Speler kijkt naar rechts
         } else {
@@ -227,9 +239,17 @@ class Player {
             this.velX *= friction;
             
             // Stop beweging helemaal als het bijna 0 is (voorkom kleine bewegingen)
-            if (Math.abs(this.velX) < 0.1) {
+            // Hogere drempel voor ijs om glijden te simuleren
+            const stopThreshold = this.onIce ? 0.05 : 0.1;
+            if (Math.abs(this.velX) < stopThreshold) {
                 this.velX = 0;
             }
+        }
+        
+        // Voeg glijden toe op ijs, ook als de speler in de lucht is
+        if (this.onIce && !this.onGround) {
+            // Behoud een deel van de horizontale beweging, zelfs in de lucht
+            this.velX *= 0.995; // Zeer lichte vertraging
         }
         
         // Springen als op de grond
@@ -346,6 +366,7 @@ class Player {
             this.y = gameCore.GROUND_LEVEL - this.height;
             this.velY = 0;
             this.onGround = true;
+            this.onIce = false; // Reset ijs-status op standaard grond
         }
         
         // Platform collisions
@@ -452,7 +473,7 @@ class Player {
                             }
                         }
                     }
-                } else if (platform.type === "NORMAL" || platform.type === "CLIMB" || platform.type === "TREE") {
+                } else if (platform.type === "NORMAL" || platform.type === "CLIMB" || platform.type === "TREE" || platform.type === "ICE") {
                     // Als de eenhoorn vliegt, stop het vliegen als de eenhoorn een platform raakt
                     // Dit moet altijd als eerste worden gecontroleerd om door-vliegen te voorkomen
                     if (this.animalType === "UNICORN" && this.flying) {
@@ -505,6 +526,14 @@ class Player {
                             this.y = platform.y - this.height;
                             this.velY = 0;
                             this.onGround = true;
+                            
+                            // Speciale fysica voor ijsplatforms
+                            if (platform.type === "ICE") {
+                                // Markeer dat we op ijs staan
+                                this.onIce = true;
+                            } else {
+                                this.onIce = false;
+                            }
                         }
                     }
                 }
