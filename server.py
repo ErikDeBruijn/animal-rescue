@@ -732,10 +732,22 @@ def file_monitor_thread():
             if check_for_file_changes():
                 # Stuur een bericht naar alle clients
                 try:
-                    logger.info("Sending reload signal to all clients")
+                    # Log welk bestand er gewijzigd is
+                    modified_files = []
+                    for filename in MONITORED_FILES:
+                        file_path = os.path.join(GAME_DIR, filename)
+                        if not os.path.exists(file_path):
+                            continue
+                            
+                        current_hash = calculate_file_hash(file_path)
+                        if filename in asset_hashes and asset_hashes[filename] != current_hash:
+                            modified_files.append(filename)
+                            
+                    logger.info(f"Sending reload signal to all clients for changes in: {', '.join(modified_files)}")
                     socketio.emit('reload_needed', {
                         'message': 'Er zijn updates beschikbaar. Het spel moet opnieuw geladen worden.',
-                        'timestamp': time.time()
+                        'timestamp': time.time(),
+                        'modified_files': modified_files
                     })
                     logger.info("Reload signal sent successfully")
                 except Exception as emit_error:

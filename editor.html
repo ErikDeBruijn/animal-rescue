@@ -325,6 +325,26 @@
                 socket.on('reload_needed', function(data) {
                     console.log('Reload notification received:', data);
                     
+                    // Toon welke bestanden er gewijzigd zijn
+                    if (data.modified_files && data.modified_files.length > 0) {
+                        console.log('Gewijzigde bestanden:', data.modified_files.join(', '));
+                        
+                        // Update de melding met welke bestanden er gewijzigd zijn
+                        let message = '';
+                        if (data.modified_files.includes('editor.html') || data.modified_files.includes('editor.js')) {
+                            message = 'Er zijn updates voor de editor beschikbaar.';
+                        } else if (data.modified_files.includes('levels.js')) {
+                            message = 'Er zijn nieuwe levels of level wijzigingen beschikbaar.';
+                        } else {
+                            message = 'Er zijn updates voor het spel beschikbaar.';
+                        }
+                        
+                        const notificationText = document.querySelector('#reload-notification p');
+                        if (notificationText) {
+                            notificationText.textContent = message;
+                        }
+                    }
+                    
                     // Check if there are unsaved changes in the editor
                     const hasUnsavedChanges = editorState && editorState.editingLevel && 
                                               document.getElementById('save-level-btn') && 

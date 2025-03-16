@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dieren Redders</title>
+    <title>Dieren Redders v2</title>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <style>
         body {
@@ -250,6 +250,11 @@
                 
                 socket.on('reload_needed', function(data) {
                     console.log('Reload notification received:', data);
+                    
+                    // Toon welke bestanden er gewijzigd zijn
+                    if (data.modified_files && data.modified_files.length > 0) {
+                        console.log('Gewijzigde bestanden:', data.modified_files.join(', '));
+                    }
                     
                     // Check if player is in the middle of a level
                     const inActiveLevel = window.gameState && gameState.currentLevel !== undefined;
