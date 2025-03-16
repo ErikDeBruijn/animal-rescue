@@ -1,51 +1,69 @@
 // game-entities.js
-// Bevat alle entiteiten voor het spel: spelers, enemies, puppy
+// Contains all game entity behaviors, physics and game logic
+// This file focuses on behavior only - rendering is handled in game-characters.js
 
-// Spelers
+// Player class with all behavior and physics logic
 class Player {
     constructor(x, y, controls, name, defaultAnimal) {
+        // Position and physics properties
         this.x = x;
         this.y = y;
         this.velX = 0;
         this.velY = 0;
         this.onGround = false;
+        
+        // Input and identity properties
         this.controls = controls;
         this.name = name;
         this.animalType = defaultAnimal;
         this.canSwitch = true;
+        
+        // Visual orientation (used by renderer)
+        this.facingRight = true; 
+        
+        // Special ability: Fire breathing
         this.canBreatheFire = false;
         this.fireBreathTimer = 0;
-        this.facingRight = true; // Voor de richting van vuurspuwen
         
-        // Levens-systeem
+        // Life system
         this.lives = 3;
         this.isInvulnerable = false;
         this.invulnerableTimer = 0;
         
-        // Zuurstof-systeem voor schildpad
+        // Turtle oxygen system
         this.oxygenLevel = 100;
         this.maxOxygenLevel = 100;
         this.isUnderwater = false;
         this.lowOxygenWarning = false;
         
-        // Krauw-systeem voor kat
+        // Cat claw system
         this.canClaw = false;
         this.clawTimer = 0;
         this.clawActive = false;
         
-        // Properties die afhankelijk zijn van diersoort
+        // Initialize animal-specific properties
         this.updateAnimalProperties();
     }
     
     updateAnimalProperties() {
+        // Get the properties for this animal type from the game configuration
         const animal = gameCore.animalTypes[this.animalType];
+        
+        // Physics and collision properties
         this.width = animal.width;
         this.height = animal.height;
         this.jumpPower = animal.jumpPower;
         this.speed = animal.speed;
+        
+        // Visual property (used by renderer)
         this.color = animal.color;
         
-        // Update de UI met het huidige dier
+        // Update the UI with the current animal
+        this.updateUI();
+    }
+    
+    // UI-specific method that updates the player information display
+    updateUI() {
         this.updatePlayerInfoUI();
     }
     
@@ -71,7 +89,7 @@ class Player {
         const playerElement = document.getElementById(this.name === "Speler 1" ? "player1-animal" : "player2-animal");
         
         if (playerElement) {
-            // Voeg levens emoji toe (hart emoji)
+            // Add lives emoji (heart emoji)
             const heartsEmoji = "❤️".repeat(this.lives);
             playerElement.textContent = `${animalName} ${animalEmoji} ${heartsEmoji}`;
         }
@@ -639,46 +657,68 @@ class Player {
         this.velY = 0;
     }
     
-    // Nieuw: Methode om een leven te verliezen en onkwetsbaar te worden
+    /**
+     * Handles the player losing a life, including:
+     * - Decreasing life count
+     * - Setting invulnerability period
+     * - Updating the UI
+     * - Checking for game over condition
+     * - Resetting player position
+     * 
+     * @returns {boolean} true if game over, false otherwise
+     */
     loseLife() {
-        // Alleen leven verliezen als niet onkwetsbaar
+        // Only lose a life if not currently invulnerable
         if (!this.isInvulnerable) {
+            // Game logic: reduce lives
             this.lives--;
+            
+            // UI update
             this.updatePlayerInfoUI();
             
-            // Onkwetsbaar maken voor 2 seconden
+            // Invulnerability period
             this.isInvulnerable = true;
-            this.invulnerableTimer = 120; // 2 seconden bij 60 fps
+            this.invulnerableTimer = 120; // 2 seconds at 60 fps
             
-            // Controleer game over als geen levens meer
+            // Check for game over condition
             if (this.lives <= 0) {
-                // Game over voor deze speler
+                // Game state update
                 gameCore.gameState.message = `${this.name} heeft geen levens meer!`;
                 
-                // Reset levens en start opnieuw
+                // Reset lives 
                 this.lives = 3;
+                
+                // UI update
                 this.updatePlayerInfoUI();
                 
-                // Terugzetten op startpositie
+                // Reset position
                 this.resetToStart();
                 return true; // Game over
             }
             
-            // Terugzetten op startpositie
+            // Reset position
             this.resetToStart();
         }
-        return false; // Geen game over
+        return false; // Not game over
     }
     
-    // Nieuw: Reset levens (gebruikt bij nieuw level)
+    /**
+     * Resets player lives when starting a new level
+     */
     resetLives() {
+        // Game state reset
         this.lives = 3;
         this.isInvulnerable = false;
         this.invulnerableTimer = 0;
+        
+        // UI update
         this.updatePlayerInfoUI();
     }
     
-    // Nieuw: Update de onkwetsbaarheidstimer
+    /**
+     * Updates the invulnerability timer
+     * Called each frame to decrease the timer when active
+     */
     updateInvulnerability() {
         if (this.isInvulnerable) {
             this.invulnerableTimer--;
@@ -689,42 +729,51 @@ class Player {
     }
 }
 
-// Update de puppy
+/**
+ * Updates the puppy in the current level
+ * Handles:
+ * - Movement animation (shaking)
+ * - Detection of player rescue
+ * - Detection of enemy capture
+ * - Game state updates
+ */
 function updatePuppy() {
+    // Safety checks
     if (!window.levels) return;
     const currentLevelData = window.levels[gameCore.currentLevel];
     if (!currentLevelData.puppy) return;
     
     const puppy = currentLevelData.puppy;
     
-    // Als de puppy nog niet gered is
+    // Only process if the puppy hasn't been saved yet
     if (!puppy.saved && !gameCore.gameState.puppySaved) {
-        // Geef de puppy een kleine beweging (schudden) om hem op te laten vallen
-        puppy.offsetX = Math.sin(Date.now() / 300) * 2; // Langzaam schudden
+        // Animation: give the puppy a small movement (shaking) to make it noticeable
+        // This is used by the renderer to position the puppy
+        puppy.offsetX = Math.sin(Date.now() / 300) * 2; // Slow shaking
         
-        // Controleer of een speler de puppy aanraakt (redt)
-        const currentLevelData = window.levels[gameCore.currentLevel];
+        // Check if a player touches (rescues) the puppy
         const hasMultiplePlayers = currentLevelData.allowedAnimals && currentLevelData.allowedAnimals.length > 1;
         
-        // Controleer welke spelers we moeten checken op basis van het aantal beschikbare dieren
+        // Check which players to check based on number of available animals
         if (window.player1 && 
             (window.player1.collidesWithObject(puppy) || 
              (hasMultiplePlayers && window.player2 && window.player2.collidesWithObject(puppy)))) {
+            // Game state update: puppy is saved
             puppy.saved = true;
             gameCore.gameState.puppySaved = true;
             gameCore.gameState.message = "Je hebt de puppy gered! Verzamel nu de ster!";
             
-            // Voeg een vertraging toe om het bericht te tonen
+            // Clear message after delay
             setTimeout(() => {
                 gameCore.gameState.message = "";
             }, 3000);
         }
         
-        // Controleer of een vijand de puppy aanraakt (puppy verloren)
-        // Voeg een kleine veiligheidsmarge toe, zodat de leeuw de puppy niet te makkelijk te pakken krijgt
+        // Check if an enemy touches the puppy (puppy lost)
+        // Add a small safety margin so the lion doesn't catch the puppy too easily
         const enemies = currentLevelData.enemies || [];
         for (let enemy of enemies) {
-            // Kleinere hitbox voor vijanden om puppy te pakken (75% van normale grootte)
+            // Smaller hitbox for enemies to catch puppy (75% of normal size)
             const adjustedEnemy = {
                 x: enemy.x + enemy.width * 0.125,
                 y: enemy.y + enemy.height * 0.125,
@@ -733,8 +782,9 @@ function updatePuppy() {
             };
             
             if (gameCore.collidesWithObjects(adjustedEnemy, puppy)) {
-                // Ook hier 20% kans dat de puppy ontsnapt!
+                // 20% chance the puppy escapes!
                 if (!gameCore.gameState.gameOver && Math.random() > 0.2) {
+                    // Game state update: game over
                     gameCore.gameState.gameOver = true;
                     gameCore.gameState.message = "Oh nee! De puppy is gevangen! Druk op Spatie om opnieuw te proberen";
                 }
@@ -743,23 +793,34 @@ function updatePuppy() {
     }
 }
 
-// Update vijanden (verplaats ze volgens hun patrol paths)
+/**
+ * Updates all enemies in the current level
+ * Handles:
+ * - Enemy movement AI
+ * - Physics and collision detection
+ * - Dragon fire breathing
+ * - Player and puppy detection
+ * 
+ * @param {Array} players - The player objects to check for proximity
+ */
 function updateEnemies(players) {
+    // Safety checks
     if (!window.levels) return;
     const currentLevelData = window.levels[gameCore.currentLevel];
     const enemies = currentLevelData.enemies || [];
     const platforms = currentLevelData.platforms || [];
     
-    if (gameCore.gameState.gameOver) return; // Geen updates als het game over is
+    // No updates if game is over
+    if (gameCore.gameState.gameOver) return;
     
     enemies.forEach(enemy => {
-        // Initialiseer physics properties als ze nog niet bestaan
+        // Initialize physics properties if they don't exist yet
         if (enemy.velY === undefined) {
-            enemy.velY = 0;         // Verticale snelheid
-            enemy.onGround = false; // Of de vijand op de grond/platform staat
+            enemy.velY = 0;         // Vertical velocity
+            enemy.onGround = false;  // Whether the enemy is on ground/platform
         }
         
-        // Initialiseer vuurspuwen voor draken
+        // Initialize fire breathing for dragons
         if (enemy.type === "DRAGON" && enemy.fireBreathingTimer === undefined) {
             enemy.fireBreathingTimer = 0;
             enemy.fireBreathing = false;
@@ -867,24 +928,38 @@ function updateEnemies(players) {
             // Alleen als er geen speler of puppy wordt achtervolgd
             if (!nearestPlayer && !(currentLevelData.puppy && !currentLevelData.puppy.saved && Math.abs(enemy.x - currentLevelData.puppy.x) < 150)) {
                 if (enemy.x > enemy.startX + enemy.patrolDistance) {
-                    enemy.direction = -1; // Draai om en ga naar links
-                    enemy.x = enemy.startX + enemy.patrolDistance; // Zorg dat hij niet te ver gaat
+                    // Turn around and go left
+                    enemy.direction = -1;
+                    // Ensure the enemy doesn't go too far
+                    enemy.x = enemy.startX + enemy.patrolDistance;
                     
-                    // Draak vuur aan het einde van de patrol
+                    // Dragon fire breathing at the end of patrol
                     if (enemy.type === "DRAGON" && enemy.fireBreathCooldown <= 0) {
+                        // Set fire state for the renderer to use
                         enemy.fireBreathing = true;
-                        enemy.fireBreathingTimer = 60; // Ongeveer 1 seconde vuur (60 frames)
-                        enemy.fireBreathCooldown = 180; // Ongeveer 3 seconden cooldown
+                        
+                        // Configure the duration of fire breathing
+                        enemy.fireBreathingTimer = 60; // Approximately 1 second of fire (60 frames)
+                        
+                        // Set cooldown before next fire breathing
+                        enemy.fireBreathCooldown = 180; // Approximately 3 seconds cooldown
                     }
                 } else if (enemy.x < enemy.startX) {
-                    enemy.direction = 1; // Draai om en ga naar rechts
-                    enemy.x = enemy.startX; // Zorg dat hij niet te ver gaat
+                    // Turn around and go right
+                    enemy.direction = 1;
+                    // Ensure the enemy doesn't go too far
+                    enemy.x = enemy.startX;
                     
-                    // Draak vuur aan het einde van de patrol
+                    // Dragon fire breathing at the end of patrol
                     if (enemy.type === "DRAGON" && enemy.fireBreathCooldown <= 0) {
+                        // Set fire state for the renderer to use
                         enemy.fireBreathing = true;
-                        enemy.fireBreathingTimer = 60; // Ongeveer 1 seconde vuur (60 frames)
-                        enemy.fireBreathCooldown = 180; // Ongeveer 3 seconden cooldown
+                        
+                        // Configure the duration of fire breathing
+                        enemy.fireBreathingTimer = 60; // Approximately 1 second of fire (60 frames)
+                        
+                        // Set cooldown before next fire breathing
+                        enemy.fireBreathCooldown = 180; // Approximately 3 seconds cooldown
                     }
                 }
             }
@@ -945,9 +1020,12 @@ function updateEnemies(players) {
     });
 }
 
-// Exporteer de functies
+// Export the game entity functions and classes
 window.gameEntities = {
+    // Main player class
     Player,
-    updatePuppy,
-    updateEnemies
+    
+    // Entity update functions
+    updatePuppy,    // Updates puppy state and interactions
+    updateEnemies   // Updates enemy movement and behaviors
 };
