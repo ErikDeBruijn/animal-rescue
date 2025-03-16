@@ -1,107 +1,116 @@
 // game-controls.js
-// Bevat alle besturingsfuncties voor het spel: toetsenbord input, click handling, etc.
+// Bevat de besturing voor het spel
 
-// Object om de status van toetsen bij te houden
+// Input state
 const keys = {};
 
-// Object om de status van klikken/touches bij te houden
-const clicks = {
-    active: false,
-    x: 0,
-    y: 0
-};
-
-// Toetsenbord event handlers
-function handleKeyDown(e) {
-    keys[e.key] = true;
-    
-    // Voorkom standaard gedrag van specifieke toetsen
-    if (e.key === " " || e.key === "ArrowUp" || e.key === "ArrowDown") {
-        e.preventDefault();
-    }
-    
-    // Verwerk spatie toets voor level resten/voltooien
-    if (e.key === " ") {
-        // Level voltooien als het level is afgerond
-        if (gameCore.levelCompleted) {
-            gameCore.nextLevel();
-        }
+// Debug functie om de huidige toetsenstaat te tonen
+function debugKeyState() {
+    console.log("Huidige toetsenstaat:", {
+        // Actie keys
+        left: keys['left'],
+        right: keys['right'],
+        up: keys['up'],
+        down: keys['down'],
+        switch: keys['switch'],
         
-        // Spel resetten als het game over is
-        if (gameCore.gameState.gameOver) {
-            gameCore.resetCurrentLevel();
-        }
+        // Echte toetsen
+        ArrowLeft: keys['ArrowLeft'],
+        ArrowRight: keys['ArrowRight'],
+        ArrowUp: keys['ArrowUp'],
+        ArrowDown: keys['ArrowDown'],
+        w: keys['w'],
+        a: keys['a'],
+        s: keys['s'],
+        d: keys['d'],
+        f: keys['f'],
+        Shift: keys['Shift']
+    });
+}
+
+// Vertaal toetsen naar acties
+function getControlAction(key) {
+    // Toetsen mappen naar acties (links, rechts, omhoog, omlaag)
+    if (key === 'ArrowLeft' || key === 'a' || key === 'A') {
+        return 'left';
+    } else if (key === 'ArrowRight' || key === 'd' || key === 'D') {
+        return 'right';
+    } else if (key === 'ArrowUp' || key === 'w' || key === 'W') {
+        return 'up';
+    } else if (key === 'ArrowDown' || key === 's' || key === 'S') {
+        return 'down';
+    } else if (key === 'Shift' || key === 'ShiftLeft' || key === 'ShiftRight' || key === 'f' || key === 'F') {
+        return 'switch';
     }
+    return null;
 }
 
-function handleKeyUp(e) {
-    keys[e.key] = false;
-}
-
-// Muisclick event handlers
-function handleMouseDown(e) {
-    clicks.active = true;
-    clicks.x = e.clientX;
-    clicks.y = e.clientY;
-}
-
-function handleMouseUp(e) {
-    clicks.active = false;
-}
-
-function handleMouseMove(e) {
-    if (clicks.active) {
-        clicks.x = e.clientX;
-        clicks.y = e.clientY;
-    }
-}
-
-// Touch event handlers (voor mobiele apparaten)
-function handleTouchStart(e) {
-    e.preventDefault();
-    if (e.touches.length > 0) {
-        clicks.active = true;
-        clicks.x = e.touches[0].clientX;
-        clicks.y = e.touches[0].clientY;
-    }
-}
-
-function handleTouchEnd(e) {
-    e.preventDefault();
-    clicks.active = false;
-}
-
-function handleTouchMove(e) {
-    e.preventDefault();
-    if (e.touches.length > 0 && clicks.active) {
-        clicks.x = e.touches[0].clientX;
-        clicks.y = e.touches[0].clientY;
-    }
-}
-
-// Eventlisteners instellen
+// Input event listeners
 function setupInputListeners() {
-    // Toetsenbord
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
-    
-    // Muis
-    const canvas = document.getElementById('gameCanvas');
-    if (canvas) {
-        canvas.addEventListener('mousedown', handleMouseDown);
-        window.addEventListener('mouseup', handleMouseUp);
-        window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('keydown', function(e) {
+        // Registreer de toets
+        keys[e.key] = true;
         
-        // Touch (mobiel)
-        canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
-        window.addEventListener('touchend', handleTouchEnd, { passive: false });
-        window.addEventListener('touchmove', handleTouchMove, { passive: false });
-    }
+        // Voor WASD/pijltjes consistentie
+        const action = getControlAction(e.key);
+        if (action) {
+            // Registreer de actie
+            keys[action] = true;
+            
+        }
+        
+        // Spatie om naar volgend level te gaan als level voltooid is
+        if (e.key === ' ' && gameCore.levelCompleted) {
+            window.gameCore.nextLevel();
+        }
+        
+        // Spatie om opnieuw te proberen als de puppy is gevangen
+        if (e.key === ' ' && gameCore.gameState.gameOver) {
+            // Reset het huidige level
+            window.gameCore.resetCurrentLevel();
+        }
+    });
+    
+    window.addEventListener('keyup', function(e) {
+        // Deactiveer de toets
+        keys[e.key] = false;
+        
+        // Voor WASD/pijltjes consistentie
+        const action = getControlAction(e.key);
+        if (action) {
+
+            // Controleer of er geen andere toetsen voor dezelfde actie ingedrukt zijn
+            // (bijv. bij zowel 'ArrowLeft' als 'a' indrukken en dan één loslaten)
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+                if (!keys['ArrowLeft'] && !keys['a'] && !keys['A']) {
+                    keys['left'] = false;
+                }
+            } else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+                if (!keys['ArrowRight'] && !keys['d'] && !keys['D']) {
+                    keys['right'] = false;
+                }
+            } else if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') {
+                if (!keys['ArrowUp'] && !keys['w'] && !keys['W']) {
+                    keys['up'] = false;
+                }
+            } else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') {
+                if (!keys['ArrowDown'] && !keys['s'] && !keys['S']) {
+                    keys['down'] = false;
+                }
+            } else if (e.key === 'Shift' || e.key === 'ShiftLeft' || e.key === 'ShiftRight' || e.key === 'f' || e.key === 'F') {
+                if (!keys['Shift'] && !keys['ShiftLeft'] && !keys['ShiftRight'] && !keys['f'] && !keys['F']) {
+                    keys['switch'] = false;
+                }
+            }
+        }
+    });
 }
 
-// Exporteer de benodigde functies
+
+// Exporteer de besturing
 window.gameControls = {
     keys,
-    clicks,
-    setupInputListeners
+    setupInputListeners,
+    getControlAction,
+    debugKeyState
 };
