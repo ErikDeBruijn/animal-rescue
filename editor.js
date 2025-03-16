@@ -476,18 +476,18 @@ function setupEventListeners() {
 function setupPropertyChangeListeners() {
     // Platform eigenschappen
     document.getElementById('platform-type').addEventListener('change', updateSelectedObjectProperty);
-    document.getElementById('platform-width').addEventListener('change', updateSelectedObjectProperty);
-    document.getElementById('platform-height').addEventListener('change', updateSelectedObjectProperty);
+    document.getElementById('platform-width').addEventListener('input', updateSelectedObjectProperty);
+    document.getElementById('platform-height').addEventListener('input', updateSelectedObjectProperty);
     
     // Vijand eigenschappen
     document.getElementById('enemy-type').addEventListener('change', updateSelectedObjectProperty);
-    document.getElementById('enemy-patrol').addEventListener('change', updateSelectedObjectProperty);
-    document.getElementById('enemy-speed').addEventListener('change', updateSelectedObjectProperty);
+    document.getElementById('enemy-patrol').addEventListener('input', updateSelectedObjectProperty);
+    document.getElementById('enemy-speed').addEventListener('input', updateSelectedObjectProperty);
     
     // Val eigenschappen
     document.getElementById('trap-type').addEventListener('change', updateSelectedObjectProperty);
-    document.getElementById('trap-width').addEventListener('change', updateSelectedObjectProperty);
-    document.getElementById('trap-height').addEventListener('change', updateSelectedObjectProperty);
+    document.getElementById('trap-width').addEventListener('input', updateSelectedObjectProperty);
+    document.getElementById('trap-height').addEventListener('input', updateSelectedObjectProperty);
 }
 
 // Update de eigenschappen van het geselecteerde object
@@ -499,16 +499,32 @@ function updateSelectedObjectProperty() {
     
     if (objectType === 'platform') {
         object.type = document.getElementById('platform-type').value;
-        object.width = parseInt(document.getElementById('platform-width').value);
-        object.height = parseInt(document.getElementById('platform-height').value);
+        const width = parseInt(document.getElementById('platform-width').value);
+        const height = parseInt(document.getElementById('platform-height').value);
+        
+        if (!isNaN(width) && width > 0) object.width = width;
+        if (!isNaN(height) && height > 0) object.height = height;
     } else if (objectType === 'enemy') {
         object.type = document.getElementById('enemy-type').value;
-        object.patrolDistance = parseInt(document.getElementById('enemy-patrol').value);
-        object.speed = parseFloat(document.getElementById('enemy-speed').value);
+        
+        const patrolDistance = parseInt(document.getElementById('enemy-patrol').value);
+        const speed = parseFloat(document.getElementById('enemy-speed').value);
+        
+        if (!isNaN(patrolDistance) && patrolDistance >= 0) object.patrolDistance = patrolDistance;
+        if (!isNaN(speed) && speed >= 0) object.speed = speed;
+        
+        // Store the start position if not already set
+        if (object.startX === undefined) {
+            object.startX = object.x;
+        }
     } else if (objectType === 'trap') {
         object.type = document.getElementById('trap-type').value;
-        object.width = parseInt(document.getElementById('trap-width').value);
-        object.height = parseInt(document.getElementById('trap-height').value);
+        
+        const width = parseInt(document.getElementById('trap-width').value);
+        const height = parseInt(document.getElementById('trap-height').value);
+        
+        if (!isNaN(width) && width > 0) object.width = width;
+        if (!isNaN(height) && height > 0) object.height = height;
     }
     
     renderEditor();
@@ -524,8 +540,14 @@ function setActiveTool(tool) {
     document.getElementById('move-tool').classList.remove('selected');
     document.getElementById('delete-tool').classList.remove('selected');
     document.getElementById('resize-tool').classList.remove('selected');
+    document.getElementById('place-tool').classList.remove('selected');
     
     document.getElementById(tool + '-tool').classList.add('selected');
+    
+    // Als we een selectie-tool kiezen, moeten we uit de plaatsingsmodus
+    if (tool === 'select' || tool === 'move' || tool === 'delete' || tool === 'resize') {
+        editorState.placementMode = false;
+    }
 }
 
 // Zet het actieve object type
@@ -717,6 +739,9 @@ function handleCanvasMouseDown(e) {
             newInstructionElement.textContent = 'Kies een object type om te plaatsen';
             
             document.body.appendChild(newInstructionElement);
+        } else {
+            // Als het een ander objecttype is, toon dan de eigenschappen
+            updatePropertiesPanel();
         }
     } else if (editorState.selectedTool === 'select' || editorState.selectedTool === 'move' || 
         editorState.selectedTool === 'resize' || editorState.selectedTool === 'delete') {
@@ -751,11 +776,13 @@ function handleCanvasMouseDown(e) {
                 }
             }
             
+            // Toon properties panel voor het geselecteerde object
             updatePropertiesPanel();
         } else {
             // Deselecteer als er geen object is geklikt
             editorState.selectedObject = null;
             editorState.selectedObjectType = null;
+            document.getElementById('object-panel').style.display = 'none';
             hideAllPropertyPanels();
         }
     }
@@ -1095,19 +1122,22 @@ function updatePropertiesPanel() {
     const type = editorState.selectedObjectType;
     const object = editorState.selectedObject;
     
+    // Zorg ervoor dat het object-panel zichtbaar is zodat de eigenschappen panels zichtbaar kunnen zijn
+    document.getElementById('object-panel').style.display = 'block';
+    
     if (type === 'platform') {
         document.getElementById('platform-props').style.display = 'block';
-        document.getElementById('platform-type').value = object.type;
+        document.getElementById('platform-type').value = object.type || 'NORMAL';
         document.getElementById('platform-width').value = object.width;
         document.getElementById('platform-height').value = object.height;
     } else if (type === 'enemy') {
         document.getElementById('enemy-props').style.display = 'block';
-        document.getElementById('enemy-type').value = object.type;
-        document.getElementById('enemy-patrol').value = object.patrolDistance;
-        document.getElementById('enemy-speed').value = object.speed;
+        document.getElementById('enemy-type').value = object.type || 'LION';
+        document.getElementById('enemy-patrol').value = object.patrolDistance || 100;
+        document.getElementById('enemy-speed').value = object.speed || 1.0;
     } else if (type === 'trap') {
         document.getElementById('trap-props').style.display = 'block';
-        document.getElementById('trap-type').value = object.type;
+        document.getElementById('trap-type').value = object.type || 'SPIKES';
         document.getElementById('trap-width').value = object.width;
         document.getElementById('trap-height').value = object.height;
     }
@@ -1136,6 +1166,14 @@ function updateObjectList() {
         }
         puppyItem.textContent = 'Puppy';
         puppyItem.addEventListener('click', function() {
+            // Zet de editor tool naar select tool om duidelijk te maken dat we objecten selecteren
+            setActiveTool('select');
+            
+            // Zorg dat we niet in plaatsingsmodus zijn
+            editorState.placementMode = false;
+            document.getElementById('object-panel').style.display = 'block';
+            
+            // Selecteer het object
             editorState.selectedObject = editorState.editingLevel.puppy;
             editorState.selectedObjectType = 'puppy';
             updatePropertiesPanel();
@@ -1186,6 +1224,14 @@ function addObjectsToList(title, objects, type) {
             objectItem.textContent = `${objectName} [${Math.round(object.x)}, ${Math.round(object.y)}]`;
             
             objectItem.addEventListener('click', function() {
+                // Zet de editor tool naar select tool om duidelijk te maken dat we objecten selecteren
+                setActiveTool('select');
+                
+                // Zorg dat we niet in plaatsingsmodus zijn
+                editorState.placementMode = false;
+                document.getElementById('object-panel').style.display = 'block';
+                
+                // Selecteer het object
                 editorState.selectedObject = object;
                 editorState.selectedObjectType = type;
                 updatePropertiesPanel();
