@@ -264,6 +264,7 @@ function updateAvailableAnimalsUI() {
             case "SQUIRREL": animalEmoji = "🐿️"; break;
             case "TURTLE": animalEmoji = "🐢"; break;
             case "UNICORN": animalEmoji = "🦄"; break;
+            case "CAT": animalEmoji = "🐱"; break;
         }
         
         animalElement.textContent = `${animalEmoji} ${animal.name}`;
