@@ -35,7 +35,8 @@ const objectColors = {
         WATER: '#4a90e2',   // Blauw voor water
         TREE: '#8B4513',    // Bruin voor bomen
         CLOUD: '#ffffff',   // Wit voor wolken
-        CLIMB: '#d3a87d'    // Lichter bruin voor klimoppervlakken
+        CLIMB: '#d3a87d',   // Lichter bruin voor klimoppervlakken
+        TRAMPOLINE: '#ff4d4d' // Rood voor trampolines
     },
     enemy: {
         LION: '#ff9800',    // Oranje voor leeuwen
@@ -1469,6 +1470,42 @@ function drawPlatform(platform) {
             ctx.lineTo(x, platform.y + platform.height - platform.height * Math.random() * 0.5);
             ctx.stroke();
         }
+    } else if (platform.type === 'TRAMPOLINE') {
+        // Teken trampoline
+        const frameHeight = 10;
+        const springHeight = platform.height - frameHeight;
+        
+        // Teken het frame (bruin)
+        ctx.fillStyle = '#8B4513';
+        ctx.fillRect(platform.x, platform.y + springHeight, platform.width, frameHeight);
+        
+        // Teken de poten
+        ctx.fillRect(platform.x + 5, platform.y + springHeight, 10, 20);
+        ctx.fillRect(platform.x + platform.width - 15, platform.y + springHeight, 10, 20);
+        
+        // Teken het springdoek (rood)
+        ctx.fillStyle = objectColors.platform.TRAMPOLINE;
+        ctx.fillRect(platform.x + 5, platform.y, platform.width - 10, springHeight);
+        
+        // Teken de springveertjes als witte lijnen
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 2;
+        for (let i = 1; i < 10; i++) {
+            const x = platform.x + (platform.width / 10) * i;
+            ctx.beginPath();
+            ctx.moveTo(x, platform.y);
+            ctx.lineTo(x, platform.y + springHeight);
+            ctx.stroke();
+        }
+        
+        // Teken bounciness indicator (pijlen omhoog)
+        ctx.fillStyle = 'rgba(255, 215, 0, 0.7)'; // Gouden kleur
+        ctx.beginPath();
+        ctx.moveTo(platform.x + platform.width / 2, platform.y - 20);
+        ctx.lineTo(platform.x + platform.width / 2 - 15, platform.y - 5);
+        ctx.lineTo(platform.x + platform.width / 2 + 15, platform.y - 5);
+        ctx.closePath();
+        ctx.fill();
     }
     
     // Omtrek
