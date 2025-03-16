@@ -164,6 +164,8 @@ function loadLevel(levelIndex) {
 function updatePlayButton() {
     const playBtn = document.getElementById('play-level-btn');
     
+    if (!playBtn) return; // Veiligheidscontrole
+    
     // Verberg de knop als dit een nieuw level is dat nog niet is opgeslagen
     if (editorState.currentLevel === 'new') {
         playBtn.textContent = 'Sla dit level eerst op om het te spelen';
@@ -227,7 +229,7 @@ function setupEventListeners() {
     // Level selector
     document.getElementById('level-select').addEventListener('change', function(e) {
         loadLevel(e.target.value);
-        updatePlayButton(); // Update de speel-knop om het correcte level nummer te tonen
+        // updatePlayButton wordt al aangeroepen in loadLevel functie
     });
     
     // Nieuwe level knop
