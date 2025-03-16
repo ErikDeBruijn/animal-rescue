@@ -354,23 +354,23 @@ const gameMultiplayer = {
                     data.local_players.forEach(playerData => {
                         if (playerData.index === 0 && window.player1) {
                             // Update player1
-                            player1.x = playerData.x;
-                            player1.y = playerData.y;
-                            player1.velX = playerData.velX;
-                            player1.velY = playerData.velY;
-                            if (playerData.animalType !== player1.animalType) {
-                                player1.animalType = playerData.animalType;
-                                player1.updateAnimalProperties();
+                            window.player1.x = playerData.x;
+                            window.player1.y = playerData.y;
+                            window.player1.velX = playerData.velX;
+                            window.player1.velY = playerData.velY;
+                            if (playerData.animalType !== window.player1.animalType) {
+                                window.player1.animalType = playerData.animalType;
+                                window.player1.updateAnimalProperties();
                             }
                         } else if (playerData.index === 1 && window.player2) {
                             // Update player2
-                            player2.x = playerData.x;
-                            player2.y = playerData.y;
-                            player2.velX = playerData.velX;
-                            player2.velY = playerData.velY;
-                            if (playerData.animalType !== player2.animalType) {
-                                player2.animalType = playerData.animalType;
-                                player2.updateAnimalProperties();
+                            window.player2.x = playerData.x;
+                            window.player2.y = playerData.y;
+                            window.player2.velX = playerData.velX;
+                            window.player2.velY = playerData.velY;
+                            if (playerData.animalType !== window.player2.animalType) {
+                                window.player2.animalType = playerData.animalType;
+                                window.player2.updateAnimalProperties();
                             }
                         }
                     });
@@ -422,17 +422,17 @@ const gameMultiplayer = {
                     
                     // Reset spelers
                     if (window.player1) {
-                        player1.animalType = "SQUIRREL";
-                        player1.updateAnimalProperties();
-                        player1.x = window.levels[gameCore.currentLevel].startPositions[0].x;
-                        player1.y = window.levels[gameCore.currentLevel].startPositions[0].y;
+                        window.player1.animalType = "SQUIRREL";
+                        window.player1.updateAnimalProperties();
+                        window.player1.x = window.levels[gameCore.currentLevel].startPositions[0].x;
+                        window.player1.y = window.levels[gameCore.currentLevel].startPositions[0].y;
                     }
                     
                     if (window.player2) {
-                        player2.animalType = "TURTLE";
-                        player2.updateAnimalProperties();
-                        player2.x = window.levels[gameCore.currentLevel].startPositions[1].x;
-                        player2.y = window.levels[gameCore.currentLevel].startPositions[1].y;
+                        window.player2.animalType = "TURTLE";
+                        window.player2.updateAnimalProperties();
+                        window.player2.x = window.levels[gameCore.currentLevel].startPositions[1].x;
+                        window.player2.y = window.levels[gameCore.currentLevel].startPositions[1].y;
                     }
                     
                     // Reset game state
@@ -1446,21 +1446,21 @@ const gameMultiplayer = {
         if (window.player1) {
             localPlayers.push({
                 index: 0,
-                x: player1.x,
-                y: player1.y,
-                velX: player1.velX,
-                velY: player1.velY,
-                animalType: player1.animalType
+                x: window.player1.x,
+                y: window.player1.y,
+                velX: window.player1.velX,
+                velY: window.player1.velY,
+                animalType: window.player1.animalType
             });
         }
         if (window.player2) {
             localPlayers.push({
                 index: 1,
-                x: player2.x,
-                y: player2.y,
-                velX: player2.velX,
-                velY: player2.velY,
-                animalType: player2.animalType
+                x: window.player2.x,
+                y: window.player2.y,
+                velX: window.player2.velX,
+                velY: window.player2.velY,
+                animalType: window.player2.animalType
             });
         }
         

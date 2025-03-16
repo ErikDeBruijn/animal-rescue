@@ -107,10 +107,17 @@ function setupInputListeners() {
 }
 
 
+// Definieer de controle mappings voor elke speler
+const controls = {
+    player1: { up: "w", down: "s", left: "a", right: "d" },
+    player2: { up: "ArrowUp", down: "ArrowDown", left: "ArrowLeft", right: "ArrowRight" }
+};
+
 // Exporteer de besturing
 window.gameControls = {
     keys,
     setupInputListeners,
     getControlAction,
-    debugKeyState
+    debugKeyState,
+    controls  // Voeg controls toe aan het geëxporteerde object
 };

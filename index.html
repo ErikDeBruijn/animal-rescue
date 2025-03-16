@@ -5,134 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dieren Redders v2</title>
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: 'Comic Sans MS', cursive, sans-serif;
-            background-color: #8ecbf5;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            height: 100vh;
-        }
-        .nav-link {
-            position: fixed;
-            top: 10px;
-            right: 50px;
-            background-color: #45882f;
-            color: white;
-            padding: 8px 15px;
-            border-radius: 5px;
-            text-decoration: none;
-            font-weight: bold;
-            z-index: 101;
-        }
-        .nav-link:hover {
-            background-color: #5aa93f;
-        }
-        canvas {
-            border: 4px solid #45882f;
-            border-radius: 8px;
-            margin-top: 20px;
-            background-color: #c2f0c2;
-        }
-        h1 {
-            color: #45882f;
-            text-shadow: 2px 2px #fff;
-            margin-bottom: 0;
-        }
-        .instructions-container {
-            width: 800px;
-            margin-top: 10px;
-        }
-        .instructions-toggle {
-            background-color: #45882f;
-            color: white;
-            padding: 8px 15px;
-            border-radius: 8px 8px 0 0;
-            text-align: center;
-            cursor: pointer;
-            font-weight: bold;
-            user-select: none;
-        }
-        .controls {
-            color: #333;
-            background-color: rgba(255, 255, 255, 0.85);
-            padding: 10px;
-            border-radius: 0 0 8px 8px;
-            border: 2px solid #45882f;
-            border-top: none;
-            display: none; /* Standaard verborgen */
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        .controls p {
-            margin: 5px 0;
-        }
-        .player-info {
-            display: flex;
-            justify-content: space-between;
-            width: 800px;
-            margin-top: 10px;
-        }
-        .player-box {
-            background-color: rgba(255, 255, 255, 0.7);
-            border: 2px solid #45882f;
-            border-radius: 8px;
-            padding: 5px 15px;
-            width: 40%;
-            text-align: center;
-        }
-        .player1 {
-            margin-right: auto;
-        }
-        .player2 {
-            margin-left: auto;
-        }
-        .admin-panel {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background-color: rgba(255, 255, 255, 0.8);
-            border: 2px solid #333;
-            border-radius: 8px;
-            padding: 10px;
-            z-index: 100;
-            display: none;
-        }
-        .admin-panel.visible {
-            display: block;
-        }
-        .test-button {
-            background-color: #4CAF50;
-            border: none;
-            color: white;
-            padding: 8px 16px;
-            text-align: center;
-            text-decoration: none;
-            font-size: 14px;
-            border-radius: 4px;
-            cursor: pointer;
-            margin: 5px 0;
-            width: 100%;
-        }
-        .admin-toggle {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background-color: #ff9800;
-            border: none;
-            color: white;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            text-align: center;
-            line-height: 30px;
-            cursor: pointer;
-            z-index: 101;
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <h1>Dieren Redders</h1>
@@ -161,6 +34,10 @@
             <h3>Speler 2</h3>
             <p id="player2-animal">Schildpad 🐢</p>
         </div>
+        <div class="level-info">
+            <h3 id="current-level">Level 1: Start</h3>
+        </div>
+        <!-- Container voor beschikbare dieren wordt hier dynamisch ingevoegd -->
     </div>
     
     <canvas id="gameCanvas" width="800" height="450"></canvas>
@@ -225,21 +102,22 @@
         });
         
         document.getElementById('testUnicornPlatformButton').addEventListener('click', function() {
-            TestSuite.testUnicornPlatformCollision();
+            TestSuite.testUnicornPlatformCollisions();
             console.log(TestSuite.generateReport());
         });
         
         document.getElementById('testAllButton').addEventListener('click', function() {
-            console.log(TestSuite.runAllTests());
+            TestSuite.runAllTests();
+            console.log(TestSuite.generateReport());
         });
     </script>
     
     <!-- Auto-reload notification -->
-    <div id="reload-notification" style="display: none; position: fixed; bottom: 20px; right: 20px; background-color: rgba(69, 136, 47, 0.9); color: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 1000; max-width: 300px;">
-        <h3 style="margin-top: 0;">Updates beschikbaar</h3>
-        <p>Er zijn nieuwe updates voor het spel beschikbaar.</p>
-        <button onclick="window.location.reload()" style="background-color: white; color: #45882f; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 5px;">Nu herladen</button>
-        <button onclick="document.getElementById('reload-notification').style.display = 'none';" style="background-color: transparent; color: white; border: 1px solid white; padding: 8px 15px; border-radius: 4px; cursor: pointer; margin-top: 5px; margin-left: 5px;">Later</button>
+    <div id="reload-notification">
+        <h3>Updates beschikbaar</h3>
+        <p>Er zijn updates voor het spel beschikbaar.</p>
+        <button onclick="window.location.reload()">Nu herladen</button>
+        <button onclick="document.getElementById('reload-notification').style.display = 'none';">Later</button>
     </div>
     
     <script>
@@ -254,32 +132,26 @@
                     // Toon welke bestanden er gewijzigd zijn
                     if (data.modified_files && data.modified_files.length > 0) {
                         console.log('Gewijzigde bestanden:', data.modified_files.join(', '));
-                    }
-                    
-                    // Check if player is in the middle of a level
-                    const inActiveLevel = window.gameState && gameState.currentLevel !== undefined;
-                    const levelComplete = window.gameState && gameState.levelComplete;
-                    
-                    if (levelComplete || !inActiveLevel) {
-                        // Immediately reload if not in active gameplay
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 1000);
-                    } else {
-                        // Show notification if in active gameplay
-                        document.getElementById('reload-notification').style.display = 'block';
                         
-                        // Automatically reload after completing the level
-                        if (window.gameState) {
-                            const originalLevelCompleteCallback = window.onLevelComplete;
-                            window.onLevelComplete = function() {
-                                if (originalLevelCompleteCallback) originalLevelCompleteCallback();
-                                setTimeout(() => {
-                                    window.location.reload();
-                                }, 2000);
-                            };
+                        // Update de melding met welke bestanden er gewijzigd zijn
+                        let message = '';
+                        if (data.modified_files.includes('index.html') || data.modified_files.includes('game.js') || 
+                            data.modified_files.includes('game-entities.js') || data.modified_files.includes('game-rendering.js')) {
+                            message = 'Er zijn updates voor het spel beschikbaar.';
+                        } else if (data.modified_files.includes('levels.js')) {
+                            message = 'Er zijn nieuwe levels beschikbaar.';
+                        } else {
+                            message = 'Er zijn updates beschikbaar.';
+                        }
+                        
+                        const notificationText = document.querySelector('#reload-notification p');
+                        if (notificationText) {
+                            notificationText.textContent = message;
                         }
                     }
+                    
+                    // Toon de notificatie
+                    document.getElementById('reload-notification').style.display = 'block';
                 });
             }
         });

@@ -56,8 +56,8 @@ function initializeGameWhenReady() {
 // Initialiseer het spel
 function init() {
     // Bepaal het startlevel
-    currentLevel = gameCore.getStartLevel();
-    loadLevel(currentLevel);
+    window.currentLevel = gameCore.getStartLevel();
+    loadLevel(window.currentLevel);
 
     // Zorg dat de canvasgrootte goed is
     // Dit wordt hier gedaan omdat we nu de level info hebben
@@ -111,8 +111,25 @@ function loadLevel(levelIndex) {
         player2Animal = allowedAnimals[0];
     }
 
+    // Controleer of gameControls.controls bestaat
+    if (!gameControls.controls) {
+        console.error("gameControls.controls is undefined! Definieer dit in game-controls.js");
+        // Definieer een standaard controls object om errors te voorkomen
+        gameControls.controls = {
+            player1: { up: "w", down: "s", left: "a", right: "d" },
+            player2: { up: "ArrowUp", down: "ArrowDown", left: "ArrowLeft", right: "ArrowRight" }
+        };
+    }
+    
     // Maak spelers aan met hun controls en begindiertypes
     // Bij één diersoort is er maar 1 speler
+    
+    // Extra check voor player1 controls
+    if (!gameControls.controls.player1) {
+        console.error("gameControls.controls.player1 is undefined!");
+        gameControls.controls.player1 = { up: "w", down: "s", left: "a", right: "d" };
+    }
+    
     window.player1 = new gameEntities.Player(
         startPositions[0].x, startPositions[0].y, 
         gameControls.controls.player1, "Speler 1", player1Animal
@@ -120,6 +137,12 @@ function loadLevel(levelIndex) {
     
     // Als er meer dan 1 diersoort beschikbaar is, maak speler 2 aan
     if (allowedAnimals.length > 1) {
+        // Nog een extra check voor het geval gameControls.controls.player2 niet bestaat
+        if (!gameControls.controls.player2) {
+            console.error("gameControls.controls.player2 is undefined!");
+            gameControls.controls.player2 = { up: "ArrowUp", down: "ArrowDown", left: "ArrowLeft", right: "ArrowRight" };
+        }
+        
         window.player2 = new gameEntities.Player(
             startPositions[1].x, startPositions[1].y,
             gameControls.controls.player2, "Speler 2", player2Animal
@@ -145,7 +168,12 @@ function loadLevel(levelIndex) {
     window.player2.resetLives();
     
     // Toon het level en speler info
-    document.getElementById('current-level').textContent = `Level ${levelIndex + 1}: ${level.name}`;
+    const levelElement = document.getElementById('current-level');
+    if (levelElement) {
+        levelElement.textContent = `Level ${levelIndex + 1}: ${level.name}`;
+    } else {
+        console.warn("Element met ID 'current-level' niet gevonden in de DOM.");
+    }
     showPlayerInfo();
     
     // Update beschikbare dieren UI
@@ -157,11 +185,22 @@ function showPlayerInfo() {
     const player1Info = document.getElementById('player1-animal');
     const player2Info = document.getElementById('player2-animal');
     
-    window.player1.updatePlayerInfoUI();
-    window.player2.updatePlayerInfoUI();
+    // Zorg ervoor dat we de speler UI functies alleen aanroepen als de spelers bestaan
+    if (window.player1) {
+        window.player1.updatePlayerInfoUI();
+    }
+    
+    if (window.player2) {
+        window.player2.updatePlayerInfoUI();
+    }
 
     // Maak de infovakjes zichtbaar als ze nog verborgen zijn
-    document.querySelector('.player-info').style.display = 'flex';
+    const playerInfoContainer = document.querySelector('.player-info');
+    if (playerInfoContainer) {
+        playerInfoContainer.style.display = 'flex';
+    } else {
+        console.warn("Element met class 'player-info' niet gevonden in de DOM.");
+    }
 }
 
 // Update UI om de beschikbare dieren voor het huidige level te tonen
@@ -186,7 +225,14 @@ function updateAvailableAnimalsUI() {
         animalsContainer = document.createElement('div');
         animalsContainer.id = 'available-animals';
         animalsContainer.classList.add('available-animals');
-        document.querySelector('.player-info').appendChild(animalsContainer);
+        
+        const playerInfoContainer = document.querySelector('.player-info');
+        if (playerInfoContainer) {
+            playerInfoContainer.appendChild(animalsContainer);
+        } else {
+            console.warn("Element met class 'player-info' niet gevonden in de DOM. Kan beschikbare dieren UI niet toevoegen.");
+            return; // Stop de functie als we de container niet kunnen vinden
+        }
         
         // Voeg titel toe
         const title = document.createElement('div');
@@ -240,7 +286,7 @@ function updateAvailableAnimalsUI() {
 // Naar volgend level gaan
 function nextLevel() {
     gameCore.currentLevel++;
-    if (gameCore.currentLevel >= levels.length) {
+    if (gameCore.currentLevel >= window.levels.length) {
         gameCore.currentLevel = 0; // Terug naar eerste level of eindscherm tonen
     }
     
@@ -293,7 +339,7 @@ function gameLoop() {
         
         // Update de puppy en vijanden
         gameEntities.updatePuppy();
-        gameEntities.updateEnemies([player1, player2]); // Geef spelers mee aan updateEnemies
+        gameEntities.updateEnemies([window.player1, window.player2]); // Geef spelers mee aan updateEnemies
         
         // Platforms tekenen
         currentLevelData.platforms.forEach(platform => {
