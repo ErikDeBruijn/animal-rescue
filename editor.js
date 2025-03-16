@@ -70,6 +70,7 @@ function initEditor() {
     // Controleer of er een #level=X in de URL staat
     if (hash && hash.startsWith('#level=')) {
         lastLevelParam = hash.substring(7); // Extraheer het getal na #level=
+    }
     
     // Stel het huidige level in (gebruik de parameter of val terug op 0)
     editorState.currentLevel = lastLevelParam !== null ? parseInt(lastLevelParam) : 0;
