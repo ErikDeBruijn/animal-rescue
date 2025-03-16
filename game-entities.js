@@ -14,6 +14,11 @@ class Player {
         this.animalType = defaultAnimal;
         this.canSwitch = true;
         
+        // Levens-systeem
+        this.lives = 3;
+        this.isInvulnerable = false;
+        this.invulnerableTimer = 0;
+        
         // Properties die afhankelijk zijn van diersoort
         this.updateAnimalProperties();
     }
@@ -49,7 +54,9 @@ class Player {
         const playerElement = document.getElementById(this.name === "Speler 1" ? "player1-animal" : "player2-animal");
         
         if (playerElement) {
-            playerElement.textContent = `${animalName} ${animalEmoji}`;
+            // Voeg levens emoji toe (hart emoji)
+            const heartsEmoji = "❤️".repeat(this.lives);
+            playerElement.textContent = `${animalName} ${animalEmoji} ${heartsEmoji}`;
         }
     }
     
@@ -67,7 +74,7 @@ class Player {
         return false;
     }
     
-    // Verbeterde detectie voor wissel-toetsen
+    // Detectie voor wissel-toetsen
     isSwitchKeyPressed() {
         // Voor speler 2, check alle shift-toetsen (links en rechts)
         if (this.name === "Speler 2") {
@@ -133,11 +140,14 @@ class Player {
     }
     
     update(otherPlayer, platforms, traps, collectibles) {
+        // Update onkwetsbaarheidstimer als die actief is
+        this.updateInvulnerability();
+        
         // Beweging horizontaal met inertia
         const acceleration = 0.8; // Acceleratie waarde
         const friction = 0.85;    // Wrijving (lager = meer wrijving)
         
-        // Toepassen van horizontale besturing met inertia
+        // Horizontale beweging
         if (gameControls.keys[this.controls.left] || gameControls.keys[this.controls.left.toLowerCase()]) {
             // Geleidelijke versnelling naar links (negatieve x)
             this.velX -= acceleration;
@@ -179,7 +189,7 @@ class Player {
             }
         }
         
-        // Wisselen van dier - verbeterde detectie voor alle shift-toetsen en F-toets
+        // Wisselen van dier
         let switchKeyPressed = this.isSwitchKeyPressed();
         
         if (switchKeyPressed && this.canSwitch) {
@@ -289,12 +299,12 @@ class Player {
                         }
                         
                         // Laat schildpad drijven (niet zinken) in water
-                        if (Math.abs(this.velY) < 0.5 && !gameControls.keys[this.controls.up]) {
+                        if (Math.abs(this.velY) < 0.5 && !(gameControls.keys[this.controls.up] || gameControls.keys[this.controls.up.toLowerCase()])) {
                             this.velY = -0.2; // Langzaam drijven
                         }
                     } else {
                         // Andere dieren kunnen niet zwemmen
-                        this.resetToStart();
+                        this.loseLife();
                     }
                 } else if (platform.type === "CLOUD") {
                     // Alleen de eenhoorn kan op wolken staan
@@ -396,12 +406,6 @@ class Player {
         });
         
         // Collectibles verzamelen
-        // In multiplayer modus, laat alleen de host collectibles verzamelen
-        // Clients krijgen updates via game_state_update events
-        if (window.gameMultiplayer && gameMultiplayer.roomId && !gameMultiplayer.isHost) {
-            // Skip collectible detection voor niet-host clients
-            return;
-        }
         
         collectibles.forEach((collectible, index) => {
             if (this.collidesWithObject(collectible)) {
@@ -415,12 +419,6 @@ class Player {
                         gameCore.gameState.message = "Level voltooid! Druk op Spatie voor het volgende level";
                     }
                     
-                    // In multiplayer, laat de host de collectibles status updaten
-                    // We doen dit altijd, niet alleen bij level complete
-                    if (window.gameMultiplayer && gameMultiplayer.isHost && gameMultiplayer.socket) {
-                        // Stuur een onmiddellijke update om de collectibles status te synchroniseren
-                        gameMultiplayer.updateGameState();
-                    }
                 } else {
                     // Toon bericht dat puppy eerst gered moet worden
                     gameCore.gameState.message = "Red eerst de puppy!";
@@ -435,7 +433,7 @@ class Player {
         // Valstrikken controleren
         traps.forEach(trap => {
             if (this.collidesWithObject(trap)) {
-                this.resetToStart();
+                this.loseLife();
             }
         });
         
@@ -444,8 +442,8 @@ class Player {
         const enemies = currentLevelData.enemies || [];
         enemies.forEach(enemy => {
             if (this.collidesWithObject(enemy)) {
-                // Bij aanraking met een vijand, terug naar start
-                this.resetToStart();
+                // Bij aanraking met een vijand, leven verliezen
+                this.loseLife();
             }
         });
     }
@@ -470,6 +468,55 @@ class Player {
         this.y = startPos.y;
         this.velX = 0;
         this.velY = 0;
+    }
+    
+    // Nieuw: Methode om een leven te verliezen en onkwetsbaar te worden
+    loseLife() {
+        // Alleen leven verliezen als niet onkwetsbaar
+        if (!this.isInvulnerable) {
+            this.lives--;
+            this.updatePlayerInfoUI();
+            
+            // Onkwetsbaar maken voor 2 seconden
+            this.isInvulnerable = true;
+            this.invulnerableTimer = 120; // 2 seconden bij 60 fps
+            
+            // Controleer game over als geen levens meer
+            if (this.lives <= 0) {
+                // Game over voor deze speler
+                gameCore.gameState.message = `${this.name} heeft geen levens meer!`;
+                
+                // Reset levens en start opnieuw
+                this.lives = 3;
+                this.updatePlayerInfoUI();
+                
+                // Terugzetten op startpositie
+                this.resetToStart();
+                return true; // Game over
+            }
+            
+            // Terugzetten op startpositie
+            this.resetToStart();
+        }
+        return false; // Geen game over
+    }
+    
+    // Nieuw: Reset levens (gebruikt bij nieuw level)
+    resetLives() {
+        this.lives = 3;
+        this.isInvulnerable = false;
+        this.invulnerableTimer = 0;
+        this.updatePlayerInfoUI();
+    }
+    
+    // Nieuw: Update de onkwetsbaarheidstimer
+    updateInvulnerability() {
+        if (this.isInvulnerable) {
+            this.invulnerableTimer--;
+            if (this.invulnerableTimer <= 0) {
+                this.isInvulnerable = false;
+            }
+        }
     }
 }
 
@@ -503,11 +550,6 @@ function updatePuppy() {
             gameCore.gameState.puppySaved = true;
             gameCore.gameState.message = "Je hebt de puppy gered! Verzamel nu de ster!";
             
-            // In multiplayer, laat de host de puppy-status updaten
-            if (window.gameMultiplayer && gameMultiplayer.isHost && gameMultiplayer.socket) {
-                // Stuur een onmiddellijke update om de puppystatus te synchroniseren
-                gameMultiplayer.updateGameState();
-            }
             
             // Voeg een vertraging toe om het bericht te tonen
             setTimeout(() => {

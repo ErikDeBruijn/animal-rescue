@@ -5,6 +5,22 @@
 
 // Spelconstanten en state laden
 document.addEventListener('DOMContentLoaded', function() {
+    // Controleer eerst of alle benodigde objecten beschikbaar zijn
+    initializeGameWhenReady();
+});
+
+// Functie die controleert of alle benodigde game componenten geladen zijn
+function initializeGameWhenReady() {
+    if (!window.gameEntities || !window.gameCore || !window.gameControls) {
+        // Als nog niet alle componenten geladen zijn, wacht dan 100ms en probeer opnieuw
+        console.log("Wachten tot alle game componenten geladen zijn...");
+        setTimeout(initializeGameWhenReady, 100);
+        return;
+    }
+    
+    // Nu alle componenten geladen zijn, initialiseer het spel
+    console.log("Alle game componenten zijn geladen, initialiseren...");
+    
     // Canvas referenties koppelen aan gameCore
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
@@ -12,6 +28,16 @@ document.addEventListener('DOMContentLoaded', function() {
     gameCore.canvas = canvas;
     gameCore.ctx = ctx;
     gameCore.GROUND_LEVEL = canvas.height - 50;
+    
+    // Zorg dat de gamestate altijd aanwezig is
+    if (!gameCore.gameState) {
+        gameCore.gameState = {
+            running: true,
+            gameOver: false,
+            puppySaved: false,
+            message: ""
+        };
+    }
     
     // Levels inladen
     window.levels = getLevels(gameCore.GROUND_LEVEL);
@@ -51,14 +77,9 @@ document.addEventListener('DOMContentLoaded', function() {
         "TURTLE"
     );
     
-    // Initialiseer de multiplayer mode
-    if (typeof initMultiplayer === 'function') {
-        initMultiplayer();
-    }
-    
     // Game starten
     gameLoop();
-});
+}
 
 // Naar volgend level gaan
 function nextLevel() {
@@ -72,11 +93,14 @@ function nextLevel() {
     player1.updateAnimalProperties();
     player1.x = levels[gameCore.currentLevel].startPositions[0].x;
     player1.y = levels[gameCore.currentLevel].startPositions[0].y;
+    // Reset levens van spelers alleen bij nieuw level, niet bij heropstarten hetzelfde level
+    player1.resetLives();
     
     player2.animalType = "TURTLE";
     player2.updateAnimalProperties();
     player2.x = levels[gameCore.currentLevel].startPositions[1].x;
     player2.y = levels[gameCore.currentLevel].startPositions[1].y;
+    player2.resetLives();
     
     // Reset game state
     gameCore.levelCompleted = false;
@@ -89,13 +113,6 @@ function nextLevel() {
     
     // Update de editor link
     gameCore.updateEditorLink();
-    
-    // Als we in multiplayer modus zijn en de host zijn, broadcast het nieuwe level
-    if (window.gameMultiplayer && gameMultiplayer.isHost && gameMultiplayer.socket) {
-        console.log("Broadcasting level change to all players:", gameCore.currentLevel);
-        // Update onmiddellijk de game state om het nieuwe level te synchroniseren
-        gameMultiplayer.updateGameState();
-    }
 }
 
 // Reset het huidige level (na game over door puppy verlies)
@@ -125,6 +142,9 @@ function resetCurrentLevel() {
         });
     }
 }
+
+// Houd frame telling bij voor debug doeleinden
+let frameCount = 0;
 
 // Game loop
 function gameLoop() {
@@ -168,118 +188,20 @@ function gameLoop() {
         // Grond tekenen
         gameRendering.drawGround();
         
-        // Spelers updaten en tekenen
-        // Als we in multiplayer modus zijn en NIET de host, dan updaten we alleen onze lokale spelers
-        // De positie-updates komen van de host via player_update events
-        if (window.gameMultiplayer && gameMultiplayer.roomId && !gameMultiplayer.isHost) {
-            // Toon alleen de spelers, update ze niet (om client-side prediction te voorkomen)
-            // In plaats daarvan sturen we alleen inputs naar de host
-        } else {
-            // Als we de host zijn of in singleplayer modus, update normaal
-            player1.update(player2, currentLevelData.platforms, currentLevelData.traps, currentLevelData.collectibles);
-            player2.update(player1, currentLevelData.platforms, currentLevelData.traps, currentLevelData.collectibles);
+        // Debug toetsenstaat periodiek
+        if (frameCount % 30 === 0) {
+            if (window.gameControls && gameControls.debugKeyState) {
+                gameControls.debugKeyState();
+            }
         }
         
+        // Beide spelers worden lokaal bestuurd
+        player1.update(player2, currentLevelData.platforms, currentLevelData.traps, currentLevelData.collectibles);
+        player2.update(player1, currentLevelData.platforms, currentLevelData.traps, currentLevelData.collectibles);
+        
+        // Teken beide spelers
         gameRendering.drawPlayer(player1);
         gameRendering.drawPlayer(player2);
-        
-        // Multiplayer-specifieke spelers tekenen en updaten (andere spelers in het netwerk)
-        if (window.gameMultiplayer && gameMultiplayer.roomId) {
-            if (gameMultiplayer.socket) {
-                // Verschillende gedrag voor host vs client
-                if (gameMultiplayer.isHost) {
-                    // HOST SPECIFIEKE CODE
-                    
-                    // Verwerk remote inputs van andere spelers
-                    if (gameMultiplayer.remotePlayerInputs) {
-                        for (const playerId in gameMultiplayer.remotePlayerInputs) {
-                            const inputData = gameMultiplayer.remotePlayerInputs[playerId];
-                            
-                            // Vind de remote speler object
-                            const otherPlayer = gameMultiplayer.otherPlayers[playerId];
-                            if (otherPlayer && otherPlayer.playerObj) {
-                                // Pas de gameControls.keys aan voor deze speler
-                                // We maken een tijdelijke kopie van de keys state voor deze verwerking
-                                const originalKeys = {...gameControls.keys}; // Backup huidige toetsenbord staat
-                                
-                                // Stel tijdelijk toetsen in op basis van remote input
-                                const remoteKeys = inputData.keys;
-                                const playerObj = otherPlayer.playerObj;
-                                
-                                // Update controls voor de simulatie - toepassen van de remote inputs
-                                gameControls.keys[playerObj.controls.left] = remoteKeys.left;
-                                gameControls.keys[playerObj.controls.right] = remoteKeys.right;
-                                gameControls.keys[playerObj.controls.up] = remoteKeys.up;
-                                gameControls.keys[playerObj.controls.down] = remoteKeys.down;
-                                
-                                // Verwerk deze inputs in de player update
-                                playerObj.update(player1, currentLevelData.platforms, currentLevelData.traps, currentLevelData.collectibles);
-                                
-                                // Herstel de originele toetsenbordsituatie
-                                gameControls.keys = originalKeys;
-                            }
-                        }
-                    }
-                    
-                    // Stuur elke 3 frames een positie-update voor ALLE spelers (ook remote)
-                    if (frameCount % 3 === 0) {
-                        // Stuur positie updates voor lokale spelers
-                        gameMultiplayer.sendPositionUpdate(player1);
-                        gameMultiplayer.sendPositionUpdate(player2);
-                        
-                        // Stuur ook updates voor remote spelers
-                        for (const playerId in gameMultiplayer.otherPlayers) {
-                            const otherPlayer = gameMultiplayer.otherPlayers[playerId];
-                            if (otherPlayer.playerObj) {
-                                // Gebruik de reeds berekende posities om terug te sturen naar de clients
-                                gameMultiplayer.socket.emit('player_update', {
-                                    player_id: playerId,
-                                    position: { x: otherPlayer.playerObj.x, y: otherPlayer.playerObj.y },
-                                    velocity: { x: otherPlayer.playerObj.velX, y: otherPlayer.playerObj.velY },
-                                    animal_type: otherPlayer.playerObj.animalType
-                                });
-                            }
-                        }
-                    }
-                    
-                    // Synchroniseer game state (minder vaak)
-                    if (frameCount % 15 === 0) {
-                        gameMultiplayer.updateGameState();
-                    }
-                } else {
-                    // CLIENT SPECIFIEKE CODE
-                    
-                    // Stuur lokale inputs naar de server voor verwerking door de host
-                    if (frameCount % 2 === 0) { // Iets vaker dan positie updates voor responsive besturing
-                        gameMultiplayer.sendPlayerInput(player1, gameControls.keys);
-                        gameMultiplayer.sendPlayerInput(player2, gameControls.keys);
-                    }
-                }
-                
-                // Update de spelernamen in de UI periodiek (elke 150 frames = ongeveer elke 2.5 seconden)
-                if (frameCount % 150 === 0) {
-                    gameMultiplayer.updatePlayerNamesInUI();
-                }
-            }
-            
-            // Teken andere spelers
-            for (const playerId in gameMultiplayer.otherPlayers) {
-                const otherPlayer = gameMultiplayer.otherPlayers[playerId];
-                if (otherPlayer.playerObj) {
-                    // We gebruiken de bestaande renderingcode voor spelers
-                    gameRendering.drawPlayer(otherPlayer.playerObj);
-                } else {
-                    // Maak een spelerobject voor deze speler als het nog niet bestaat
-                    otherPlayer.playerObj = new gameEntities.Player(
-                        otherPlayer.position.x, 
-                        otherPlayer.position.y,
-                        {}, // Geen controls nodig, wordt extern gestuurd
-                        otherPlayer.username,
-                        otherPlayer.animalType
-                    );
-                }
-            }
-        }
         
         // Game berichten
         if (gameCore.gameState.message) {
@@ -294,20 +216,9 @@ function gameLoop() {
         gameCore.ctx.fillStyle = 'black';
         gameCore.ctx.textAlign = 'left';
         gameCore.ctx.fillText("Level " + (gameCore.currentLevel + 1) + ": " + currentLevelData.name, 10, 20);
-        
-        // Toon multiplayer indicator als we in een multiplayer sessie zijn
-        if (window.gameMultiplayer && gameMultiplayer.roomId) {
-            gameCore.ctx.font = '16px Comic Sans MS';
-            gameCore.ctx.fillStyle = 'green';
-            gameCore.ctx.textAlign = 'right';
-            gameCore.ctx.fillText("Multiplayer", gameCore.canvas.width - 10, 20);
-        }
     }
     
-    // Houd frame telling bij voor multiplayer updates
-    if (typeof frameCount === 'undefined') {
-        frameCount = 0;
-    }
+    // Incrementeer frame telling voor debug doeleinden
     frameCount++;
     
     requestAnimationFrame(gameLoop);
