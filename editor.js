@@ -81,6 +81,24 @@ function handleBackToGame() {
     }
 }
 
+// Update de dierenkeuzevakjes op basis van het huidige level
+function updateAnimalCheckboxes() {
+    // Initialiseer dierenarray als deze niet bestaat in het level
+    if (!editorState.editingLevel.allowedAnimals) {
+        editorState.editingLevel.allowedAnimals = ["SQUIRREL", "TURTLE", "UNICORN", "CAT"];
+    }
+    
+    // Zet alle checkboxes op basis van opgeslagen waarden
+    document.getElementById('animal-squirrel').checked = 
+        editorState.editingLevel.allowedAnimals.includes("SQUIRREL");
+    document.getElementById('animal-turtle').checked = 
+        editorState.editingLevel.allowedAnimals.includes("TURTLE");
+    document.getElementById('animal-unicorn').checked = 
+        editorState.editingLevel.allowedAnimals.includes("UNICORN");
+    document.getElementById('animal-cat').checked = 
+        editorState.editingLevel.allowedAnimals.includes("CAT");
+}
+
 // Zet het venster op
 window.onload = function() {
     initEditor();
@@ -172,6 +190,7 @@ function loadLevel(levelIndex) {
         // Maak een nieuw leeg level
         editorState.editingLevel = {
             name: "Nieuw Level",
+            allowedAnimals: ["SQUIRREL", "TURTLE", "UNICORN", "CAT"], // Standaard alle dieren toegestaan
             startPositions: [{x: 50, y: GROUND_LEVEL - 50}, {x: 100, y: GROUND_LEVEL - 50}],
             platforms: [],
             traps: [],
@@ -205,6 +224,9 @@ function loadLevel(levelIndex) {
     
     // Update de "Speel Dit Level" knop
     updatePlayButton();
+    
+    // Update de dieren selectievakjes
+    updateAnimalCheckboxes();
     
     // Render het level
     renderEditor();
@@ -293,8 +315,61 @@ function playCurrentLevel() {
 
 // Setup event listeners voor alle UI elementen
 function setupEventListeners() {
+    // Animal checkbox event listeners
+    document.getElementById('animal-squirrel').addEventListener('change', function() {
+        updateAllowedAnimals();
+    });
+    document.getElementById('animal-turtle').addEventListener('change', function() {
+        updateAllowedAnimals();
+    });
+    document.getElementById('animal-unicorn').addEventListener('change', function() {
+        updateAllowedAnimals();
+    });
+    document.getElementById('animal-cat').addEventListener('change', function() {
+        updateAllowedAnimals();
+    });
+    
+    // Function to update allowed animals based on checkboxes
+    function updateAllowedAnimals() {
+        const allowedAnimals = [];
+        if (document.getElementById('animal-squirrel').checked) allowedAnimals.push('SQUIRREL');
+        if (document.getElementById('animal-turtle').checked) allowedAnimals.push('TURTLE');
+        if (document.getElementById('animal-unicorn').checked) allowedAnimals.push('UNICORN');
+        if (document.getElementById('animal-cat').checked) allowedAnimals.push('CAT');
+        
+        // Update the level data
+        editorState.editingLevel.allowedAnimals = allowedAnimals;
+        
+        // Mark as unsaved changes
+        editorState.hasUnsavedChanges = true;
+    }
+    
+    // Globaal keyboard event listener voor delete key
+    document.addEventListener('keydown', function(e) {
+        // Check of de delete of backspace toets is ingedrukt
+        if ((e.key === 'Delete' || e.key === 'Backspace') && 
+            editorState.selectedObject && 
+            (editorState.selectedTool === 'select' || editorState.selectedTool === 'move' || editorState.selectedTool === 'resize')) {
+            deleteSelectedObject();
+        }
+    });
+    
+    // Dieren selectie checkboxes
+    document.getElementById('animal-squirrel').addEventListener('change', updateAllowedAnimals);
+    document.getElementById('animal-turtle').addEventListener('change', updateAllowedAnimals);
+    document.getElementById('animal-unicorn').addEventListener('change', updateAllowedAnimals);
+    
     // Level selector
     document.getElementById('level-select').addEventListener('change', function(e) {
+        // Controleer eerst of er niet-opgeslagen wijzigingen zijn
+        if (editorState.hasUnsavedChanges) {
+            if (!confirm('Je hebt niet-opgeslagen wijzigingen. Weet je zeker dat je naar een ander level wilt gaan? Klik op Annuleren om terug te gaan en op te slaan.')) {
+                // Gebruiker heeft geannuleerd, stel de level selector terug op het huidige level
+                e.target.value = editorState.currentLevel;
+                return;
+            }
+        }
+        
         loadLevel(e.target.value);
         // updatePlayButton wordt al aangeroepen in loadLevel functie
         
@@ -380,7 +455,23 @@ function setupEventListeners() {
         fetch(`/api/levels/${levelIndex}`, {
             method: 'DELETE'
         })
-        .then(response => response.json())
+        .then(response => {
+            // Controleer eerst of de response status OK is (200-299)
+            if (!response.ok) {
+                // Als er een 404 is, betekent het dat de editor API niet beschikbaar is (geen dev mode)
+                if (response.status === 404) {
+                    throw new Error("Editor API niet beschikbaar. Start de server met --dev flag om de editor te gebruiken.");
+                }
+                // Voor andere fouten, probeer de error text te lezen
+                return response.text().then(text => {
+                    throw new Error(`Server fout (${response.status}): ${text}`);
+                });
+            }
+            // Probeer de response als JSON te parsen
+            return response.json().catch(e => {
+                throw new Error("Ongeldig antwoord van server - kon JSON niet verwerken");
+            });
+        })
         .then(data => {
             if (data.success) {
                 // Ververs de lijst met levels
@@ -417,7 +508,15 @@ function setupEventListeners() {
             deleteBtn.disabled = false;
         })
         .catch((error) => {
-            alert('Fout bij het verwijderen van het level: ' + error);
+            // Mooier foutbericht
+            let errorMessage = error.message || "Onbekende fout";
+            
+            // Verberg technische details van bepaalde fouten
+            if (errorMessage.includes("<!doctype") || errorMessage.includes("SyntaxError")) {
+                errorMessage = "Server communicatiefout. Controleer of de server draait en in dev mode staat.";
+            }
+            
+            alert('Fout bij het verwijderen van het level: ' + errorMessage);
             deleteBtn.textContent = originalText;
             deleteBtn.disabled = false;
             hideDeleteConfirmation();
@@ -463,7 +562,23 @@ function setupEventListeners() {
                 levelCode: levelCode
             }),
         })
-        .then(response => response.json())
+        .then(response => {
+            // Controleer eerst of de response status OK is (200-299)
+            if (!response.ok) {
+                // Als er een 404 is, betekent het dat de editor API niet beschikbaar is (geen dev mode)
+                if (response.status === 404) {
+                    throw new Error("Editor API niet beschikbaar. Start de server met --dev flag om de editor te gebruiken.");
+                }
+                // Voor andere fouten, probeer de error text te lezen
+                return response.text().then(text => {
+                    throw new Error(`Server fout (${response.status}): ${text}`);
+                });
+            }
+            // Probeer de response als JSON te parsen
+            return response.json().catch(e => {
+                throw new Error("Ongeldig antwoord van server - kon JSON niet verwerken");
+            });
+        })
         .then(data => {
             if (data.success) {
                 // Als dit een nieuw level was, laad de levels opnieuw in
@@ -498,7 +613,15 @@ function setupEventListeners() {
             saveBtn.disabled = false;
         })
         .catch((error) => {
-            alert('Fout bij het opslaan van het level: ' + error);
+            // Mooier foutbericht
+            let errorMessage = error.message || "Onbekende fout";
+            
+            // Verberg technische details van bepaalde fouten
+            if (errorMessage.includes("<!doctype") || errorMessage.includes("SyntaxError")) {
+                errorMessage = "Server communicatiefout. Controleer of de server draait en in dev mode staat.";
+            }
+            
+            alert('Fout bij het opslaan van het level: ' + errorMessage);
             saveBtn.textContent = originalText;
             saveBtn.disabled = false;
         });
@@ -527,6 +650,11 @@ function setupEventListeners() {
         // Check of er twee startposities zijn
         if (level.startPositions.length < 2) {
             errors.push("Je level moet twee startposities hebben voor beide spelers.");
+        }
+        
+        // Check op toegestane dieren (minstens één dier)
+        if (!level.allowedAnimals || level.allowedAnimals.length === 0) {
+            errors.push("Je moet minstens één diersoort selecteren voor dit level.");
         }
         
         // Als er fouten zijn, toon ze en keer terug
@@ -868,6 +996,38 @@ function hideAllPropertyPanels() {
     });
 }
 
+// Functie om de toegestane dieren bij te werken
+function updateAllowedAnimals() {
+    // Verzamel alle geselecteerde dieren
+    const allowedAnimals = [];
+    
+    if (document.getElementById('animal-squirrel').checked) {
+        allowedAnimals.push("SQUIRREL");
+    }
+    
+    if (document.getElementById('animal-turtle').checked) {
+        allowedAnimals.push("TURTLE");
+    }
+    
+    if (document.getElementById('animal-unicorn').checked) {
+        allowedAnimals.push("UNICORN");
+    }
+    
+    // Zorg ervoor dat er altijd minstens één dier geselecteerd is
+    if (allowedAnimals.length === 0) {
+        alert("Je moet minstens één diersoort selecteren!");
+        // Herstel de laatste selectie die gemaakt was
+        updateAnimalCheckboxes();
+        return;
+    }
+    
+    // Update level data
+    editorState.editingLevel.allowedAnimals = allowedAnimals;
+    
+    // Markeer als onopgeslagen
+    markAsUnsaved();
+}
+
 // Functie om wijzigingen bij te houden
 function markAsUnsaved() {
     // Marker dat er niet-opgeslagen wijzigingen zijn
@@ -942,29 +1102,72 @@ function handleCanvasMouseDown(e) {
         const selectedObj = findObjectAtPosition(mouseX, mouseY);
         
         if (selectedObj) {
-            editorState.selectedObject = selectedObj.object;
-            editorState.selectedObjectType = selectedObj.type;
+            // We bewaren de mousedown positie om later te bepalen of de gebruiker sleept of klikt
+            editorState.mouseDownPos = { x: mouseX, y: mouseY };
             
-            if (editorState.selectedTool === 'delete') {
-                deleteSelectedObject();
-                return;
-            }
-            
-            if (editorState.selectedTool === 'move') {
-                editorState.isDragging = true;
-                editorState.dragStart = { x: mouseX, y: mouseY };
-                editorState.dragOffset = { 
-                    x: mouseX - selectedObj.object.x, 
-                    y: mouseY - selectedObj.object.y 
-                };
-            }
-            
-            if (editorState.selectedTool === 'resize') {
-                const resizeHandle = checkResizeHandles(mouseX, mouseY, selectedObj.object);
-                if (resizeHandle) {
-                    editorState.isResizing = true;
-                    editorState.resizeHandle = resizeHandle;
+            if (editorState.selectedObject === selectedObj.object) {
+                // Het is hetzelfde object dat al was geselecteerd
+                
+                if (editorState.selectedTool === 'move') {
+                    // Begin in move modus, maar bereid voor op mogelijke tool-wissel
+                    editorState.isDragging = true;
                     editorState.dragStart = { x: mouseX, y: mouseY };
+                    editorState.dragOffset = { 
+                        x: mouseX - selectedObj.object.x, 
+                        y: mouseY - selectedObj.object.y 
+                    };
+                } 
+                else if (editorState.selectedTool === 'resize') {
+                    // Begin in resize modus, maar bereid voor op mogelijke tool-wissel
+                    const resizeHandle = checkResizeHandles(mouseX, mouseY, selectedObj.object);
+                    if (resizeHandle) {
+                        editorState.isResizing = true;
+                        editorState.resizeHandle = resizeHandle;
+                        editorState.dragStart = { x: mouseX, y: mouseY };
+                    } else {
+                        // Als we niet op een resize handle hebben geklikt, begin dan met draggen
+                        editorState.isDragging = true;
+                        editorState.dragStart = { x: mouseX, y: mouseY };
+                        editorState.dragOffset = { 
+                            x: mouseX - selectedObj.object.x, 
+                            y: mouseY - selectedObj.object.y 
+                        };
+                    }
+                }
+            } else {
+                // Nieuw object geselecteerd
+                editorState.selectedObject = selectedObj.object;
+                editorState.selectedObjectType = selectedObj.type;
+                
+                if (editorState.selectedTool === 'delete') {
+                    deleteSelectedObject();
+                    return;
+                }
+                
+                if (editorState.selectedTool === 'move') {
+                    editorState.isDragging = true;
+                    editorState.dragStart = { x: mouseX, y: mouseY };
+                    editorState.dragOffset = { 
+                        x: mouseX - selectedObj.object.x, 
+                        y: mouseY - selectedObj.object.y 
+                    };
+                }
+                
+                if (editorState.selectedTool === 'resize') {
+                    const resizeHandle = checkResizeHandles(mouseX, mouseY, selectedObj.object);
+                    if (resizeHandle) {
+                        editorState.isResizing = true;
+                        editorState.resizeHandle = resizeHandle;
+                        editorState.dragStart = { x: mouseX, y: mouseY };
+                    } else {
+                        // Als we niet op een resize handle hebben geklikt, begin dan met draggen
+                        editorState.isDragging = true;
+                        editorState.dragStart = { x: mouseX, y: mouseY };
+                        editorState.dragOffset = { 
+                            x: mouseX - selectedObj.object.x, 
+                            y: mouseY - selectedObj.object.y 
+                        };
+                    }
                 }
             }
             
@@ -1061,10 +1264,31 @@ function handleCanvasMouseMove(e) {
 }
 
 // Handle canvas mouseup event
-function handleCanvasMouseUp() {
+function handleCanvasMouseUp(e) {
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+    
+    // Controleer of dit een klik was (weinig/geen beweging) of een sleep
+    if (editorState.mouseDownPos && editorState.selectedObject) {
+        const dx = Math.abs(mouseX - editorState.mouseDownPos.x);
+        const dy = Math.abs(mouseY - editorState.mouseDownPos.y);
+        const isClick = dx < 5 && dy < 5; // Minder dan 5 pixels verplaatsing = klik
+        
+        // Als het een klik was (geen sleep), wissel dan tussen tools
+        if (isClick) {
+            if (editorState.selectedTool === 'move') {
+                setActiveTool('resize');
+            } else if (editorState.selectedTool === 'resize') {
+                setActiveTool('move');
+            }
+        }
+    }
+    
     editorState.isDragging = false;
     editorState.isResizing = false;
     editorState.resizeHandle = null;
+    editorState.mouseDownPos = null; // Reset de mousedown positie
     updateObjectList();
 }
 
@@ -2050,6 +2274,12 @@ function exportLevelCode() {
     // Formateer het level object naar leesbare JavaScript code
     let code = `{\n`;
     code += `    name: "${level.name}",\n`;
+    
+    // Voeg toegestane dieren toe als deze beschikbaar zijn
+    if (level.allowedAnimals && level.allowedAnimals.length > 0) {
+        code += `    allowedAnimals: ${JSON.stringify(level.allowedAnimals)},\n`;
+    }
+    
     code += `    startPositions: [\n        {x: ${level.startPositions[0].x}, y: ${level.startPositions[0].y}}`;
     
     if (level.startPositions.length > 1) {

@@ -804,6 +804,8 @@ function drawPlayer(player) {
         drawTurtle(player);
     } else if (player.animalType === "UNICORN") {
         drawUnicorn(player);
+    } else if (player.animalType === "CAT") {
+        drawCat(player);
     }
     
     // Herstel de globalAlpha naar normaal als deze was aangepast
@@ -1221,6 +1223,284 @@ function drawUnicorn(player) {
             gameCore.ctx.arc(x, y, 2 + Math.sin(time / 20 + i) * 1, 0, Math.PI * 2);
             gameCore.ctx.fill();
         }
+    }
+}
+
+// Teken de kat
+function drawCat(player) {
+    // Bepaal richting op basis van beweging
+    const facingLeft = player.velX < 0;
+    
+    // Lichaam
+    gameCore.ctx.fillStyle = player.color;
+    gameCore.ctx.fillRect(player.x, player.y, player.width, player.height);
+    
+    // Kop (iets lichter grijs)
+    gameCore.ctx.fillStyle = '#aaaaaa';
+    gameCore.ctx.beginPath();
+    
+    if (facingLeft) {
+        // Kop links
+        gameCore.ctx.arc(
+            player.x + player.width * 0.3, 
+            player.y + player.height * 0.3, 
+            player.width * 0.25, 
+            0, Math.PI * 2
+        );
+    } else {
+        // Kop rechts (standaard)
+        gameCore.ctx.arc(
+            player.x + player.width * 0.7, 
+            player.y + player.height * 0.3, 
+            player.width * 0.25, 
+            0, Math.PI * 2
+        );
+    }
+    
+    gameCore.ctx.fill();
+    
+    // Oren (driehoekig)
+    gameCore.ctx.fillStyle = player.color;
+    gameCore.ctx.beginPath();
+    
+    if (facingLeft) {
+        // Linker oor
+        gameCore.ctx.moveTo(player.x + player.width * 0.2, player.y + player.height * 0.15);
+        gameCore.ctx.lineTo(player.x + player.width * 0.1, player.y - player.height * 0.1);
+        gameCore.ctx.lineTo(player.x + player.width * 0.3, player.y + player.height * 0.1);
+        
+        // Rechter oor
+        gameCore.ctx.moveTo(player.x + player.width * 0.4, player.y + player.height * 0.15);
+        gameCore.ctx.lineTo(player.x + player.width * 0.3, player.y - player.height * 0.1);
+        gameCore.ctx.lineTo(player.x + player.width * 0.5, player.y + player.height * 0.1);
+    } else {
+        // Rechter oor
+        gameCore.ctx.moveTo(player.x + player.width * 0.8, player.y + player.height * 0.15);
+        gameCore.ctx.lineTo(player.x + player.width * 0.9, player.y - player.height * 0.1);
+        gameCore.ctx.lineTo(player.x + player.width * 0.7, player.y + player.height * 0.1);
+        
+        // Linker oor
+        gameCore.ctx.moveTo(player.x + player.width * 0.6, player.y + player.height * 0.15);
+        gameCore.ctx.lineTo(player.x + player.width * 0.7, player.y - player.height * 0.1);
+        gameCore.ctx.lineTo(player.x + player.width * 0.5, player.y + player.height * 0.1);
+    }
+    
+    gameCore.ctx.fill();
+    
+    // Ogen (geel met zwarte pupillen)
+    if (facingLeft) {
+        // Linker oog
+        gameCore.ctx.fillStyle = 'yellow';
+        gameCore.ctx.beginPath();
+        gameCore.ctx.ellipse(
+            player.x + player.width * 0.25, 
+            player.y + player.height * 0.25, 
+            player.width * 0.08, 
+            player.height * 0.06, 
+            0, 0, Math.PI * 2
+        );
+        gameCore.ctx.fill();
+        
+        // Pupil
+        gameCore.ctx.fillStyle = 'black';
+        gameCore.ctx.beginPath();
+        gameCore.ctx.ellipse(
+            player.x + player.width * 0.25, 
+            player.y + player.height * 0.25, 
+            player.width * 0.03, 
+            player.height * 0.05, 
+            0, 0, Math.PI * 2
+        );
+        gameCore.ctx.fill();
+    } else {
+        // Rechter oog
+        gameCore.ctx.fillStyle = 'yellow';
+        gameCore.ctx.beginPath();
+        gameCore.ctx.ellipse(
+            player.x + player.width * 0.75, 
+            player.y + player.height * 0.25, 
+            player.width * 0.08, 
+            player.height * 0.06, 
+            0, 0, Math.PI * 2
+        );
+        gameCore.ctx.fill();
+        
+        // Pupil
+        gameCore.ctx.fillStyle = 'black';
+        gameCore.ctx.beginPath();
+        gameCore.ctx.ellipse(
+            player.x + player.width * 0.75, 
+            player.y + player.height * 0.25, 
+            player.width * 0.03, 
+            player.height * 0.05, 
+            0, 0, Math.PI * 2
+        );
+        gameCore.ctx.fill();
+    }
+    
+    // Snuit
+    gameCore.ctx.fillStyle = '#dddddd'; // Licht wit/grijs
+    gameCore.ctx.beginPath();
+    
+    if (facingLeft) {
+        gameCore.ctx.arc(
+            player.x + player.width * 0.2, 
+            player.y + player.height * 0.35, 
+            player.width * 0.1, 
+            0, Math.PI * 2
+        );
+    } else {
+        gameCore.ctx.arc(
+            player.x + player.width * 0.8, 
+            player.y + player.height * 0.35, 
+            player.width * 0.1, 
+            0, Math.PI * 2
+        );
+    }
+    
+    gameCore.ctx.fill();
+    
+    // Neus
+    gameCore.ctx.fillStyle = '#FF69B4'; // Roze voor de neus
+    gameCore.ctx.beginPath();
+    
+    if (facingLeft) {
+        gameCore.ctx.arc(
+            player.x + player.width * 0.15, 
+            player.y + player.height * 0.32, 
+            player.width * 0.03, 
+            0, Math.PI * 2
+        );
+    } else {
+        gameCore.ctx.arc(
+            player.x + player.width * 0.85, 
+            player.y + player.height * 0.32, 
+            player.width * 0.03, 
+            0, Math.PI * 2
+        );
+    }
+    
+    gameCore.ctx.fill();
+    
+    // Snorharen
+    gameCore.ctx.strokeStyle = 'white';
+    gameCore.ctx.lineWidth = 1;
+    
+    if (facingLeft) {
+        // Links
+        for (let i = 0; i < 3; i++) {
+            gameCore.ctx.beginPath();
+            gameCore.ctx.moveTo(player.x + player.width * 0.15, player.y + player.height * (0.32 + i * 0.03));
+            gameCore.ctx.lineTo(player.x - player.width * 0.1, player.y + player.height * (0.28 + i * 0.05));
+            gameCore.ctx.stroke();
+        }
+    } else {
+        // Rechts
+        for (let i = 0; i < 3; i++) {
+            gameCore.ctx.beginPath();
+            gameCore.ctx.moveTo(player.x + player.width * 0.85, player.y + player.height * (0.32 + i * 0.03));
+            gameCore.ctx.lineTo(player.x + player.width * 1.1, player.y + player.height * (0.28 + i * 0.05));
+            gameCore.ctx.stroke();
+        }
+    }
+    
+    // Staart
+    gameCore.ctx.strokeStyle = player.color;
+    gameCore.ctx.lineWidth = 5;
+    gameCore.ctx.beginPath();
+    
+    if (facingLeft) {
+        // Staart rechts
+        gameCore.ctx.moveTo(player.x + player.width, player.y + player.height * 0.5);
+        gameCore.ctx.bezierCurveTo(
+            player.x + player.width * 1.3, player.y + player.height * 0.3,
+            player.x + player.width * 1.5, player.y + player.height * 0.6,
+            player.x + player.width * 1.2, player.y + player.height * 0.8
+        );
+    } else {
+        // Staart links
+        gameCore.ctx.moveTo(player.x, player.y + player.height * 0.5);
+        gameCore.ctx.bezierCurveTo(
+            player.x - player.width * 0.3, player.y + player.height * 0.3,
+            player.x - player.width * 0.5, player.y + player.height * 0.6,
+            player.x - player.width * 0.2, player.y + player.height * 0.8
+        );
+    }
+    
+    gameCore.ctx.stroke();
+    
+    // Poten
+    gameCore.ctx.fillStyle = player.color;
+    
+    if (facingLeft) {
+        // Voorpoot links
+        gameCore.ctx.fillRect(
+            player.x + player.width * 0.25, 
+            player.y + player.height * 0.7, 
+            player.width * 0.15, 
+            player.height * 0.3
+        );
+        // Achterpoot rechts
+        gameCore.ctx.fillRect(
+            player.x + player.width * 0.75, 
+            player.y + player.height * 0.7, 
+            player.width * 0.15, 
+            player.height * 0.3
+        );
+    } else {
+        // Voorpoot rechts
+        gameCore.ctx.fillRect(
+            player.x + player.width * 0.75, 
+            player.y + player.height * 0.7, 
+            player.width * 0.15, 
+            player.height * 0.3
+        );
+        // Achterpoot links
+        gameCore.ctx.fillRect(
+            player.x + player.width * 0.25, 
+            player.y + player.height * 0.7, 
+            player.width * 0.15, 
+            player.height * 0.3
+        );
+    }
+    
+    // Teken klauwen als ze actief zijn
+    if (player.clawActive) {
+        gameCore.ctx.fillStyle = '#444444'; // Donkergrijs voor klauwen
+        
+        if (facingLeft) {
+            // Klauwen links
+            for (let i = 0; i < 3; i++) {
+                gameCore.ctx.beginPath();
+                gameCore.ctx.moveTo(player.x + player.width * 0.25, player.y + player.height * 0.97);
+                gameCore.ctx.lineTo(player.x + player.width * (0.2 - i * 0.05), player.y + player.height * 1.1);
+                gameCore.ctx.lineTo(player.x + player.width * (0.25 - i * 0.05), player.y + player.height * 1.1);
+                gameCore.ctx.closePath();
+                gameCore.ctx.fill();
+            }
+        } else {
+            // Klauwen rechts
+            for (let i = 0; i < 3; i++) {
+                gameCore.ctx.beginPath();
+                gameCore.ctx.moveTo(player.x + player.width * 0.9, player.y + player.height * 0.97);
+                gameCore.ctx.lineTo(player.x + player.width * (0.95 + i * 0.05), player.y + player.height * 1.1);
+                gameCore.ctx.lineTo(player.x + player.width * (1.0 + i * 0.05), player.y + player.height * 1.1);
+                gameCore.ctx.closePath();
+                gameCore.ctx.fill();
+            }
+        }
+        
+        // Klauw effect rond de kat
+        gameCore.ctx.strokeStyle = 'rgba(255, 0, 0, 0.3)';
+        gameCore.ctx.lineWidth = 3;
+        gameCore.ctx.beginPath();
+        gameCore.ctx.arc(
+            player.x + player.width / 2,
+            player.y + player.height / 2,
+            player.width * 0.8,
+            0, Math.PI * 2
+        );
+        gameCore.ctx.stroke();
     }
 }
 

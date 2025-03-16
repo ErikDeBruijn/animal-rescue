@@ -34,23 +34,43 @@ De Python server biedt extra functionaliteit, zoals het opslaan van aangepaste l
 
 Vereisten:
 - Python 3.6 of hoger
-- Flask (`pip install flask`)
+- Flask en andere dependencies installeren:
+  ```
+  pip install -r requirements.txt
+  ```
 
-Starten:
+#### Normale modus (zonder level editor)
 ```
 python server.py
 ```
 
-De server draait op http://10.1.1.0:5000 en accepteert verbindingen van je lokale netwerk (10.1.1.0/24).
+De game is beschikbaar op: http://localhost:5050
+
+#### Development modus (met level editor)
+```
+python server.py --dev
+```
+
+Of via environment variable:
+```
+DIERENREDDERS_DEV_MODE=true python server.py
+```
+
+In development mode is de level editor beschikbaar op: http://localhost:5050/editor
 
 ## Level Editor
 
-Je kunt je eigen levels maken en bewerken met de level editor. 
+Je kunt je eigen levels maken en bewerken met de level editor (alleen beschikbaar in development mode).
 
-- Via browser: Open `editor.html`
-- Via server: Ga naar http://10.1.1.0:5000/editor
+- Via de server in development mode: Ga naar http://localhost:5050/editor
 
 Wanneer je de server gebruikt, kun je levels opslaan met de "Opslaan" knop en worden deze direct in het spel beschikbaar.
+
+### Nieuwe features in de editor
+
+1. Geselecteerde objecten kunnen worden verwijderd met de delete toets
+2. Je kunt wisselen tussen de tools 'verplaatsen' en 'formaat' door nog een keer op hetzelfde object te klikken 
+3. Er is een waarschuwing bij wisselen van level als er niet-opgeslagen wijzigingen zijn
 
 ## Levels
 

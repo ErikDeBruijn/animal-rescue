@@ -42,9 +42,9 @@
     
     <canvas id="gameCanvas" width="800" height="450"></canvas>
     
-    <!-- Admin Panel voor tests (verborgen tijdens normaal spelen) -->
-    <a href="editor.html" class="nav-link" id="editor-link">Level Editor</a>
-    <div class="admin-toggle" id="adminToggle">⚙️</div>
+    <!-- Admin Panel voor tests (alleen zichtbaar in dev mode) -->
+    <a href="editor.html" class="nav-link" id="editor-link" style="display: none;">Level Editor</a>
+    <div class="admin-toggle" id="adminToggle" style="display: none;">⚙️</div>
     <div class="admin-panel" id="adminPanel">
         <h3>Test Panel</h3>
         <button class="test-button" id="testSwitchButton">Test Dier Wisselen</button>
@@ -66,6 +66,28 @@
     <script src="tests-automated.js"></script>
     
     <script>
+        // Controleer of we in dev mode zijn op basis van de cookie
+        function isDevMode() {
+            const devModeCookie = document.cookie.split('; ').find(row => row.startsWith('dev_mode='));
+            return devModeCookie ? devModeCookie.split('=')[1] === 'true' : false;
+        }
+        
+        // Toon dev tools alleen in dev mode
+        document.addEventListener('DOMContentLoaded', function() {
+            if (isDevMode()) {
+                // Toon editor link en admin toggle in dev mode
+                document.getElementById('editor-link').style.display = 'block';
+                document.getElementById('adminToggle').style.display = 'block';
+                console.log("Development mode - Editor en test opties zijn beschikbaar");
+            } else {
+                // Verberg editor link en admin panel in productie mode
+                document.getElementById('editor-link').style.display = 'none';
+                document.getElementById('adminToggle').style.display = 'none';
+                document.getElementById('adminPanel').style.display = 'none';
+                console.log("Production mode - Editor en test opties zijn verborgen");
+            }
+        });
+        
         // Instructies accordeon functionaliteit
         document.querySelector('.instructions-toggle').addEventListener('click', function() {
             const controls = document.querySelector('.controls');

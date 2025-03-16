@@ -28,6 +28,11 @@ class Player {
         this.isUnderwater = false;
         this.lowOxygenWarning = false;
         
+        // Krauw-systeem voor kat
+        this.canClaw = false;
+        this.clawTimer = 0;
+        this.clawActive = false;
+        
         // Properties die afhankelijk zijn van diersoort
         this.updateAnimalProperties();
     }
@@ -56,6 +61,9 @@ class Player {
                 break;
             case "UNICORN":
                 animalEmoji = "🦄";
+                break;
+            case "CAT":
+                animalEmoji = "🐱";
                 break;
         }
         
@@ -162,6 +170,16 @@ class Player {
         // Wordt weer op true gezet als speler in water is
         this.isUnderwater = false;
         
+        // Update krauw-status van de kat
+        if (this.animalType === "CAT") {
+            if (this.clawTimer > 0) {
+                this.clawTimer--;
+                if (this.clawTimer <= 0) {
+                    this.clawActive = false;
+                }
+            }
+        }
+        
         // Beweging horizontaal met inertia
         const acceleration = 0.8; // Acceleratie waarde
         const friction = 0.85;    // Wrijving (lager = meer wrijving)
@@ -218,6 +236,17 @@ class Player {
             this.canSwitch = false; // Voorkom snel wisselen
         } else if (!switchKeyPressed) {
             this.canSwitch = true; // Reset wanneer knop losgelaten
+        }
+        
+        // Activeer klauwen voor kat wanneer spatiebalk wordt ingedrukt
+        if (this.animalType === "CAT" && !this.clawActive) {
+            // Controleer of de spatiebalk is ingedrukt
+            if (gameControls.keys[' '] && this.canClaw) {
+                this.clawActive = true;
+                this.clawTimer = 30; // Klauwen actief voor 30 frames (halve seconde)
+                this.canClaw = false; // Kan pas opnieuw gebruiken na afkoelen
+                console.log("Kat activeert klauwen!");
+            }
         }
         
         // Zwaartekracht toepassen (minder voor vliegende eenhoorn)
@@ -546,8 +575,24 @@ class Player {
         const enemies = currentLevelData.enemies || [];
         enemies.forEach(enemy => {
             if (this.collidesWithObject(enemy)) {
-                // Bij aanraking met een vijand, leven verliezen
-                this.loseLife();
+                // Als kat met actieve klauwen vijand aanraakt, verwijder vijand
+                if (this.animalType === "CAT" && this.clawActive) {
+                    // Vind de index van de vijand in de array
+                    const enemyIndex = enemies.indexOf(enemy);
+                    if (enemyIndex !== -1) {
+                        // Verwijder de vijand uit de array
+                        enemies.splice(enemyIndex, 1);
+                        console.log("Kat heeft een vijand aangevallen!");
+                        
+                        // Laat de kat weer krabben na 2 seconden
+                        setTimeout(() => {
+                            this.canClaw = true;
+                        }, 2000);
+                    }
+                } else {
+                    // Bij aanraking met een vijand, leven verliezen
+                    this.loseLife();
+                }
             }
         });
         

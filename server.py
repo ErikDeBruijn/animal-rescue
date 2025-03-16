@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, abort
 import os
 import re
 import json
@@ -8,6 +8,8 @@ import time
 import logging
 import threading
 import hashlib
+import argparse
+import sys
 from pathlib import Path
 from flask_socketio import SocketIO, emit, join_room, leave_room
 
@@ -22,8 +24,26 @@ file_handler = logging.FileHandler(LOG_FILE)
 file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
 logger.addHandler(file_handler)
 
+# Parse commando regel argumenten
+parser = argparse.ArgumentParser(description='Dieren Redders Game Server')
+parser.add_argument('--dev', action='store_true', help='Start in development mode met level editor')
+
+# We gebruiken sys.argv om te controleren op --dev, want argparse kan conflicteren met Flask's command line parsing
+dev_mode_flag = '--dev' in sys.argv
+
+# Controleer ook op environment variable
+dev_mode = dev_mode_flag or os.environ.get('DIERENREDDERS_DEV_MODE', '').lower() in ('true', '1', 'yes')
+
+# We parse args alleen als ze nodig zijn voor andere flags
+try:
+    args = parser.parse_args()
+except:
+    # Bij conflicten met Flask argumenten, ignoreren we de parser error
+    pass
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'dieren-redders-secret-key'
+app.config['DEV_MODE'] = dev_mode
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Map met hash-waarden van assets voor het detecteren van wijzigingen
@@ -49,11 +69,17 @@ MONITORED_FILES = [
 @app.route('/')
 def index():
     """Serveer de game zelf"""
-    return send_from_directory(GAME_DIR, 'index.html')
+    # Zet een cookie om aan de client te laten weten of we in dev mode zijn
+    response = send_from_directory(GAME_DIR, 'index.html')
+    response.set_cookie('dev_mode', str(app.config['DEV_MODE']).lower())
+    return response
 
 @app.route('/editor')
 def editor():
-    """Serveer de level editor"""
+    """Serveer de level editor alleen in dev mode"""
+    if not app.config['DEV_MODE']:
+        # Als niet in development mode, geef 404 error
+        abort(404)
     return send_from_directory(GAME_DIR, 'editor.html')
 
 @app.route('/<path:path>')
@@ -65,6 +91,7 @@ def serve_static(path):
 def get_levels():
     """Haal de huidige levels op"""
     try:
+        # Levels ophalen is altijd toegestaan (ook voor de game zelf)
         with open(LEVELS_FILE, 'r', encoding='utf-8') as f:
             content = f.read()
             return jsonify({'success': True, 'content': content})
@@ -73,6 +100,11 @@ def get_levels():
         
 @app.route('/api/levels/<int:level_index>', methods=['DELETE'])
 def delete_level(level_index):
+    """Verwijder een level - alleen in dev mode"""
+    # Controleer of we in dev mode zijn
+    if not app.config['DEV_MODE']:
+        abort(404)
+        
     """Verwijder een level"""
     try:
         logger.info(f"Verzoek om level {level_index} te verwijderen")
@@ -128,6 +160,11 @@ def delete_level(level_index):
 
 @app.route('/api/levels', methods=['POST'])
 def save_levels():
+    """Sla een nieuw level op - alleen in dev mode"""
+    # Controleer of we in dev mode zijn
+    if not app.config['DEV_MODE']:
+        abort(404)
+        
     """Sla een nieuw level op"""
     try:
         data = request.json
@@ -222,7 +259,11 @@ def add_save_functionality():
     """
     Voeg code toe aan editor.js om levels op te slaan via de server API
     Dit is een handige helper functie voor als de editor.js nog geen save functionaliteit heeft
+    Alleen beschikbaar in dev mode
     """
+    # Controleer of we in dev mode zijn
+    if not app.config['DEV_MODE']:
+        abort(404)
     try:
         EDITOR_JS = os.path.join(GAME_DIR, 'editor.js')
         
@@ -843,15 +884,30 @@ def run_server_with_auto_reload():
     port = 5050
     
     logger.info(f"Starting Dieren Redders multiplayer game server on http://{ip}:{port}")
-    logger.info(f"Level editor available at http://{ip}:{port}/editor")
+    
+    # Toon level editor info alleen in dev mode
+    if app.config['DEV_MODE']:
+        logger.info(f"DEVELOPMENT MODE: Level editor available at http://{ip}:{port}/editor")
+        # Extra debug logging om te zien hoe dev mode is ingeschakeld
+        if dev_mode_flag:
+            logger.info("Development mode ingeschakeld via --dev flag")
+        elif os.environ.get('DIERENREDDERS_DEV_MODE'):
+            logger.info(f"Development mode ingeschakeld via DIERENREDDERS_DEV_MODE environment variable (value: {os.environ.get('DIERENREDDERS_DEV_MODE')})")
+    else:
+        logger.info(f"PRODUCTION MODE: Level editor disabled. Start with --dev flag to enable editor.")
+    
     logger.info(f"Spelers in hetzelfde netwerk kunnen verbinden via dit IP adres")
     logger.info(f"Je kunt ook altijd localhost gebruiken: http://localhost:{port}")
     
     # Start de socketio server met auto-reload voor code wijzigingen
     try:
-        socketio.run(app, host='0.0.0.0', port=port, debug=True, 
-                    use_reloader=True,
-                    allow_unsafe_werkzeug=True)
+        # In dev mode gebruiken we reloader, maar in productie niet
+        use_reloader = app.config['DEV_MODE']
+        debug_mode = app.config['DEV_MODE']
+        
+        socketio.run(app, host='0.0.0.0', port=port, debug=debug_mode, 
+                    use_reloader=use_reloader,
+                    allow_unsafe_werkzeug=debug_mode)
     except KeyboardInterrupt:
         logger.info("Server gestopt door gebruiker")
         sys.exit(0)

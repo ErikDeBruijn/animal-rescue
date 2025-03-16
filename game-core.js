@@ -51,6 +51,15 @@ const animalTypes = {
         speed: 6, // Snelste dier
         ability: "Vliegen en over grote afstanden zweven",
         canFly: true // Speciale eigenschap voor vliegen
+    },
+    CAT: {
+        name: "Kat",
+        color: "#888888", // Grijs
+        width: 35,
+        height: 30,
+        jumpPower: -7,
+        speed: 4,
+        ability: "Klauwen voor aanvallen"
     }
 };
 
