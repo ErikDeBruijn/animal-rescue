@@ -527,6 +527,56 @@ function drawTrap(trap) {
 // Platform tekenen
 function drawPlatform(platform) {
     switch(platform.type) {
+        case "TRAMPOLINE":
+            // Bepaal de compressie van de trampoline
+            let trampolineHeight = platform.height;
+            let trampolineY = platform.y;
+            
+            // Als de trampoline wordt ingedrukt, toon dit visueel
+            if (platform.compressed) {
+                const compressionAmount = Math.min(5, platform.springForce / 3);
+                trampolineHeight = platform.height - compressionAmount;
+                trampolineY = platform.y + compressionAmount;
+            }
+            
+            // Teken de basis (houten platform)
+            gameCore.ctx.fillStyle = '#8B4513';
+            gameCore.ctx.fillRect(platform.x, platform.y + platform.height - 5, platform.width, 5);
+            
+            // Teken de poten
+            gameCore.ctx.fillStyle = '#A52A2A'; // Donkerder bruin voor de poten
+            gameCore.ctx.fillRect(platform.x + 5, platform.y + platform.height - 10, 5, 10);
+            gameCore.ctx.fillRect(platform.x + platform.width - 10, platform.y + platform.height - 10, 5, 10);
+            
+            // Teken springmateriaal (rood)
+            gameCore.ctx.fillStyle = '#FF6347';
+            gameCore.ctx.fillRect(platform.x, trampolineY, platform.width, trampolineHeight - 5);
+            
+            // Teken horizontale lijnen voor het trampolinemat-effect
+            gameCore.ctx.strokeStyle = 'white';
+            gameCore.ctx.lineWidth = 1;
+            for (let i = 1; i < 4; i++) {
+                gameCore.ctx.beginPath();
+                gameCore.ctx.moveTo(platform.x, trampolineY + i * (trampolineHeight - 5) / 4);
+                gameCore.ctx.lineTo(platform.x + platform.width, trampolineY + i * (trampolineHeight - 5) / 4);
+                gameCore.ctx.stroke();
+            }
+            
+            // Toon de sterkte van de trampoline visueel
+            if (platform.springForce > 0) {
+                const springPower = platform.springForce / platform.maxSpringForce;
+                // Teken pijlen boven de trampoline om springkracht te tonen
+                gameCore.ctx.fillStyle = 'rgba(255, 215, 0, ' + springPower + ')';
+                
+                // Pijl omhoog
+                gameCore.ctx.beginPath();
+                gameCore.ctx.moveTo(platform.x + platform.width / 2, platform.y - 20);
+                gameCore.ctx.lineTo(platform.x + platform.width / 2 - 10, platform.y - 10);
+                gameCore.ctx.lineTo(platform.x + platform.width / 2 + 10, platform.y - 10);
+                gameCore.ctx.closePath();
+                gameCore.ctx.fill();
+            }
+            break;
         case "NORMAL":
             gameCore.ctx.fillStyle = '#8B4513';
             gameCore.ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
