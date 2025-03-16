@@ -25,7 +25,9 @@ let editorState = {
     placementMode: false,  // Of we in plaatsings-modus zijn
     placementPreview: null, // Preview object dat we gaan plaatsen
     cursorPosition: { x: 0, y: 0 }, // Huidige muispositie voor preview
-    tempNewLevelIndex: -1 // Tijdelijke index voor nieuw levels
+    tempNewLevelIndex: -1, // Tijdelijke index voor nieuw levels
+    hasUnsavedChanges: false, // Bijhouden of er niet-opgeslagen wijzigingen zijn
+    originalLevelState: null // Kopie van de originele levelstaat voor vergelijking
 };
 
 // Hulpkleuren voor verschillende objecttypes
@@ -125,6 +127,16 @@ function populateLevelSelector(levels) {
 
 // Laad een level in de editor
 function loadLevel(levelIndex) {
+    // Controleer eerst of er niet-opgeslagen wijzigingen zijn
+    if (editorState.hasUnsavedChanges) {
+        if (!confirm('Je hebt niet-opgeslagen wijzigingen. Weet je zeker dat je naar een ander level wilt gaan? Klik op Annuleren om terug te gaan en op te slaan.')) {
+            // Gebruiker heeft geannuleerd, stel de level selector terug op het huidige level
+            const levelSelect = document.getElementById('level-select');
+            levelSelect.value = editorState.currentLevel;
+            return;
+        }
+    }
+
     const levels = getLevels(GROUND_LEVEL);
     
     if (levelIndex === 'new') {
@@ -155,6 +167,12 @@ function loadLevel(levelIndex) {
     // Reset selection
     editorState.selectedObject = null;
     editorState.selectedObjectType = null;
+    
+    // Reset de unsaved changes status
+    editorState.hasUnsavedChanges = false;
+    
+    // Sla de originele staat op voor vergelijking
+    editorState.originalLevelState = JSON.parse(JSON.stringify(editorState.editingLevel));
     
     // Update de "Speel Dit Level" knop
     updatePlayButton();
@@ -264,6 +282,9 @@ function setupEventListeners() {
     // Save level knop
     document.getElementById('save-level-btn').addEventListener('click', function() {
         saveLevelToServer();
+        // Na opslaan, reset de unsaved changes status
+        editorState.hasUnsavedChanges = false;
+        editorState.originalLevelState = JSON.parse(JSON.stringify(editorState.editingLevel));
     });
     
     // Verwijder level knop
@@ -311,6 +332,14 @@ function setupEventListeners() {
     // Functie om een level te verwijderen
     function deleteLevelFromServer() {
         const levelIndex = editorState.currentLevel;
+        
+        // Controleer of er niet-opgeslagen wijzigingen zijn
+        if (editorState.hasUnsavedChanges) {
+            if (!confirm('Je hebt niet-opgeslagen wijzigingen aan dit level. Wil je het nog steeds verwijderen en je wijzigingen verliezen?')) {
+                hideDeleteConfirmation();
+                return;
+            }
+        }
         
         // Toon spinner of laadtekst
         const deleteBtn = document.getElementById('delete-level-btn');
@@ -810,6 +839,18 @@ function hideAllPropertyPanels() {
     });
 }
 
+// Functie om wijzigingen bij te houden
+function markAsUnsaved() {
+    // Marker dat er niet-opgeslagen wijzigingen zijn
+    editorState.hasUnsavedChanges = true;
+    
+    // Voeg een * toe aan de save-knop om aan te geven dat er niet-opgeslagen wijzigingen zijn
+    const saveBtn = document.getElementById('save-level-btn');
+    if (saveBtn && !saveBtn.textContent.includes('*')) {
+        saveBtn.textContent = 'Opslaan*';
+    }
+}
+
 // Handle canvas mousedown event
 function handleCanvasMouseDown(e) {
     const rect = canvas.getBoundingClientRect();
@@ -921,6 +962,9 @@ function handleCanvasMouseMove(e) {
     
     if (editorState.isDragging && editorState.selectedObject) {
         // Object verplaatsen
+        const oldX = editorState.selectedObject.x;
+        const oldY = editorState.selectedObject.y;
+        
         editorState.selectedObject.x = mouseX - editorState.dragOffset.x;
         editorState.selectedObject.y = mouseY - editorState.dragOffset.y;
         
@@ -928,11 +972,22 @@ function handleCanvasMouseMove(e) {
         editorState.selectedObject.x = Math.max(0, Math.min(canvas.width - editorState.selectedObject.width, editorState.selectedObject.x));
         editorState.selectedObject.y = Math.max(0, Math.min(canvas.height - editorState.selectedObject.height, editorState.selectedObject.y));
         
+        // Markeer als onopgeslagen als positie veranderd is
+        if (oldX !== editorState.selectedObject.x || oldY !== editorState.selectedObject.y) {
+            markAsUnsaved();
+        }
+        
         renderEditor();
     } else if (editorState.isResizing && editorState.selectedObject) {
         // Object formaat wijzigen
         const dx = mouseX - editorState.dragStart.x;
         const dy = mouseY - editorState.dragStart.y;
+        
+        // Sla de originele afmetingen op voor vergelijking
+        const oldWidth = editorState.selectedObject.width;
+        const oldHeight = editorState.selectedObject.height;
+        const oldX = editorState.selectedObject.x;
+        const oldY = editorState.selectedObject.y;
         
         if (editorState.resizeHandle === 'br') {
             editorState.selectedObject.width = Math.max(20, editorState.selectedObject.width + dx);
@@ -954,6 +1009,14 @@ function handleCanvasMouseMove(e) {
             const newHeight = Math.max(20, editorState.selectedObject.height - dy);
             editorState.selectedObject.y += editorState.selectedObject.height - newHeight;
             editorState.selectedObject.height = newHeight;
+        }
+        
+        // Markeer als onopgeslagen als afmetingen veranderd zijn
+        if (oldWidth !== editorState.selectedObject.width || 
+            oldHeight !== editorState.selectedObject.height || 
+            oldX !== editorState.selectedObject.x || 
+            oldY !== editorState.selectedObject.y) {
+            markAsUnsaved();
         }
         
         editorState.dragStart = { x: mouseX, y: mouseY };
@@ -1085,6 +1148,9 @@ function findObjectAtPosition(x, y) {
 
 // Maak een nieuw object op de gegeven positie
 function createNewObject(x, y) {
+    // Markeer het level als onopgeslagen (heeft wijzigingen)
+    markAsUnsaved();
+    
     switch (editorState.selectedObjectType) {
         case 'platform':
             const platformWidth = parseInt(document.getElementById('platform-width').value);

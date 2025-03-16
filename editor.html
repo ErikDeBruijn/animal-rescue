@@ -1,6 +1,18 @@
 <!DOCTYPE html>
 <html lang="nl">
 <head>
+    <!-- Voeg beforeunload event toe om te waarschuwen voor niet-opgeslagen wijzigingen -->
+    <script>
+        window.addEventListener('beforeunload', function(e) {
+            // Controleer of er niet-opgeslagen wijzigingen zijn
+            if (window.editorState && window.editorState.hasUnsavedChanges) {
+                // Standaard "wijzigingen onopgeslagen" bericht
+                const message = 'Je hebt niet-opgeslagen wijzigingen. Als je de pagina verlaat gaan deze wijzigingen verloren.';
+                e.returnValue = message; // Standaard dialoogvenster
+                return message; // Voor oudere browsers
+            }
+        });
+    </script>
     <!-- Confirmation Dialog CSS -->
     <style id="confirmation-dialog-styles">
         .confirmation-dialog {
