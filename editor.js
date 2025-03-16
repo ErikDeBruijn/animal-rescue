@@ -56,6 +56,21 @@ const objectColors = {
 window.onload = function() {
     initEditor();
     setupEventListeners();
+    
+    // Voeg event listener toe voor "Terug naar Game" link
+    const backToGameLink = document.getElementById('back-to-game-link');
+    if (backToGameLink) {
+        backToGameLink.addEventListener('click', function(e) {
+            // Controleer of er niet-opgeslagen wijzigingen zijn
+            if (editorState.hasUnsavedChanges) {
+                // Als er onopgeslagen wijzigingen zijn, vraag bevestiging
+                if (!confirm('Je hebt niet-opgeslagen wijzigingen. Weet je zeker dat je terug wilt naar het spel? Klik op Annuleren om terug te gaan en op te slaan.')) {
+                    // Voorkom navigatie als de gebruiker annuleert
+                    e.preventDefault();
+                }
+            }
+        });
+    }
 };
 
 // Initialiseer de editor
