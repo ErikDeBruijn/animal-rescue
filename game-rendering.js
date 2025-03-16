@@ -1,476 +1,12 @@
 // game-rendering.js
-// Bevat alle render functies voor het spel
+// Contains all environment and game world rendering functions
 
-// Teken vijanden
-function drawEnemies() {
-    if (!window.levels) return;
-    const currentLevelData = window.levels[gameCore.currentLevel];
-    const enemies = currentLevelData.enemies || [];
-    
-    enemies.forEach(enemy => {
-        if (enemy.type === "LION") {
-            drawLion(enemy);
-        } else if (enemy.type === "DRAGON") {
-            drawDragon(enemy);
-        }
-    });
-}
-
-// Teken een leeuw
-function drawLion(lion) {
-    // Bepaal richting op basis van beweging
-    const facingLeft = lion.direction === -1;
-    
-    // Lichaam (goudkleurig)
-    gameCore.ctx.fillStyle = '#DAA520'; // Goud kleur
-    gameCore.ctx.fillRect(lion.x, lion.y, lion.width, lion.height);
-    
-    // Manen (donkerder goud) - positie afhankelijk van richting
-    gameCore.ctx.fillStyle = '#B8860B'; // Donker goud
-    gameCore.ctx.beginPath();
-    
-    if (facingLeft) {
-        // Manen links
-        gameCore.ctx.arc(lion.x + lion.width * 0.3, lion.y + lion.height * 0.4, 
-                lion.width * 0.4, 0, Math.PI * 2);
-    } else {
-        // Manen rechts (standaard)
-        gameCore.ctx.arc(lion.x + lion.width * 0.7, lion.y + lion.height * 0.4, 
-                lion.width * 0.4, 0, Math.PI * 2);
-    }
-    
-    gameCore.ctx.fill();
-    
-    // Ogen en Neus - positie afhankelijk van richting
-    gameCore.ctx.fillStyle = 'black';
-    
-    if (facingLeft) {
-        // Oog links
-        gameCore.ctx.beginPath();
-        gameCore.ctx.arc(lion.x + lion.width * 0.2, lion.y + lion.height * 0.3, 
-                lion.width * 0.06, 0, Math.PI * 2);
-        gameCore.ctx.fill();
-        
-        // Neus links
-        gameCore.ctx.beginPath();
-        gameCore.ctx.arc(lion.x + lion.width * 0.1, lion.y + lion.height * 0.4, 
-                lion.width * 0.05, 0, Math.PI * 2);
-        gameCore.ctx.fill();
-    } else {
-        // Oog rechts (standaard)
-        gameCore.ctx.beginPath();
-        gameCore.ctx.arc(lion.x + lion.width * 0.8, lion.y + lion.height * 0.3, 
-                lion.width * 0.06, 0, Math.PI * 2);
-        gameCore.ctx.fill();
-        
-        // Neus rechts (standaard)
-        gameCore.ctx.beginPath();
-        gameCore.ctx.arc(lion.x + lion.width * 0.9, lion.y + lion.height * 0.4, 
-                lion.width * 0.05, 0, Math.PI * 2);
-        gameCore.ctx.fill();
-    }
-    
-    // Staart - positie afhankelijk van richting
-    gameCore.ctx.fillStyle = '#DAA520';
-    gameCore.ctx.beginPath();
-    
-    if (facingLeft) {
-        // Staart rechts
-        gameCore.ctx.moveTo(lion.x + lion.width, lion.y + lion.height * 0.7);
-        gameCore.ctx.quadraticCurveTo(
-            lion.x + lion.width + lion.width * 0.2, lion.y + lion.height, 
-            lion.x + lion.width + lion.width * 0.3, lion.y + lion.height * 0.5
-        );
-        gameCore.ctx.quadraticCurveTo(
-            lion.x + lion.width + lion.width * 0.3, lion.y + lion.height * 0.2, 
-            lion.x + lion.width, lion.y + lion.height * 0.4
-        );
-    } else {
-        // Staart links (standaard)
-        gameCore.ctx.moveTo(lion.x, lion.y + lion.height * 0.7);
-        gameCore.ctx.quadraticCurveTo(
-            lion.x - lion.width * 0.2, lion.y + lion.height, 
-            lion.x - lion.width * 0.3, lion.y + lion.height * 0.5
-        );
-        gameCore.ctx.quadraticCurveTo(
-            lion.x - lion.width * 0.3, lion.y + lion.height * 0.2, 
-            lion.x, lion.y + lion.height * 0.4
-        );
-    }
-    
-    gameCore.ctx.fill();
-    
-    // Poten - positie afhankelijk van richting
-    gameCore.ctx.fillStyle = '#DAA520';
-    
-    if (facingLeft) {
-        // Poten gespiegeld
-        // Voorpoot links
-        gameCore.ctx.fillRect(
-            lion.x + lion.width * 0.3, 
-            lion.y + lion.height * 0.7, 
-            lion.width * 0.15, 
-            lion.height * 0.3
-        );
-        // Achterpoot rechts
-        gameCore.ctx.fillRect(
-            lion.x + lion.width * 0.8, 
-            lion.y + lion.height * 0.7, 
-            lion.width * 0.15, 
-            lion.height * 0.3
-        );
-    } else {
-        // Poten standaard
-        // Voorpoot rechts
-        gameCore.ctx.fillRect(
-            lion.x + lion.width * 0.7, 
-            lion.y + lion.height * 0.7, 
-            lion.width * 0.15, 
-            lion.height * 0.3
-        );
-        // Achterpoot links
-        gameCore.ctx.fillRect(
-            lion.x + lion.width * 0.2, 
-            lion.y + lion.height * 0.7, 
-            lion.width * 0.15, 
-            lion.height * 0.3
-        );
-    }
-}
-
-// Teken een draak
-function drawDragon(dragon) {
-    // Bepaal richting op basis van beweging
-    const facingLeft = dragon.direction === -1;
-    
-    // Lichaam (groen)
-    gameCore.ctx.fillStyle = '#228B22'; // Forest green
-    gameCore.ctx.fillRect(dragon.x, dragon.y, dragon.width, dragon.height);
-    
-    // Vleugels - positie afhankelijk van richting
-    gameCore.ctx.fillStyle = '#006400'; // Donkerder groen
-    
-    if (facingLeft) {
-        // Vleugels gespiegeld
-        // Rechter vleugel (nu links)
-        gameCore.ctx.beginPath();
-        gameCore.ctx.moveTo(dragon.x + dragon.width * 0.3, dragon.y + dragon.height * 0.2);
-        gameCore.ctx.lineTo(dragon.x - dragon.width * 0.3, dragon.y - dragon.height * 0.1);
-        gameCore.ctx.lineTo(dragon.x - dragon.width * 0.1, dragon.y + dragon.height * 0.1);
-        gameCore.ctx.lineTo(dragon.x + dragon.width * 0.1, dragon.y + dragon.height * 0.3);
-        gameCore.ctx.closePath();
-        gameCore.ctx.fill();
-        
-        // Linker vleugel (nu rechts)
-        gameCore.ctx.beginPath();
-        gameCore.ctx.moveTo(dragon.x + dragon.width * 0.7, dragon.y + dragon.height * 0.2);
-        gameCore.ctx.lineTo(dragon.x + dragon.width * 1.3, dragon.y - dragon.height * 0.1);
-        gameCore.ctx.lineTo(dragon.x + dragon.width * 1.1, dragon.y + dragon.height * 0.1);
-        gameCore.ctx.lineTo(dragon.x + dragon.width * 0.9, dragon.y + dragon.height * 0.3);
-        gameCore.ctx.closePath();
-        gameCore.ctx.fill();
-    } else {
-        // Vleugels standaard
-        // Linker vleugel
-        gameCore.ctx.beginPath();
-        gameCore.ctx.moveTo(dragon.x + dragon.width * 0.3, dragon.y + dragon.height * 0.2);
-        gameCore.ctx.lineTo(dragon.x - dragon.width * 0.3, dragon.y - dragon.height * 0.1);
-        gameCore.ctx.lineTo(dragon.x - dragon.width * 0.1, dragon.y + dragon.height * 0.1);
-        gameCore.ctx.lineTo(dragon.x + dragon.width * 0.1, dragon.y + dragon.height * 0.3);
-        gameCore.ctx.closePath();
-        gameCore.ctx.fill();
-        
-        // Rechter vleugel
-        gameCore.ctx.beginPath();
-        gameCore.ctx.moveTo(dragon.x + dragon.width * 0.7, dragon.y + dragon.height * 0.2);
-        gameCore.ctx.lineTo(dragon.x + dragon.width * 1.3, dragon.y - dragon.height * 0.1);
-        gameCore.ctx.lineTo(dragon.x + dragon.width * 1.1, dragon.y + dragon.height * 0.1);
-        gameCore.ctx.lineTo(dragon.x + dragon.width * 0.9, dragon.y + dragon.height * 0.3);
-        gameCore.ctx.closePath();
-        gameCore.ctx.fill();
-    }
-    
-    // Kop - positie afhankelijk van richting
-    gameCore.ctx.fillStyle = '#228B22';
-    gameCore.ctx.beginPath();
-    
-    if (facingLeft) {
-        // Kop links
-        gameCore.ctx.arc(
-            dragon.x + dragon.width * 0.2, 
-            dragon.y + dragon.height * 0.3, 
-            dragon.width * 0.2, 
-            0, Math.PI * 2
-        );
-    } else {
-        // Kop rechts (standaard)
-        gameCore.ctx.arc(
-            dragon.x + dragon.width * 0.8, 
-            dragon.y + dragon.height * 0.3, 
-            dragon.width * 0.2, 
-            0, Math.PI * 2
-        );
-    }
-    
-    gameCore.ctx.fill();
-    
-    // Ogen - positie afhankelijk van richting
-    gameCore.ctx.fillStyle = 'red';
-    gameCore.ctx.beginPath();
-    
-    if (facingLeft) {
-        // Oog links
-        gameCore.ctx.arc(
-            dragon.x + dragon.width * 0.15, 
-            dragon.y + dragon.height * 0.25, 
-            dragon.width * 0.05, 
-            0, Math.PI * 2
-        );
-    } else {
-        // Oog rechts (standaard)
-        gameCore.ctx.arc(
-            dragon.x + dragon.width * 0.85, 
-            dragon.y + dragon.height * 0.25, 
-            dragon.width * 0.05, 
-            0, Math.PI * 2
-        );
-    }
-    
-    gameCore.ctx.fill();
-    
-    // Staart - positie afhankelijk van richting
-    gameCore.ctx.fillStyle = '#228B22';
-    gameCore.ctx.beginPath();
-    
-    if (facingLeft) {
-        // Staart rechts
-        gameCore.ctx.moveTo(dragon.x + dragon.width, dragon.y + dragon.height * 0.5);
-        gameCore.ctx.quadraticCurveTo(
-            dragon.x + dragon.width + dragon.width * 0.5, dragon.y + dragon.height * 0.5, 
-            dragon.x + dragon.width + dragon.width * 0.3, dragon.y + dragon.height * 0.7
-        );
-        gameCore.ctx.quadraticCurveTo(
-            dragon.x + dragon.width + dragon.width * 0.2, dragon.y + dragon.height * 0.9, 
-            dragon.x + dragon.width, dragon.y + dragon.height * 0.7
-        );
-    } else {
-        // Staart links (standaard)
-        gameCore.ctx.moveTo(dragon.x, dragon.y + dragon.height * 0.5);
-        gameCore.ctx.quadraticCurveTo(
-            dragon.x - dragon.width * 0.5, dragon.y + dragon.height * 0.5, 
-            dragon.x - dragon.width * 0.3, dragon.y + dragon.height * 0.7
-        );
-        gameCore.ctx.quadraticCurveTo(
-            dragon.x - dragon.width * 0.2, dragon.y + dragon.height * 0.9, 
-            dragon.x, dragon.y + dragon.height * 0.7
-        );
-    }
-    
-    gameCore.ctx.fill();
-    
-    // Vuur (als de draak rondvliegt)
-    if (dragon.patrolDistance > 0) {
-        const time = Date.now() / 100;
-        // Bepaal waar het vuur vandaan komt op basis van richting
-        const fireX = facingLeft ? dragon.x : dragon.x + dragon.width;
-        
-        // Gele buitenste vlam
-        gameCore.ctx.fillStyle = 'yellow';
-        gameCore.ctx.beginPath();
-        gameCore.ctx.arc(
-            fireX, 
-            dragon.y + dragon.height * 0.3, 
-            dragon.width * 0.15, 
-            0, Math.PI * 2
-        );
-        gameCore.ctx.fill();
-        
-        // Oranje middelste vlam
-        gameCore.ctx.fillStyle = 'orange';
-        gameCore.ctx.beginPath();
-        gameCore.ctx.arc(
-            fireX, 
-            dragon.y + dragon.height * 0.3, 
-            dragon.width * 0.1, 
-            0, Math.PI * 2
-        );
-        gameCore.ctx.fill();
-        
-        // Rode binnenste vlam
-        gameCore.ctx.fillStyle = 'red';
-        gameCore.ctx.beginPath();
-        gameCore.ctx.arc(
-            fireX, 
-            dragon.y + dragon.height * 0.3, 
-            dragon.width * 0.05, 
-            0, Math.PI * 2
-        );
-        gameCore.ctx.fill();
-    }
-}
-
-// Functie om de puppy te tekenen
-function drawPuppy(puppy) {
-    if (puppy.saved) return; // Teken de puppy niet als hij al gered is
-    
-    // Pas de positie aan met de offset voor het schudden (als die bestaat)
-    const puppyX = puppy.x + (puppy.offsetX || 0);
-    
-    // Puppy lichaam (lichtbruin)
-    gameCore.ctx.fillStyle = '#D2B48C'; // Tan kleur
-    gameCore.ctx.fillRect(puppyX, puppy.y, puppy.width, puppy.height);
-    
-    // Puppy oren (donkerder bruin)
-    // Linker oor
-    gameCore.ctx.fillStyle = '#A0522D';
-    gameCore.ctx.beginPath();
-    gameCore.ctx.moveTo(puppyX + puppy.width * 0.1, puppy.y);
-    gameCore.ctx.lineTo(puppyX, puppy.y - puppy.height * 0.5);
-    gameCore.ctx.lineTo(puppyX + puppy.width * 0.2, puppy.y);
-    gameCore.ctx.fill();
-    
-    // Rechter oor
-    gameCore.ctx.beginPath();
-    gameCore.ctx.moveTo(puppyX + puppy.width * 0.8, puppy.y);
-    gameCore.ctx.lineTo(puppyX + puppy.width, puppy.y - puppy.height * 0.5);
-    gameCore.ctx.lineTo(puppyX + puppy.width * 0.9, puppy.y);
-    gameCore.ctx.fill();
-    
-    // Puppy ogen (groot en schattig)
-    gameCore.ctx.fillStyle = 'black';
-    // Linker oog
-    gameCore.ctx.beginPath();
-    gameCore.ctx.arc(
-        puppyX + puppy.width * 0.3, 
-        puppy.y + puppy.height * 0.3, 
-        puppy.width * 0.12, 
-        0, Math.PI * 2
-    );
-    gameCore.ctx.fill();
-    
-    // Wit van het oog
-    gameCore.ctx.fillStyle = 'white';
-    gameCore.ctx.beginPath();
-    gameCore.ctx.arc(
-        puppyX + puppy.width * 0.28, 
-        puppy.y + puppy.height * 0.28, 
-        puppy.width * 0.04, 
-        0, Math.PI * 2
-    );
-    gameCore.ctx.fill();
-    
-    // Rechter oog
-    gameCore.ctx.fillStyle = 'black';
-    gameCore.ctx.beginPath();
-    gameCore.ctx.arc(
-        puppyX + puppy.width * 0.7, 
-        puppy.y + puppy.height * 0.3, 
-        puppy.width * 0.12, 
-        0, Math.PI * 2
-    );
-    gameCore.ctx.fill();
-    
-    // Wit van het oog
-    gameCore.ctx.fillStyle = 'white';
-    gameCore.ctx.beginPath();
-    gameCore.ctx.arc(
-        puppyX + puppy.width * 0.68, 
-        puppy.y + puppy.height * 0.28, 
-        puppy.width * 0.04, 
-        0, Math.PI * 2
-    );
-    gameCore.ctx.fill();
-    
-    // Puppy neus
-    gameCore.ctx.fillStyle = 'black';
-    gameCore.ctx.beginPath();
-    gameCore.ctx.arc(
-        puppyX + puppy.width * 0.5, 
-        puppy.y + puppy.height * 0.5, 
-        puppy.width * 0.1, 
-        0, Math.PI * 2
-    );
-    gameCore.ctx.fill();
-    
-    // Puppy staart
-    gameCore.ctx.fillStyle = '#D2B48C';
-    gameCore.ctx.beginPath();
-    gameCore.ctx.moveTo(puppyX, puppy.y + puppy.height * 0.5);
-    gameCore.ctx.quadraticCurveTo(
-        puppyX - puppy.width * 0.3, puppy.y + puppy.height * 0.3, 
-        puppyX - puppy.width * 0.2, puppy.y + puppy.height * 0.7
-    );
-    gameCore.ctx.quadraticCurveTo(
-        puppyX - puppy.width * 0.1, puppy.y + puppy.height * 0.8, 
-        puppyX, puppy.y + puppy.height * 0.6
-    );
-    gameCore.ctx.fill();
-    
-    // Teken een kleine SOS-tekstballon boven de puppy om aan te geven dat hij hulp nodig heeft
-    if (!gameCore.gameState.gameOver) {
-        const bubbleWidth = puppy.width * 1.2;
-        const bubbleHeight = puppy.height * 0.6;
-        const bubbleX = puppyX - (bubbleWidth - puppy.width) / 2;
-        const bubbleY = puppy.y - bubbleHeight - 15;
-        
-        // Voeg een klein beefeffect toe aan de SOS-tekstballon
-        const time = Date.now() / 150;
-        const trembleX = Math.sin(time) * 1.5;
-        const trembleY = Math.cos(time * 1.5) * 1;
-        
-        // Teken de tekstballon
-        gameCore.ctx.fillStyle = 'white';
-        gameCore.ctx.beginPath();
-        gameCore.ctx.ellipse(
-            bubbleX + bubbleWidth/2 + trembleX, 
-            bubbleY + bubbleHeight/2 + trembleY, 
-            bubbleWidth/2, 
-            bubbleHeight/2, 
-            0, 0, Math.PI * 2
-        );
-        gameCore.ctx.fill();
-        
-        // Teken de driehoek naar de puppy
-        gameCore.ctx.beginPath();
-        gameCore.ctx.moveTo(bubbleX + bubbleWidth/2 - 5 + trembleX, bubbleY + bubbleHeight + trembleY);
-        gameCore.ctx.lineTo(bubbleX + bubbleWidth/2 + 5 + trembleX, bubbleY + bubbleHeight + trembleY);
-        gameCore.ctx.lineTo(puppyX + puppy.width/2, puppy.y);
-        gameCore.ctx.fill();
-        
-        // Teken "Help!" in de tekstballon
-        gameCore.ctx.fillStyle = 'red';
-        gameCore.ctx.font = '10px Arial';
-        gameCore.ctx.textAlign = 'center';
-        gameCore.ctx.fillText('Help!', bubbleX + bubbleWidth/2 + trembleX, bubbleY + bubbleHeight/2 + 4 + trembleY);
-        
-        // Geanimeerde voetstappen voor de puppy om aan te geven dat hij beweegt
-        const footprintTime = Date.now() / 500;
-        // Teken alleen als de functie sin ongeveer 1 is (dus maar af en toe)
-        if (Math.sin(footprintTime) > 0.9) {
-            gameCore.ctx.fillStyle = 'rgba(165, 42, 42, 0.3)'; // Donkerrode voetafdrukken
-            // Verschillende posities voor pootafdrukken
-            const positions = [
-                {x: puppyX - 10, y: puppy.y + puppy.height + 5},
-                {x: puppyX - 15, y: puppy.y + puppy.height + 8},
-                {x: puppyX - 20, y: puppy.y + puppy.height + 3}
-            ];
-            
-            // Teken kleine pootafdrukken
-            positions.forEach(pos => {
-                gameCore.ctx.beginPath();
-                gameCore.ctx.arc(pos.x, pos.y, 3, 0, Math.PI * 2);
-                gameCore.ctx.fill();
-            });
-        }
-    }
-}
-
-// Verzamelobject tekenen
+// Collectible object rendering
 function drawCollectible(collectible) {
-    // Redden sterretje
+    // Rescue star
     gameCore.ctx.fillStyle = 'gold';
     
-    // Ster tekenen
+    // Draw the star
     const centerX = collectible.x + collectible.width/2;
     const centerY = collectible.y + collectible.height/2;
     const spikes = 5;
@@ -493,7 +29,7 @@ function drawCollectible(collectible) {
     gameCore.ctx.closePath();
     gameCore.ctx.fill();
     
-    // Glinstering
+    // Sparkle effect
     gameCore.ctx.fillStyle = 'white';
     gameCore.ctx.beginPath();
     gameCore.ctx.arc(centerX - collectible.width/5, centerY - collectible.height/5, 
@@ -501,15 +37,15 @@ function drawCollectible(collectible) {
     gameCore.ctx.fill();
 }
 
-// Valstrik tekenen
+// Trap rendering
 function drawTrap(trap) {
     if (trap.type === "SPIKES") {
         gameCore.ctx.fillStyle = '#888';
         
-        // Basis van de spikes
+        // Base of the spikes
         gameCore.ctx.fillRect(trap.x, trap.y + trap.height - 5, trap.width, 5);
         
-        // Punten tekenen
+        // Draw the points
         gameCore.ctx.fillStyle = '#555';
         const spikeWidth = 8;
         const numSpikes = Math.floor(trap.width / spikeWidth);
@@ -524,35 +60,35 @@ function drawTrap(trap) {
     }
 }
 
-// Platform tekenen
+// Platform rendering
 function drawPlatform(platform) {
     switch(platform.type) {
         case "TRAMPOLINE":
-            // Bepaal de compressie van de trampoline
+            // Determine the compression of the trampoline
             let trampolineHeight = platform.height;
             let trampolineY = platform.y;
             
-            // Als de trampoline wordt ingedrukt, toon dit visueel
+            // If the trampoline is compressed, show this visually
             if (platform.compressed) {
                 const compressionAmount = Math.min(5, platform.springForce / 3);
                 trampolineHeight = platform.height - compressionAmount;
                 trampolineY = platform.y + compressionAmount;
             }
             
-            // Teken de basis (houten platform)
+            // Draw the base (wooden platform)
             gameCore.ctx.fillStyle = '#8B4513';
             gameCore.ctx.fillRect(platform.x, platform.y + platform.height - 5, platform.width, 5);
             
-            // Teken de poten
-            gameCore.ctx.fillStyle = '#A52A2A'; // Donkerder bruin voor de poten
+            // Draw the legs
+            gameCore.ctx.fillStyle = '#A52A2A'; // Darker brown for the legs
             gameCore.ctx.fillRect(platform.x + 5, platform.y + platform.height - 10, 5, 10);
             gameCore.ctx.fillRect(platform.x + platform.width - 10, platform.y + platform.height - 10, 5, 10);
             
-            // Teken springmateriaal (rood)
+            // Draw the spring material (red)
             gameCore.ctx.fillStyle = '#FF6347';
             gameCore.ctx.fillRect(platform.x, trampolineY, platform.width, trampolineHeight - 5);
             
-            // Teken horizontale lijnen voor het trampolinemat-effect
+            // Draw horizontal lines for the trampoline mat effect
             gameCore.ctx.strokeStyle = 'white';
             gameCore.ctx.lineWidth = 1;
             for (let i = 1; i < 4; i++) {
@@ -562,13 +98,13 @@ function drawPlatform(platform) {
                 gameCore.ctx.stroke();
             }
             
-            // Toon de sterkte van de trampoline visueel
+            // Show the strength of the trampoline visually
             if (platform.springForce > 0) {
                 const springPower = platform.springForce / platform.maxSpringForce;
-                // Teken pijlen boven de trampoline om springkracht te tonen
+                // Draw arrows above the trampoline to show spring force
                 gameCore.ctx.fillStyle = 'rgba(255, 215, 0, ' + springPower + ')';
                 
-                // Pijl omhoog
+                // Arrow pointing up
                 gameCore.ctx.beginPath();
                 gameCore.ctx.moveTo(platform.x + platform.width / 2, platform.y - 20);
                 gameCore.ctx.lineTo(platform.x + platform.width / 2 - 10, platform.y - 10);
@@ -580,25 +116,25 @@ function drawPlatform(platform) {
         case "NORMAL":
             gameCore.ctx.fillStyle = '#8B4513';
             gameCore.ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
-            // Gras bovenop
+            // Grass on top
             gameCore.ctx.fillStyle = '#2E8B57';
             gameCore.ctx.fillRect(platform.x, platform.y, platform.width, 5);
             break;
         case "WATER":
-            // Duidelijker water achtergrond
+            // Clearer water background
             gameCore.ctx.fillStyle = 'rgba(0, 120, 255, 0.7)';
             gameCore.ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
             
-            // Animeer de golven met de game time
+            // Animate the waves with the game time
             const time = Date.now() / 1000;
             const waveHeight = 3;
             const waveFreq = 0.2;
             
-            // Golven
+            // Waves
             gameCore.ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
             gameCore.ctx.lineWidth = 2;
             
-            // Bovenste golven
+            // Top waves
             gameCore.ctx.beginPath();
             for (let i = 0; i < platform.width; i += 5) {
                 const y = platform.y + Math.sin((i + time * 50) * waveFreq) * waveHeight;
@@ -610,7 +146,7 @@ function drawPlatform(platform) {
             }
             gameCore.ctx.stroke();
             
-            // Kleine bubbels
+            // Small bubbles
             for (let i = 0; i < 5; i++) {
                 const bubbleX = platform.x + Math.sin(time * (i+1)) * platform.width/4 + platform.width/2;
                 const bubbleY = platform.y + ((time * 20 + i * 30) % platform.height);
@@ -623,14 +159,14 @@ function drawPlatform(platform) {
             }
             break;
         case "CLOUD":
-            // Magische wolkenplatform (alleen bruikbaar door de eenhoorn)
-            const cloudTime = Date.now() / 10000; // Langzaam drijvende effect
+            // Magical cloud platform (only usable by the unicorn)
+            const cloudTime = Date.now() / 10000; // Slow floating effect
             
-            // Kleine animatie van de wolk (subtiel zweven)
+            // Small animation of the cloud (subtle floating)
             const offsetY = Math.sin(cloudTime * Math.PI * 2) * 3;
             
-            // Wolk tekenen met een regenboog-gloed
-            // Eerst een regenboogachtige gloed onder de wolk
+            // Draw the cloud with a rainbow glow
+            // First a rainbow-like glow under the cloud
             const cloudColors = ['#FF9AA2', '#FFB7B2', '#FFDAC1', '#E2F0CB', '#B5EAD7', '#C7CEEA'];
             for (let i = 0; i < cloudColors.length; i++) {
                 const glowSize = platform.height * 0.7 + i * 3;
@@ -647,14 +183,14 @@ function drawPlatform(platform) {
             }
             gameCore.ctx.globalAlpha = 1.0;
             
-            // Teken nu de witte wolk erbovenop
-            // Hoofddeel van de wolk
+            // Now draw the white cloud on top
+            // Main part of the cloud
             const centerX = platform.x + platform.width / 2;
             const centerY = platform.y + platform.height / 2 + offsetY;
             const radiusX = platform.width / 2;
             const radiusY = platform.height / 2;
             
-            // Teken meerdere cirkels om een wolkachtige vorm te maken
+            // Draw multiple circles to make a cloud-like shape
             gameCore.ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
             
             gameCore.ctx.beginPath();
@@ -677,18 +213,18 @@ function drawPlatform(platform) {
             gameCore.ctx.arc(centerX + radiusX * 0.3, centerY - radiusY * 0.4, radiusY * 0.7, 0, Math.PI * 2);
             gameCore.ctx.fill();
             
-            // Glinster-effect voor de magische wolken (alleen te gebruiken door eenhoorns)
+            // Sparkle effect for the magical clouds (only usable by unicorns)
             const starColors = ['#FFD700', '#FF00FF', '#00FFFF', '#FF69B4', '#ADFF2F'];
             for (let i = 0; i < 5; i++) {
                 const twinkleX = centerX + Math.cos(cloudTime * 5 + i * 2) * radiusX * 0.7;
                 const twinkleY = centerY + Math.sin(cloudTime * 7 + i * 2) * radiusY * 0.7;
                 const twinkleSize = 3 + Math.sin(cloudTime * 10 + i) * 2;
                 
-                // Sterretje tekenen
+                // Draw a star
                 gameCore.ctx.fillStyle = starColors[i % starColors.length];
                 gameCore.ctx.beginPath();
                 
-                // Teken een 5-puntige ster
+                // Draw a 5-pointed star
                 for (let j = 0; j < 5; j++) {
                     const angle = (j * 2 * Math.PI / 5) - Math.PI / 2 + cloudTime * 3;
                     const x = twinkleX + Math.cos(angle) * twinkleSize;
@@ -707,7 +243,7 @@ function drawPlatform(platform) {
         case "CLIMB":
             gameCore.ctx.fillStyle = '#A0522D';
             gameCore.ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
-            // Klimpatroon
+            // Climbing pattern
             gameCore.ctx.strokeStyle = '#654321';
             gameCore.ctx.lineWidth = 2;
             for (let i = 10; i < platform.height; i += 20) {
@@ -718,11 +254,11 @@ function drawPlatform(platform) {
             }
             break;
         case "TREE":
-            // Boomstam tekenen
-            gameCore.ctx.fillStyle = '#8B4513'; // Bruine stam
+            // Draw tree trunk
+            gameCore.ctx.fillStyle = '#8B4513'; // Brown trunk
             gameCore.ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
             
-            // Boomschors textuur
+            // Tree bark texture
             gameCore.ctx.strokeStyle = '#654321';
             gameCore.ctx.lineWidth = 2;
             for (let i = 10; i < platform.height; i += 25) {
@@ -732,15 +268,15 @@ function drawPlatform(platform) {
                 gameCore.ctx.stroke();
             }
             
-            // Bladeren tekenen op de top van de boom
+            // Draw leaves on top of the tree
             const leafSize = platform.width * 1.5;
             
-            gameCore.ctx.fillStyle = '#006400'; // Donkergroen
+            gameCore.ctx.fillStyle = '#006400'; // Dark green
             gameCore.ctx.beginPath();
             gameCore.ctx.arc(platform.x + platform.width / 2, platform.y - leafSize / 3, leafSize / 2, 0, Math.PI * 2);
             gameCore.ctx.fill();
             
-            gameCore.ctx.fillStyle = '#32CD32'; // Lichtergroen
+            gameCore.ctx.fillStyle = '#32CD32'; // Lighter green
             gameCore.ctx.beginPath();
             gameCore.ctx.arc(platform.x + platform.width / 2 - 15, platform.y - leafSize / 2 - 10, leafSize / 3, 0, Math.PI * 2);
             gameCore.ctx.fill();
@@ -752,13 +288,13 @@ function drawPlatform(platform) {
     }
 }
 
-// Achtergrond tekenen
+// Background drawing
 function drawBackground() {
-    // Lucht
+    // Sky
     gameCore.ctx.fillStyle = '#87CEEB';
     gameCore.ctx.fillRect(0, 0, gameCore.canvas.width, gameCore.canvas.height);
     
-    // Achtergrondwolken (wit en semi-transparant)
+    // Background clouds (white and semi-transparent)
     gameCore.ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
     gameCore.ctx.beginPath();
     gameCore.ctx.arc(100, 80, 30, 0, Math.PI * 2);
@@ -773,745 +309,21 @@ function drawBackground() {
     gameCore.ctx.fill();
 }
 
-// Grond tekenen
+// Ground drawing
 function drawGround() {
     gameCore.ctx.fillStyle = '#8B4513';
     gameCore.ctx.fillRect(0, gameCore.GROUND_LEVEL, gameCore.canvas.width, gameCore.canvas.height - gameCore.GROUND_LEVEL);
     
-    // Gras bovenop
+    // Grass on top
     gameCore.ctx.fillStyle = '#2E8B57';
     gameCore.ctx.fillRect(0, gameCore.GROUND_LEVEL, gameCore.canvas.width, 10);
 }
 
-// Draw player method for each animal type
-function drawPlayer(player) {
-    // Controleer of de speler onkwetsbaar is
-    if (player.isInvulnerable) {
-        // Bereken knippereffect op basis van timer
-        if (player.invulnerableTimer % 10 < 5) {
-            // Sla het tekenen over tijdens bepaalde frames voor knippereffect
-            // return; // Volledig knipperen (uitgecommentarieerd)
-            
-            // Semi-transparant effect
-            gameCore.ctx.globalAlpha = 0.5;
-        }
-    }
-    
-    // Teken de juiste diersoort
-    if (player.animalType === "SQUIRREL") {
-        drawSquirrel(player);
-    } else if (player.animalType === "TURTLE") {
-        drawTurtle(player);
-    } else if (player.animalType === "UNICORN") {
-        drawUnicorn(player);
-    } else if (player.animalType === "CAT") {
-        drawCat(player);
-    }
-    
-    // Herstel de globalAlpha naar normaal als deze was aangepast
-    if (player.isInvulnerable) {
-        gameCore.ctx.globalAlpha = 1.0;
-    }
-}
-
-function drawSquirrel(player) {
-    // Bepaal richting op basis van beweging
-    const facingLeft = player.velX < 0;
-    
-    // Lichaam
-    gameCore.ctx.fillStyle = player.color;
-    gameCore.ctx.fillRect(player.x, player.y, player.width, player.height);
-    
-    // Ogen (positie afhankelijk van richting)
-    gameCore.ctx.fillStyle = "white";
-    if (facingLeft) {
-        // Ogen links
-        gameCore.ctx.fillRect(player.x + player.width * 0.15, player.y + player.height * 0.2, player.width * 0.15, player.height * 0.15);
-    } else {
-        // Ogen rechts (standaard)
-        gameCore.ctx.fillRect(player.x + player.width * 0.7, player.y + player.height * 0.2, player.width * 0.15, player.height * 0.15);
-    }
-    
-    // Staart (positie afhankelijk van richting)
-    gameCore.ctx.fillStyle = player.color;
-    gameCore.ctx.beginPath();
-    
-    if (facingLeft) {
-        // Staart rechts
-        gameCore.ctx.moveTo(player.x + player.width, player.y + player.height * 0.3);
-        gameCore.ctx.quadraticCurveTo(
-            player.x + player.width + player.width * 0.5, player.y + player.height * 0.2, 
-            player.x + player.width + player.width * 0.3, player.y + player.height * 0.5
-        );
-        gameCore.ctx.quadraticCurveTo(
-            player.x + player.width + player.width * 0.2, player.y + player.height * 0.8, 
-            player.x + player.width, player.y + player.height * 0.7
-        );
-    } else {
-        // Staart links (standaard)
-        gameCore.ctx.moveTo(player.x, player.y + player.height * 0.3);
-        gameCore.ctx.quadraticCurveTo(
-            player.x - player.width * 0.5, player.y + player.height * 0.2, 
-            player.x - player.width * 0.3, player.y + player.height * 0.5
-        );
-        gameCore.ctx.quadraticCurveTo(
-            player.x - player.width * 0.2, player.y + player.height * 0.8, 
-            player.x, player.y + player.height * 0.7
-        );
-    }
-    
-    gameCore.ctx.fill();
-}
-
-function drawTurtle(player) {
-    // Bepaal richting op basis van beweging
-    const facingLeft = player.velX < 0;
-    
-    // Controleer of de schildpad onder water is 
-    // en pas dan pas zuurstofafname toe
-    if (player.oxygenLevel !== undefined && player.isUnderwater) {
-        // Verminder zuurstof nog langzamer (4x zo langzaam als oorspronkelijk)
-        player.oxygenLevel = Math.max(0, player.oxygenLevel - 0.25);
-        console.log("Turtle zuurstofniveau onder water: " + player.oxygenLevel);
-    }
-    
-    // Teken zuurstofmeter boven de schildpad, maar alleen als het niet 100% is
-    if (player.oxygenLevel !== undefined && player.oxygenLevel < player.maxOxygenLevel) {
-        const meterWidth = player.width * 1.2;
-        const meterHeight = 5;
-        const meterX = player.x - (meterWidth - player.width) / 2;
-        const meterY = player.y - 15;
-        
-        // Achtergrond van de meter
-        gameCore.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-        gameCore.ctx.fillRect(meterX, meterY, meterWidth, meterHeight);
-        
-        // Actuele zuurstof
-        const fillWidth = (player.oxygenLevel / player.maxOxygenLevel) * meterWidth;
-        
-        // Kleur op basis van zuurstofniveau
-        let meterColor;
-        if (player.oxygenLevel > 70) {
-            meterColor = 'rgb(0, 255, 255)'; // Cyaan
-        } else if (player.oxygenLevel > 30) {
-            meterColor = 'rgb(0, 191, 255)'; // Diepblauw
-        } else {
-            meterColor = 'rgb(0, 0, 255)'; // Blauw
-        }
-        
-        gameCore.ctx.fillStyle = meterColor;
-        gameCore.ctx.fillRect(meterX, meterY, fillWidth, meterHeight);
-        
-        // Controleer hier ook op game-over conditie (wanneer zuurstof op is)
-        if (player.oxygenLevel <= 0) {
-            player.loseLife();
-            player.oxygenLevel = player.maxOxygenLevel * 0.3; // Reset naar 30% na een leven verloren
-        }
-        
-        // Check of zuurstof bijna op is (onder 30%)
-        if (player.oxygenLevel < 30 && !player.lowOxygenWarning) {
-            gameCore.gameState.message = "De schildpad heeft zuurstof nodig! Zwem naar boven!";
-            player.lowOxygenWarning = true;
-            
-            // Wis bericht na 2 seconden
-            setTimeout(() => {
-                if (gameCore.gameState.message === "De schildpad heeft zuurstof nodig! Zwem naar boven!") {
-                    gameCore.gameState.message = "";
-                }
-            }, 2000);
-        }
-        
-        // Teken bubbeleffect, maar alleen als de schildpad onder water is
-        if (player.isUnderwater) {
-            const time = Date.now() / 1000;
-            // Teken bubbles rond het hoofd van de schildpad (grotere en meer zichtbare bubbels)
-            for (let i = 0; i < 5; i++) {
-                const bubbleX = player.x + player.width * (facingLeft ? 0.2 : 0.8) + Math.sin(time * 2 + i) * 5;
-                const bubbleY = player.y + player.height * 0.2 - (time * 5 + i * 10) % 30;
-                const size = 3 + Math.sin(time + i) * 2; // Grotere bubbels
-                
-                gameCore.ctx.fillStyle = 'rgba(255, 255, 255, 0.9)'; // Meer zichtbaar
-                gameCore.ctx.beginPath();
-                gameCore.ctx.arc(bubbleX, bubbleY, size, 0, Math.PI * 2);
-                gameCore.ctx.fill();
-            }
-        }
-    }
-    
-    // Schild
-    gameCore.ctx.fillStyle = player.color;
-    gameCore.ctx.beginPath();
-    gameCore.ctx.ellipse(
-        player.x + player.width/2, 
-        player.y + player.height/2, 
-        player.width/2, 
-        player.height/2, 
-        0, 0, Math.PI * 2
-    );
-    gameCore.ctx.fill();
-    
-    // Schild patroon
-    gameCore.ctx.fillStyle = "#006400";
-    gameCore.ctx.beginPath();
-    gameCore.ctx.ellipse(
-        player.x + player.width/2, 
-        player.y + player.height/2, 
-        player.width/3, 
-        player.height/3, 
-        0, 0, Math.PI * 2
-    );
-    gameCore.ctx.fill();
-    
-    // Hoofd (positie afhankelijk van richting)
-    gameCore.ctx.fillStyle = "#00804A";
-    gameCore.ctx.beginPath();
-    
-    if (facingLeft) {
-        // Hoofd links
-        gameCore.ctx.ellipse(
-            player.x + player.width * 0.2, 
-            player.y + player.height * 0.3, 
-            player.width * 0.25, 
-            player.height * 0.25, 
-            0, 0, Math.PI * 2
-        );
-    } else {
-        // Hoofd rechts (standaard)
-        gameCore.ctx.ellipse(
-            player.x + player.width * 0.8, 
-            player.y + player.height * 0.3, 
-            player.width * 0.25, 
-            player.height * 0.25, 
-            0, 0, Math.PI * 2
-        );
-    }
-    
-    gameCore.ctx.fill();
-    
-    // Pootjes (slechts zichtbaar als de schildpad beweegt)
-    if (player.velX !== 0 || player.velY !== 0) {
-        gameCore.ctx.fillStyle = "#00804A";
-        
-        if (facingLeft) {
-            // Voorste poot links
-            gameCore.ctx.fillRect(
-                player.x + player.width * 0.2, 
-                player.y + player.height * 0.6, 
-                player.width * 0.15, 
-                player.height * 0.3
-            );
-            
-            // Achterste poot rechts
-            gameCore.ctx.fillRect(
-                player.x + player.width * 0.7, 
-                player.y + player.height * 0.6, 
-                player.width * 0.15, 
-                player.height * 0.3
-            );
-        } else {
-            // Voorste poot rechts (standaard)
-            gameCore.ctx.fillRect(
-                player.x + player.width * 0.8, 
-                player.y + player.height * 0.6, 
-                player.width * 0.15, 
-                player.height * 0.3
-            );
-            
-            // Achterste poot links (standaard)
-            gameCore.ctx.fillRect(
-                player.x + player.width * 0.2, 
-                player.y + player.height * 0.6, 
-                player.width * 0.15, 
-                player.height * 0.3
-            );
-        }
-    }
-}
-
-function drawUnicorn(player) {
-    // Bepaal richting op basis van beweging
-    const facingLeft = player.velX < 0;
-    
-    // Teken vliegmeter boven de eenhoorn, maar alleen als het niet 100% is
-    if (player.flyingPower !== undefined && player.flyingPower < player.flyingPowerMax) {
-        const meterWidth = player.width * 1.2;
-        const meterHeight = 5;
-        const meterX = player.x - (meterWidth - player.width) / 2;
-        const meterY = player.y - 15;
-        
-        // Achtergrond van de meter
-        gameCore.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-        gameCore.ctx.fillRect(meterX, meterY, meterWidth, meterHeight);
-        
-        // Actuele vliegkracht
-        const fillWidth = (player.flyingPower / player.flyingPowerMax) * meterWidth;
-        
-        // Kleur op basis van vliegkracht-niveau
-        let meterColor;
-        if (player.flyingPower > 70) {
-            meterColor = 'rgb(0, 255, 0)'; // Groen
-        } else if (player.flyingPower > 30) {
-            meterColor = 'rgb(255, 255, 0)'; // Geel
-        } else {
-            meterColor = 'rgb(255, 0, 0)'; // Rood
-        }
-        
-        gameCore.ctx.fillStyle = meterColor;
-        gameCore.ctx.fillRect(meterX, meterY, fillWidth, meterHeight);
-    }
-    
-    // Basis-lichaam (ovaal)
-    gameCore.ctx.fillStyle = player.color;
-    gameCore.ctx.beginPath();
-    gameCore.ctx.ellipse(
-        player.x + player.width/2, 
-        player.y + player.height/2, 
-        player.width/2, 
-        player.height/2, 
-        0, 0, Math.PI * 2
-    );
-    gameCore.ctx.fill();
-    
-    // Manen (regenboogkleuren) - positie afhankelijk van richting
-    const maneColors = ["#FF0000", "#FF7F00", "#FFFF00", "#00FF00", "#0000FF", "#4B0082", "#9400D3"];
-    
-    if (facingLeft) {
-        // Manen aan de rechterkant
-        for (let i = 0; i < 7; i++) {
-            gameCore.ctx.fillStyle = maneColors[i];
-            gameCore.ctx.beginPath();
-            gameCore.ctx.ellipse(
-                player.x + player.width * 0.7 + i * 2, 
-                player.y + player.height * 0.3,
-                7 - i, 
-                15 - i, 
-                0, 0, Math.PI * 2
-            );
-            gameCore.ctx.fill();
-        }
-    } else {
-        // Manen aan de linkerkant (standaard)
-        for (let i = 0; i < 7; i++) {
-            gameCore.ctx.fillStyle = maneColors[i];
-            gameCore.ctx.beginPath();
-            gameCore.ctx.ellipse(
-                player.x + player.width * 0.3 - i * 2, 
-                player.y + player.height * 0.3,
-                7 - i, 
-                15 - i, 
-                0, 0, Math.PI * 2
-            );
-            gameCore.ctx.fill();
-        }
-    }
-    
-    // Hoorn (gouden kleur) - positie afhankelijk van richting
-    gameCore.ctx.fillStyle = "#FFD700";
-    gameCore.ctx.beginPath();
-    
-    if (facingLeft) {
-        // Hoorn links
-        gameCore.ctx.moveTo(player.x + player.width * 0.3, player.y + player.height * 0.1);
-        gameCore.ctx.lineTo(player.x + player.width * 0.1, player.y - player.height * 0.2);
-        gameCore.ctx.lineTo(player.x + player.width * 0.2, player.y + player.height * 0.1);
-    } else {
-        // Hoorn rechts (standaard)
-        gameCore.ctx.moveTo(player.x + player.width * 0.7, player.y + player.height * 0.1);
-        gameCore.ctx.lineTo(player.x + player.width * 0.9, player.y - player.height * 0.2);
-        gameCore.ctx.lineTo(player.x + player.width * 0.8, player.y + player.height * 0.1);
-    }
-    
-    gameCore.ctx.fill();
-    
-    // Pootjes - positie afhankelijk van richting
-    gameCore.ctx.fillStyle = "#E56BF7";
-    
-    if (facingLeft) {
-        // Pootjes gespiegeld
-        // Voorpoot links
-        gameCore.ctx.fillRect(
-            player.x + player.width * 0.3, 
-            player.y + player.height * 0.6, 
-            player.width * 0.1, 
-            player.height * 0.4
-        );
-        // Achterpoot rechts
-        gameCore.ctx.fillRect(
-            player.x + player.width * 0.8, 
-            player.y + player.height * 0.6, 
-            player.width * 0.1, 
-            player.height * 0.4
-        );
-    } else {
-        // Pootjes standaard
-        // Voorpoot rechts
-        gameCore.ctx.fillRect(
-            player.x + player.width * 0.7, 
-            player.y + player.height * 0.6, 
-            player.width * 0.1, 
-            player.height * 0.4
-        );
-        // Achterpoot links
-        gameCore.ctx.fillRect(
-            player.x + player.width * 0.2, 
-            player.y + player.height * 0.6, 
-            player.width * 0.1, 
-            player.height * 0.4
-        );
-    }
-    
-    // Oog - positie afhankelijk van richting
-    gameCore.ctx.fillStyle = "white";
-    gameCore.ctx.beginPath();
-    
-    if (facingLeft) {
-        // Oog links
-        gameCore.ctx.arc(
-            player.x + player.width * 0.3, 
-            player.y + player.height * 0.3, 
-            player.width * 0.1, 
-            0, Math.PI * 2
-        );
-    } else {
-        // Oog rechts (standaard)
-        gameCore.ctx.arc(
-            player.x + player.width * 0.7, 
-            player.y + player.height * 0.3, 
-            player.width * 0.1, 
-            0, Math.PI * 2
-        );
-    }
-    
-    gameCore.ctx.fill();
-    
-    // Pupil
-    gameCore.ctx.fillStyle = "black";
-    gameCore.ctx.beginPath();
-    
-    if (facingLeft) {
-        // Pupil links
-        gameCore.ctx.arc(
-            player.x + player.width * 0.28, 
-            player.y + player.height * 0.3, 
-            player.width * 0.05, 
-            0, Math.PI * 2
-        );
-    } else {
-        // Pupil rechts (standaard)
-        gameCore.ctx.arc(
-            player.x + player.width * 0.72, 
-            player.y + player.height * 0.3, 
-            player.width * 0.05, 
-            0, Math.PI * 2
-        );
-    }
-    
-    gameCore.ctx.fill();
-    
-    // Vliegende glitters als de eenhoorn vliegt
-    if (player.flying) {
-        const time = Date.now() / 100; // Voor animatie
-        for (let i = 0; i < 7; i++) {
-            const angle = (time / 50 + i) % (Math.PI * 2);
-            const distance = 15 + Math.sin(time / 30 + i) * 5;
-            
-            const x = player.x + player.width/2 + Math.cos(angle) * distance;
-            const y = player.y + player.height/2 + Math.sin(angle) * distance;
-            
-            gameCore.ctx.fillStyle = maneColors[i % maneColors.length];
-            gameCore.ctx.beginPath();
-            gameCore.ctx.arc(x, y, 2 + Math.sin(time / 20 + i) * 1, 0, Math.PI * 2);
-            gameCore.ctx.fill();
-        }
-    }
-}
-
-// Teken de kat
-function drawCat(player) {
-    // Bepaal richting op basis van beweging
-    const facingLeft = player.velX < 0;
-    
-    // Lichaam
-    gameCore.ctx.fillStyle = player.color;
-    gameCore.ctx.fillRect(player.x, player.y, player.width, player.height);
-    
-    // Kop (iets lichter grijs)
-    gameCore.ctx.fillStyle = '#aaaaaa';
-    gameCore.ctx.beginPath();
-    
-    if (facingLeft) {
-        // Kop links
-        gameCore.ctx.arc(
-            player.x + player.width * 0.3, 
-            player.y + player.height * 0.3, 
-            player.width * 0.25, 
-            0, Math.PI * 2
-        );
-    } else {
-        // Kop rechts (standaard)
-        gameCore.ctx.arc(
-            player.x + player.width * 0.7, 
-            player.y + player.height * 0.3, 
-            player.width * 0.25, 
-            0, Math.PI * 2
-        );
-    }
-    
-    gameCore.ctx.fill();
-    
-    // Oren (driehoekig)
-    gameCore.ctx.fillStyle = player.color;
-    gameCore.ctx.beginPath();
-    
-    if (facingLeft) {
-        // Linker oor
-        gameCore.ctx.moveTo(player.x + player.width * 0.2, player.y + player.height * 0.15);
-        gameCore.ctx.lineTo(player.x + player.width * 0.1, player.y - player.height * 0.1);
-        gameCore.ctx.lineTo(player.x + player.width * 0.3, player.y + player.height * 0.1);
-        
-        // Rechter oor
-        gameCore.ctx.moveTo(player.x + player.width * 0.4, player.y + player.height * 0.15);
-        gameCore.ctx.lineTo(player.x + player.width * 0.3, player.y - player.height * 0.1);
-        gameCore.ctx.lineTo(player.x + player.width * 0.5, player.y + player.height * 0.1);
-    } else {
-        // Rechter oor
-        gameCore.ctx.moveTo(player.x + player.width * 0.8, player.y + player.height * 0.15);
-        gameCore.ctx.lineTo(player.x + player.width * 0.9, player.y - player.height * 0.1);
-        gameCore.ctx.lineTo(player.x + player.width * 0.7, player.y + player.height * 0.1);
-        
-        // Linker oor
-        gameCore.ctx.moveTo(player.x + player.width * 0.6, player.y + player.height * 0.15);
-        gameCore.ctx.lineTo(player.x + player.width * 0.7, player.y - player.height * 0.1);
-        gameCore.ctx.lineTo(player.x + player.width * 0.5, player.y + player.height * 0.1);
-    }
-    
-    gameCore.ctx.fill();
-    
-    // Ogen (geel met zwarte pupillen)
-    if (facingLeft) {
-        // Linker oog
-        gameCore.ctx.fillStyle = 'yellow';
-        gameCore.ctx.beginPath();
-        gameCore.ctx.ellipse(
-            player.x + player.width * 0.25, 
-            player.y + player.height * 0.25, 
-            player.width * 0.08, 
-            player.height * 0.06, 
-            0, 0, Math.PI * 2
-        );
-        gameCore.ctx.fill();
-        
-        // Pupil
-        gameCore.ctx.fillStyle = 'black';
-        gameCore.ctx.beginPath();
-        gameCore.ctx.ellipse(
-            player.x + player.width * 0.25, 
-            player.y + player.height * 0.25, 
-            player.width * 0.03, 
-            player.height * 0.05, 
-            0, 0, Math.PI * 2
-        );
-        gameCore.ctx.fill();
-    } else {
-        // Rechter oog
-        gameCore.ctx.fillStyle = 'yellow';
-        gameCore.ctx.beginPath();
-        gameCore.ctx.ellipse(
-            player.x + player.width * 0.75, 
-            player.y + player.height * 0.25, 
-            player.width * 0.08, 
-            player.height * 0.06, 
-            0, 0, Math.PI * 2
-        );
-        gameCore.ctx.fill();
-        
-        // Pupil
-        gameCore.ctx.fillStyle = 'black';
-        gameCore.ctx.beginPath();
-        gameCore.ctx.ellipse(
-            player.x + player.width * 0.75, 
-            player.y + player.height * 0.25, 
-            player.width * 0.03, 
-            player.height * 0.05, 
-            0, 0, Math.PI * 2
-        );
-        gameCore.ctx.fill();
-    }
-    
-    // Snuit
-    gameCore.ctx.fillStyle = '#dddddd'; // Licht wit/grijs
-    gameCore.ctx.beginPath();
-    
-    if (facingLeft) {
-        gameCore.ctx.arc(
-            player.x + player.width * 0.2, 
-            player.y + player.height * 0.35, 
-            player.width * 0.1, 
-            0, Math.PI * 2
-        );
-    } else {
-        gameCore.ctx.arc(
-            player.x + player.width * 0.8, 
-            player.y + player.height * 0.35, 
-            player.width * 0.1, 
-            0, Math.PI * 2
-        );
-    }
-    
-    gameCore.ctx.fill();
-    
-    // Neus
-    gameCore.ctx.fillStyle = '#FF69B4'; // Roze voor de neus
-    gameCore.ctx.beginPath();
-    
-    if (facingLeft) {
-        gameCore.ctx.arc(
-            player.x + player.width * 0.15, 
-            player.y + player.height * 0.32, 
-            player.width * 0.03, 
-            0, Math.PI * 2
-        );
-    } else {
-        gameCore.ctx.arc(
-            player.x + player.width * 0.85, 
-            player.y + player.height * 0.32, 
-            player.width * 0.03, 
-            0, Math.PI * 2
-        );
-    }
-    
-    gameCore.ctx.fill();
-    
-    // Snorharen
-    gameCore.ctx.strokeStyle = 'white';
-    gameCore.ctx.lineWidth = 1;
-    
-    if (facingLeft) {
-        // Links
-        for (let i = 0; i < 3; i++) {
-            gameCore.ctx.beginPath();
-            gameCore.ctx.moveTo(player.x + player.width * 0.15, player.y + player.height * (0.32 + i * 0.03));
-            gameCore.ctx.lineTo(player.x - player.width * 0.1, player.y + player.height * (0.28 + i * 0.05));
-            gameCore.ctx.stroke();
-        }
-    } else {
-        // Rechts
-        for (let i = 0; i < 3; i++) {
-            gameCore.ctx.beginPath();
-            gameCore.ctx.moveTo(player.x + player.width * 0.85, player.y + player.height * (0.32 + i * 0.03));
-            gameCore.ctx.lineTo(player.x + player.width * 1.1, player.y + player.height * (0.28 + i * 0.05));
-            gameCore.ctx.stroke();
-        }
-    }
-    
-    // Staart
-    gameCore.ctx.strokeStyle = player.color;
-    gameCore.ctx.lineWidth = 5;
-    gameCore.ctx.beginPath();
-    
-    if (facingLeft) {
-        // Staart rechts
-        gameCore.ctx.moveTo(player.x + player.width, player.y + player.height * 0.5);
-        gameCore.ctx.bezierCurveTo(
-            player.x + player.width * 1.3, player.y + player.height * 0.3,
-            player.x + player.width * 1.5, player.y + player.height * 0.6,
-            player.x + player.width * 1.2, player.y + player.height * 0.8
-        );
-    } else {
-        // Staart links
-        gameCore.ctx.moveTo(player.x, player.y + player.height * 0.5);
-        gameCore.ctx.bezierCurveTo(
-            player.x - player.width * 0.3, player.y + player.height * 0.3,
-            player.x - player.width * 0.5, player.y + player.height * 0.6,
-            player.x - player.width * 0.2, player.y + player.height * 0.8
-        );
-    }
-    
-    gameCore.ctx.stroke();
-    
-    // Poten
-    gameCore.ctx.fillStyle = player.color;
-    
-    if (facingLeft) {
-        // Voorpoot links
-        gameCore.ctx.fillRect(
-            player.x + player.width * 0.25, 
-            player.y + player.height * 0.7, 
-            player.width * 0.15, 
-            player.height * 0.3
-        );
-        // Achterpoot rechts
-        gameCore.ctx.fillRect(
-            player.x + player.width * 0.75, 
-            player.y + player.height * 0.7, 
-            player.width * 0.15, 
-            player.height * 0.3
-        );
-    } else {
-        // Voorpoot rechts
-        gameCore.ctx.fillRect(
-            player.x + player.width * 0.75, 
-            player.y + player.height * 0.7, 
-            player.width * 0.15, 
-            player.height * 0.3
-        );
-        // Achterpoot links
-        gameCore.ctx.fillRect(
-            player.x + player.width * 0.25, 
-            player.y + player.height * 0.7, 
-            player.width * 0.15, 
-            player.height * 0.3
-        );
-    }
-    
-    // Teken klauwen als ze actief zijn
-    if (player.clawActive) {
-        gameCore.ctx.fillStyle = '#444444'; // Donkergrijs voor klauwen
-        
-        if (facingLeft) {
-            // Klauwen links
-            for (let i = 0; i < 3; i++) {
-                gameCore.ctx.beginPath();
-                gameCore.ctx.moveTo(player.x + player.width * 0.25, player.y + player.height * 0.97);
-                gameCore.ctx.lineTo(player.x + player.width * (0.2 - i * 0.05), player.y + player.height * 1.1);
-                gameCore.ctx.lineTo(player.x + player.width * (0.25 - i * 0.05), player.y + player.height * 1.1);
-                gameCore.ctx.closePath();
-                gameCore.ctx.fill();
-            }
-        } else {
-            // Klauwen rechts
-            for (let i = 0; i < 3; i++) {
-                gameCore.ctx.beginPath();
-                gameCore.ctx.moveTo(player.x + player.width * 0.9, player.y + player.height * 0.97);
-                gameCore.ctx.lineTo(player.x + player.width * (0.95 + i * 0.05), player.y + player.height * 1.1);
-                gameCore.ctx.lineTo(player.x + player.width * (1.0 + i * 0.05), player.y + player.height * 1.1);
-                gameCore.ctx.closePath();
-                gameCore.ctx.fill();
-            }
-        }
-        
-        // Klauw effect rond de kat
-        gameCore.ctx.strokeStyle = 'rgba(255, 0, 0, 0.3)';
-        gameCore.ctx.lineWidth = 3;
-        gameCore.ctx.beginPath();
-        gameCore.ctx.arc(
-            player.x + player.width / 2,
-            player.y + player.height / 2,
-            player.width * 0.8,
-            0, Math.PI * 2
-        );
-        gameCore.ctx.stroke();
-    }
-}
-
-// Exporteer de render functions
+// Export the render functions
 window.gameRendering = {
     drawBackground,
     drawGround,
-    drawEnemies,
     drawPlatform,
     drawTrap,
-    drawPuppy,
-    drawCollectible,
-    drawPlayer
+    drawCollectible
 };

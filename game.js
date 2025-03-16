@@ -353,11 +353,11 @@ function gameLoop() {
         });
         
         // Vijanden tekenen
-        gameRendering.drawEnemies();
+        gameCharacters.drawEnemies();
         
         // Puppy tekenen
         if (currentLevelData.puppy) {
-            gameRendering.drawPuppy(currentLevelData.puppy);
+            gameCharacters.drawPuppy(currentLevelData.puppy);
         }
         
         // Collectibles tekenen
@@ -382,11 +382,11 @@ function gameLoop() {
         if (currentLevelData.allowedAnimals && currentLevelData.allowedAnimals.length > 1) {
             window.player2.update(window.player1, currentLevelData.platforms, currentLevelData.traps, currentLevelData.collectibles);
             // Teken speler 2
-            gameRendering.drawPlayer(window.player2);
+            gameCharacters.drawPlayer(window.player2);
         }
         
         // Teken speler 1 (altijd)
-        gameRendering.drawPlayer(window.player1);
+        gameCharacters.drawPlayer(window.player1);
         
         // Game berichten
         if (gameCore.gameState.message) {

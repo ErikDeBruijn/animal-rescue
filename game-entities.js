@@ -538,11 +538,7 @@ class Player {
                         gameCore.gameState.message = "";
                     }, 2000);
                     
-                    // In multiplayer, laat de host de collectibles status updaten
-                    if (window.gameMultiplayer && gameMultiplayer.isHost && gameMultiplayer.socket) {
-                        // Stuur een onmiddellijke update om de collectibles status te synchroniseren
-                        gameMultiplayer.updateGameState();
-                    }
+                    // Multiplayer code removed - this was previously used for synchronizing collectibles
                 } else if (!currentLevelData.puppy || currentLevelData.puppy.saved || gameCore.gameState.puppySaved) {
                     // Normale collectible (ster)
                     collectibles.splice(index, 1);
@@ -700,16 +696,6 @@ function updatePuppy() {
     if (!currentLevelData.puppy) return;
     
     const puppy = currentLevelData.puppy;
-    
-    // In multiplayer modus, laat alleen de host de puppy-redding detecteren
-    // Clients ontvangen de update via game_state_update events
-    if (window.gameMultiplayer && gameMultiplayer.roomId && !gameMultiplayer.isHost) {
-        // Alleen visuele updates voor niet-host clients
-        if (!puppy.saved && !gameCore.gameState.puppySaved) {
-            puppy.offsetX = Math.sin(Date.now() / 300) * 2; // Langzaam schudden
-        }
-        return;
-    }
     
     // Als de puppy nog niet gered is
     if (!puppy.saved && !gameCore.gameState.puppySaved) {
