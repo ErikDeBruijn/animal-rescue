@@ -69,29 +69,80 @@
     <script>
         // Admin panel functionaliteit - zonder cookie check omdat de server dit nu regelt
         document.addEventListener('DOMContentLoaded', function() {
-            console.log("DOM Content geladen. Controleren op dev-mode elementen...");
             
-            // Controleer op editor link en toon resultaat
+            // Controleer op editor link
             const editorLink = document.getElementById('editor-link');
-            console.log("Editor link element gevonden?", editorLink ? "JA" : "NEE");
             
             // De admin toggle kan alleen bestaan als we in dev mode zijn, dus controleer eerst of die bestaat
             const adminToggle = document.getElementById('adminToggle');
-            console.log("Admin toggle element gevonden?", adminToggle ? "JA" : "NEE");
             
             if (adminToggle) {
-                console.log("Development mode - Admin panel beschikbaar");
-                // Alleen de eventlistener toevoegen als het element bestaat
+                // Alleen de eventlistener toevoegen als het element bestaat (DEV mode)
                 adminToggle.addEventListener('click', function() {
                     document.getElementById('adminPanel').classList.toggle('visible');
                 });
+                
+                // Maak level selector dropdown (alleen in DEV mode)
+                createLevelSelector();
             } else {
                 // In productie mode: zorg dat het admin panel verborgen blijft
                 const adminPanel = document.getElementById('adminPanel');
                 if (adminPanel) {
                     adminPanel.style.display = 'none';
                 }
-                console.log("Production mode - Admin panel niet beschikbaar");
+            }
+            
+            // Functie om level selector dropdown te maken
+            function createLevelSelector() {
+                // Maak een container voor de level selector
+                const selectorContainer = document.createElement('div');
+                selectorContainer.style.marginTop = '10px';
+                selectorContainer.style.display = 'flex';
+                selectorContainer.style.alignItems = 'center';
+                selectorContainer.style.justifyContent = 'center';
+                
+                // Maak een label
+                const label = document.createElement('label');
+                label.textContent = 'Level: ';
+                label.style.marginRight = '5px';
+                label.style.color = 'white';
+                label.style.fontWeight = 'bold';
+                
+                // Maak de dropdown
+                const levelSelector = document.createElement('select');
+                levelSelector.id = 'level-selector';
+                
+                // Toevoegen aan document
+                selectorContainer.appendChild(label);
+                selectorContainer.appendChild(levelSelector);
+                document.getElementById('adminPanel').appendChild(selectorContainer);
+                
+                // Vul de dropdown met levels
+                window.addEventListener('levelsLoaded', function() {
+                    if (window.levels) {
+                        // Leeg eerst de dropdown
+                        levelSelector.innerHTML = '';
+                        
+                        // Voeg alle levels toe
+                        window.levels.forEach((level, index) => {
+                            const option = document.createElement('option');
+                            option.value = index;
+                            option.textContent = `${index + 1}: ${level.name}`;
+                            levelSelector.appendChild(option);
+                        });
+                        
+                        // Zet op huidig level
+                        levelSelector.value = gameCore.currentLevel;
+                        
+                        // Event listener voor wanneer de selectie verandert
+                        levelSelector.addEventListener('change', function() {
+                            const levelIndex = parseInt(this.value);
+                            if (!isNaN(levelIndex) && levelIndex >= 0 && levelIndex < window.levels.length) {
+                                window.loadLevel(levelIndex);
+                            }
+                        });
+                    }
+                });
             }
         });
         

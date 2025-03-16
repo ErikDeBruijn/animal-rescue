@@ -32,7 +32,8 @@ function getLevels(GROUND_LEVEL) {    return [
         saved: false
     },
     collectibles: [
-        {x: 453, y: 266, width: 30, height: 30}
+        {x: 453, y: 266, width: 30, height: 30},
+        {x: 210, y: 217, width: 30, height: 30, type: "PEPPER"}
     ]
 },
         {
@@ -69,7 +70,7 @@ function getLevels(GROUND_LEVEL) {    return [
 },
         {
     name: "Wat is dat?",
-    allowedAnimals: ["TURTLE","UNICORN", "CAT"],
+    allowedAnimals: ["TURTLE","UNICORN","CAT"],
     startPositions: [
         {x: 50, y: 350},
         {x: 100, y: 350}
@@ -77,7 +78,7 @@ function getLevels(GROUND_LEVEL) {    return [
     platforms: [
         {x: 700, y: 297, width: 100, height: 100, type: "CLIMB"},
         {x: 305, y: 172, width: 200, height: 40, type: "WATER"},
-        {x: 109, y: 281, width: 150, height: 20, type: "NORMAL"},
+        {x: 109, y: 281, width: 150, height: 20, type: "ICE"},
         {x: 388, y: 216, width: 35, height: 180, type: "TREE"},
         {x: 219, y: 174, width: 80, height: 30, type: "CLOUD"},
         {x: 512, y: 176, width: 90, height: 35, type: "CLOUD"},
@@ -598,7 +599,8 @@ function getLevels(GROUND_LEVEL) {    return [
         {x: 552, y: 225, width: 30, height: 30},
         {x: 623, y: 218, width: 30, height: 30},
         {x: 695, y: 218, width: 30, height: 30},
-        {x: 715, y: 153, width: 30, height: 30}
+        {x: 715, y: 153, width: 30, height: 30},
+        {x: 742, y: 215, width: 30, height: 30}
     ]
 }
     ];
