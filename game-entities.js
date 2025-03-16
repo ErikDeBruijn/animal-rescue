@@ -90,56 +90,56 @@ class Player {
     }
     
     switchAnimal(otherPlayer) {
-        // Bepaal volgende diersoort in de cyclus: SQUIRREL -> TURTLE -> UNICORN -> SQUIRREL
-        let newAnimalType;
-        switch(this.animalType) {
-            case "SQUIRREL":
-                newAnimalType = "TURTLE";
-                break;
-            case "TURTLE":
-                newAnimalType = "UNICORN";
-                break;
-            case "UNICORN":
-                newAnimalType = "SQUIRREL";
-                break;
-        }
+        // Haal toegestane dieren op voor het huidige level
+        const currentLevelData = window.levels[gameCore.currentLevel];
+        const allowedAnimals = currentLevelData.allowedAnimals || ["SQUIRREL", "TURTLE", "UNICORN"];
         
-        // Als de andere speler al het gewenste dier is, sla het over en ga naar het volgende dier
-        if (otherPlayer.animalType === newAnimalType) {
-            // Ga naar het volgende dier in de cyclus
-            switch(newAnimalType) {
-                case "SQUIRREL":
-                    newAnimalType = "TURTLE";
-                    break;
-                case "TURTLE":
-                    newAnimalType = "UNICORN";
-                    break;
-                case "UNICORN":
-                    newAnimalType = "SQUIRREL";
-                    break;
+        // Bepaal gedrag op basis van het aantal beschikbare dieren
+        if (allowedAnimals.length <= 1) {
+            // Als er maar 1 diersoort is, kan er niet gewisseld worden
+            return;
+        } else if (allowedAnimals.length === 2) {
+            // Als er precies 2 diersoorten zijn, wissel tussen de 2 spelers van dier
+            // Bepaal het andere dier (welke het andere dier dan deze speler heeft)
+            const otherAnimal = allowedAnimals.find(animal => animal !== this.animalType);
+            
+            // Alleen wisselen als de andere speler een ander dier heeft
+            if (otherPlayer && otherPlayer.animalType !== this.animalType) {
+                console.log(`${this.name} wisselt van ${this.animalType} naar ${otherAnimal}`);
+                this.animalType = otherAnimal;
+                this.updateAnimalProperties();
+            }
+        } else {
+            // Als er 3 dieren zijn, gebruik het normale cyclus-gedrag
+            // Zoek de index van het huidige dier in de toegestane dieren lijst
+            let currentIndex = allowedAnimals.indexOf(this.animalType);
+            if (currentIndex === -1) {
+                // Als het huidige dier niet toegestaan is, begin met het eerste toegestane dier
+                currentIndex = 0;
             }
             
-            // Als we nu weer bij het originele dier zijn, neem dan het derde dier
-            if (newAnimalType === this.animalType) {
-                // Dit zou niet moeten gebeuren met drie dieren, maar voor de zekerheid
-                switch(newAnimalType) {
-                    case "SQUIRREL":
-                        newAnimalType = "UNICORN";
-                        break;
-                    case "TURTLE":
-                        newAnimalType = "SQUIRREL";
-                        break;
-                    case "UNICORN":
-                        newAnimalType = "TURTLE";
-                        break;
+            // Bepaal het volgende dier in de cyclus
+            let nextIndex = (currentIndex + 1) % allowedAnimals.length;
+            let newAnimalType = allowedAnimals[nextIndex];
+            
+            // Als de andere speler al het gewenste dier is, sla het over en ga naar het volgende dier
+            // Maar alleen als er meer dan 2 dieren toegestaan zijn
+            if (otherPlayer.animalType === newAnimalType && allowedAnimals.length > 2) {
+                nextIndex = (nextIndex + 1) % allowedAnimals.length;
+                newAnimalType = allowedAnimals[nextIndex];
+                
+                // Als we nu weer bij het originele dier zijn, zoek opnieuw
+                if (newAnimalType === this.animalType && allowedAnimals.length > 2) {
+                    nextIndex = (nextIndex + 1) % allowedAnimals.length;
+                    newAnimalType = allowedAnimals[nextIndex];
                 }
             }
+            
+            // Wissel naar nieuw dier
+            console.log(`${this.name} wisselt van ${this.animalType} naar ${newAnimalType}`);
+            this.animalType = newAnimalType;
+            this.updateAnimalProperties();
         }
-        
-        // Wissel naar nieuw dier
-        console.log(`${this.name} wisselt van ${this.animalType} naar ${newAnimalType}`);
-        this.animalType = newAnimalType;
-        this.updateAnimalProperties();
     }
     
     update(otherPlayer, platforms, traps, collectibles) {
@@ -625,12 +625,16 @@ function updatePuppy() {
         puppy.offsetX = Math.sin(Date.now() / 300) * 2; // Langzaam schudden
         
         // Controleer of een speler de puppy aanraakt (redt)
-        if (window.player1 && window.player2 && 
-            (window.player1.collidesWithObject(puppy) || window.player2.collidesWithObject(puppy))) {
+        const currentLevelData = window.levels[gameCore.currentLevel];
+        const hasMultiplePlayers = currentLevelData.allowedAnimals && currentLevelData.allowedAnimals.length > 1;
+        
+        // Controleer welke spelers we moeten checken op basis van het aantal beschikbare dieren
+        if (window.player1 && 
+            (window.player1.collidesWithObject(puppy) || 
+             (hasMultiplePlayers && window.player2 && window.player2.collidesWithObject(puppy)))) {
             puppy.saved = true;
             gameCore.gameState.puppySaved = true;
             gameCore.gameState.message = "Je hebt de puppy gered! Verzamel nu de ster!";
-            
             
             // Voeg een vertraging toe om het bericht te tonen
             setTimeout(() => {

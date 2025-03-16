@@ -49,36 +49,192 @@ function initializeGameWhenReady() {
     // Besturing opzetten
     gameControls.setupInputListeners();
     
-    // Haal het startlevel op uit de URL
-    gameCore.currentLevel = gameCore.getStartLevel();
+    // Initialiseer het spel
+    init();
+}
+
+// Initialiseer het spel
+function init() {
+    // Bepaal het startlevel
+    currentLevel = gameCore.getStartLevel();
+    loadLevel(currentLevel);
+
+    // Zorg dat de canvasgrootte goed is
+    // Dit wordt hier gedaan omdat we nu de level info hebben
+    resizeGameArea();
     
-    // Zorg ervoor dat het level index geldig is
-    if (gameCore.currentLevel >= levels.length) {
-        gameCore.currentLevel = 0;
+    // Start de game loop
+    gameLoop();
+    
+    // Toon beschikbare dieren in UI
+    updateAvailableAnimalsUI();
+}
+
+// Update het scherm formaat
+function resizeGameArea() {
+    // Dit kan later gebruikt worden voor responsive spel weergave
+}
+
+// Laad een level
+function loadLevel(levelIndex) {
+    // Stel het huidige level in
+    gameCore.currentLevel = levelIndex;
+    
+    // Reset level voltooide status
+    gameCore.levelCompleted = false;
+    gameCore.gameState.puppySaved = false;
+    gameCore.gameState.message = "";
+    gameCore.gameState.gameOver = false;
+
+    // Update de URL met het huidige level voor delen en refreshen
+    window.location.hash = `level=${levelIndex}`;
+    
+    // Update de editor link
+    gameCore.updateEditorLink();
+
+    // Haal level data op
+    const level = window.levels[levelIndex];
+    const startPositions = level.startPositions;
+    const allowedAnimals = level.allowedAnimals || ["SQUIRREL", "TURTLE", "UNICORN"];
+
+    // Bepaal de dieren voor de spelers
+    let player1Animal, player2Animal;
+    
+    // Kies het eerste beschikbare dier voor speler 1
+    player1Animal = allowedAnimals[0];
+    
+    // Kies een ander dier voor speler 2 indien mogelijk
+    if (allowedAnimals.length > 1) {
+        player2Animal = allowedAnimals[1];
+    } else {
+        // Als er maar één diersoort beschikbaar is, krijgen beide spelers hetzelfde dier
+        player2Animal = allowedAnimals[0];
+    }
+
+    // Maak spelers aan met hun controls en begindiertypes
+    // Bij één diersoort is er maar 1 speler
+    window.player1 = new gameEntities.Player(
+        startPositions[0].x, startPositions[0].y, 
+        gameControls.controls.player1, "Speler 1", player1Animal
+    );
+    
+    // Als er meer dan 1 diersoort beschikbaar is, maak speler 2 aan
+    if (allowedAnimals.length > 1) {
+        window.player2 = new gameEntities.Player(
+            startPositions[1].x, startPositions[1].y,
+            gameControls.controls.player2, "Speler 2", player2Animal
+        );
+    } else {
+        // Anders maken we een dummy speler die niet zichtbaar wordt gerenderd
+        window.player2 = {
+            x: -100, y: -100, // Buiten het scherm
+            width: 0, height: 0,
+            update: function() {}, // Lege update functie
+            resetLives: function() {},
+            updatePlayerInfoUI: function() {},
+            resetToStart: function() {},
+            collidesWithObject: function() { return false; }
+        };
+    }
+
+    // De globale speler variabelen zijn nu al ingesteld bij het aanmaken hierboven
+    // (window.player1 en window.player2)
+
+    // Reset levens en andere statussen voor beide spelers
+    window.player1.resetLives();
+    window.player2.resetLives();
+    
+    // Toon het level en speler info
+    document.getElementById('current-level').textContent = `Level ${levelIndex + 1}: ${level.name}`;
+    showPlayerInfo();
+    
+    // Update beschikbare dieren UI
+    updateAvailableAnimalsUI();
+}
+
+// Toon de spelerinfo
+function showPlayerInfo() {
+    const player1Info = document.getElementById('player1-animal');
+    const player2Info = document.getElementById('player2-animal');
+    
+    window.player1.updatePlayerInfoUI();
+    window.player2.updatePlayerInfoUI();
+
+    // Maak de infovakjes zichtbaar als ze nog verborgen zijn
+    document.querySelector('.player-info').style.display = 'flex';
+}
+
+// Update UI om de beschikbare dieren voor het huidige level te tonen
+function updateAvailableAnimalsUI() {
+    const currentLevelData = window.levels[gameCore.currentLevel];
+    const allowedAnimals = currentLevelData.allowedAnimals || ["SQUIRREL", "TURTLE", "UNICORN"];
+    
+    // Update player info first
+    const player2Info = document.getElementById('player2-info');
+    if (player2Info) {
+        // Toon of verberg speler 2 informatie gebaseerd op aantal toegestane dieren
+        if (allowedAnimals.length > 1) {
+            player2Info.style.display = 'block';
+        } else {
+            player2Info.style.display = 'none';
+        }
     }
     
-    // Update de Level Editor link om terug te gaan naar hetzelfde level in de editor
-    gameCore.updateEditorLink();
+    // Maak container voor beschikbare dieren als deze nog niet bestaat
+    let animalsContainer = document.getElementById('available-animals');
+    if (!animalsContainer) {
+        animalsContainer = document.createElement('div');
+        animalsContainer.id = 'available-animals';
+        animalsContainer.classList.add('available-animals');
+        document.querySelector('.player-info').appendChild(animalsContainer);
+        
+        // Voeg titel toe
+        const title = document.createElement('div');
+        title.classList.add('animals-title');
+        title.textContent = 'Beschikbare dieren:';
+        animalsContainer.appendChild(title);
+    } else {
+        // Leeg de container
+        while (animalsContainer.lastChild) {
+            animalsContainer.removeChild(animalsContainer.lastChild);
+        }
+        
+        // Voeg titel toe
+        const title = document.createElement('div');
+        title.classList.add('animals-title');
+        title.textContent = 'Beschikbare dieren:';
+        animalsContainer.appendChild(title);
+    }
     
-    // Spelers aanmaken
-    window.player1 = new gameEntities.Player(
-        levels[gameCore.currentLevel].startPositions[0].x, 
-        levels[gameCore.currentLevel].startPositions[0].y,
-        {up: 'w', left: 'a', right: 'd', down: 's', switch: 'f'},
-        "Speler 1",
-        "SQUIRREL"
-    );
+    // Voeg elk toegestaan dier toe met emoji en naam
+    allowedAnimals.forEach(animalType => {
+        const animal = gameCore.animalTypes[animalType];
+        const animalElement = document.createElement('div');
+        animalElement.classList.add('animal-icon');
+        
+        // Kies emoji op basis van diertype
+        let animalEmoji;
+        switch(animalType) {
+            case "SQUIRREL": animalEmoji = "🐿️"; break;
+            case "TURTLE": animalEmoji = "🐢"; break;
+            case "UNICORN": animalEmoji = "🦄"; break;
+        }
+        
+        animalElement.textContent = `${animalEmoji} ${animal.name}`;
+        animalsContainer.appendChild(animalElement);
+    });
     
-    window.player2 = new gameEntities.Player(
-        levels[gameCore.currentLevel].startPositions[1].x, 
-        levels[gameCore.currentLevel].startPositions[1].y,
-        {up: 'ArrowUp', left: 'ArrowLeft', right: 'ArrowRight', down: 'ArrowDown', switch: 'Shift'},
-        "Speler 2",
-        "TURTLE"
-    );
+    // Voeg instructietekst toe voor speler-modus
+    const modeText = document.createElement('div');
+    modeText.classList.add('game-mode-info');
     
-    // Game starten
-    gameLoop();
+    if (allowedAnimals.length > 1) {
+        modeText.textContent = "Modus: 2 spelers (verschillende dieren)";
+    } else {
+        modeText.textContent = "Modus: 1 speler (1 dier beschikbaar)";
+    }
+    
+    animalsContainer.appendChild(modeText);
 }
 
 // Naar volgend level gaan
@@ -88,38 +244,15 @@ function nextLevel() {
         gameCore.currentLevel = 0; // Terug naar eerste level of eindscherm tonen
     }
     
-    // Reset spelers
-    player1.animalType = "SQUIRREL";
-    player1.updateAnimalProperties();
-    player1.x = levels[gameCore.currentLevel].startPositions[0].x;
-    player1.y = levels[gameCore.currentLevel].startPositions[0].y;
-    // Reset levens van spelers alleen bij nieuw level, niet bij heropstarten hetzelfde level
-    player1.resetLives();
-    
-    player2.animalType = "TURTLE";
-    player2.updateAnimalProperties();
-    player2.x = levels[gameCore.currentLevel].startPositions[1].x;
-    player2.y = levels[gameCore.currentLevel].startPositions[1].y;
-    player2.resetLives();
-    
-    // Reset game state
-    gameCore.levelCompleted = false;
-    gameCore.gameState.message = "";
-    gameCore.gameState.puppySaved = false;
-    gameCore.gameState.gameOver = false;
-    
-    // Update de URL fragment zonder de pagina opnieuw te laden
-    window.location.hash = `level=${gameCore.currentLevel}`;
-    
-    // Update de editor link
-    gameCore.updateEditorLink();
+    // Laad het volgende level
+    loadLevel(gameCore.currentLevel);
 }
 
 // Reset het huidige level (na game over door puppy verlies)
 function resetCurrentLevel() {
     // Reset spelers
-    player1.resetToStart();
-    player2.resetToStart();
+    window.player1.resetToStart();
+    window.player2.resetToStart();
     
     // Reset puppy
     const currentLevelData = levels[gameCore.currentLevel];
@@ -195,13 +328,18 @@ function gameLoop() {
             }
         }
         
-        // Beide spelers worden lokaal bestuurd
-        player1.update(player2, currentLevelData.platforms, currentLevelData.traps, currentLevelData.collectibles);
-        player2.update(player1, currentLevelData.platforms, currentLevelData.traps, currentLevelData.collectibles);
+        // Spelers worden lokaal bestuurd
+        window.player1.update(window.player2, currentLevelData.platforms, currentLevelData.traps, currentLevelData.collectibles);
         
-        // Teken beide spelers
-        gameRendering.drawPlayer(player1);
-        gameRendering.drawPlayer(player2);
+        // Bij meer dan 1 diersoort wordt ook speler 2 bestuurd en gerenderd
+        if (currentLevelData.allowedAnimals && currentLevelData.allowedAnimals.length > 1) {
+            window.player2.update(window.player1, currentLevelData.platforms, currentLevelData.traps, currentLevelData.collectibles);
+            // Teken speler 2
+            gameRendering.drawPlayer(window.player2);
+        }
+        
+        // Teken speler 1 (altijd)
+        gameRendering.drawPlayer(window.player1);
         
         // Game berichten
         if (gameCore.gameState.message) {
