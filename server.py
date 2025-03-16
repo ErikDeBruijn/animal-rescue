@@ -3,8 +3,19 @@ from flask import Flask, request, jsonify, send_from_directory
 import os
 import re
 import json
+import uuid
+import time
+from flask_socketio import SocketIO, emit, join_room, leave_room
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'dieren-redders-secret-key'
+socketio = SocketIO(app, cors_allowed_origins="*")
+
+# Dictionary om game rooms bij te houden
+active_rooms = {}
+
+# Clients die momenteel verbonden zijn
+connected_clients = {}
 
 # Directory waar de game bestanden staan
 GAME_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -197,9 +208,422 @@ function saveLevelToServer() {
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+# Websocket endpoints voor multiplayer
+@socketio.on('connect')
+def handle_connect():
+    """Verwerk een nieuwe verbinding"""
+    client_id = request.sid
+    print(f"Client verbonden: {client_id}")
+    connected_clients[client_id] = {
+        'id': client_id,
+        'room': None,
+        'username': None,
+        'animal_type': None,
+        'ready': False,
+        'connected_at': time.time()
+    }
+    # Stuur een welkomstbericht met de client ID
+    emit('welcome', {'client_id': client_id, 'active_rooms': get_public_rooms()})
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    """Verwerk een verbroken verbinding"""
+    client_id = request.sid
+    print(f"Client verbroken: {client_id}")
+    
+    # Controleer of de client in een kamer zat
+    client_info = connected_clients.get(client_id)
+    if client_info and client_info['room']:
+        room_id = client_info['room']
+        leave_game_room(client_id, room_id)
+    
+    # Verwijder de client uit verbonden clients
+    if client_id in connected_clients:
+        del connected_clients[client_id]
+
+@socketio.on('create_room')
+def handle_create_room(data):
+    """Maak een nieuwe game kamer aan"""
+    client_id = request.sid
+    username = data.get('username', f"Speler_{client_id[:4]}")
+    level = data.get('level', 0)
+    max_players = data.get('max_players', 4)
+    is_public = data.get('is_public', True)
+    
+    # Genereer een unieke room ID
+    room_id = str(uuid.uuid4())[:8]
+    
+    # Maak de nieuwe kamer aan
+    active_rooms[room_id] = {
+        'id': room_id,
+        'name': f"{username}'s Game",
+        'host': client_id,
+        'level': level,
+        'max_players': max_players,
+        'is_public': is_public,
+        'players': {},
+        'created_at': time.time(),
+        'game_state': {
+            'current_level': level,
+            'puppy_saved': False,
+            'game_over': False,
+            'level_completed': False
+        }
+    }
+    
+    # Update de client met kamerinformatie
+    connected_clients[client_id]['room'] = room_id
+    connected_clients[client_id]['username'] = username
+    connected_clients[client_id]['animal_type'] = 'SQUIRREL'  # Default animal
+    connected_clients[client_id]['ready'] = True
+    connected_clients[client_id]['host'] = True
+    
+    # Voeg de speler toe aan de kamer
+    active_rooms[room_id]['players'][client_id] = {
+        'id': client_id,
+        'username': username,
+        'animal_type': 'SQUIRREL',
+        'ready': True,
+        'host': True,
+        'position': {'x': 50, 'y': 350},
+        'velocity': {'x': 0, 'y': 0}
+    }
+    
+    # Laat de client deelnemen aan de kamer voor socketio broadcasts
+    join_room(room_id)
+    
+    # Stuur de kamerinformatie terug naar de client
+    emit('room_created', {
+        'room_id': room_id,
+        'room_info': get_room_info(room_id)
+    })
+    
+    # Broadcast dat er een nieuwe publieke kamer beschikbaar is
+    if is_public:
+        emit('room_list_update', {'active_rooms': get_public_rooms()}, broadcast=True)
+
+@socketio.on('join_room')
+def handle_join_room(data):
+    """Verwerk een verzoek om bij een kamer aan te sluiten"""
+    client_id = request.sid
+    room_id = data.get('room_id')
+    username = data.get('username', f"Speler_{client_id[:4]}")
+    
+    # Controleer of de kamer bestaat
+    if room_id not in active_rooms:
+        emit('error', {'message': 'Deze kamer bestaat niet'})
+        return
+    
+    room = active_rooms[room_id]
+    
+    # Controleer of de kamer niet vol is
+    if len(room['players']) >= room['max_players']:
+        emit('error', {'message': 'Deze kamer is vol'})
+        return
+    
+    # Update client info
+    connected_clients[client_id]['room'] = room_id
+    connected_clients[client_id]['username'] = username
+    
+    # Kies een diersoort die nog niet in gebruik is
+    used_animals = [p['animal_type'] for p in room['players'].values()]
+    available_animals = ['SQUIRREL', 'TURTLE', 'UNICORN']
+    
+    animal_type = next((a for a in available_animals if a not in used_animals), 'SQUIRREL')
+    connected_clients[client_id]['animal_type'] = animal_type
+    
+    # Kies een startpositie
+    pos_index = len(room['players']) % 2
+    position = {'x': 50 + pos_index * 50, 'y': 350}
+    
+    # Voeg de speler toe aan de kamer
+    room['players'][client_id] = {
+        'id': client_id,
+        'username': username,
+        'animal_type': animal_type,
+        'ready': False,
+        'host': False,
+        'position': position,
+        'velocity': {'x': 0, 'y': 0}
+    }
+    
+    # Laat de client deelnemen aan de kamer voor socketio broadcasts
+    join_room(room_id)
+    
+    # Stuur de kamerinformatie terug naar de client
+    emit('room_joined', {
+        'room_id': room_id,
+        'room_info': get_room_info(room_id),
+        'player_info': room['players'][client_id]
+    })
+    
+    # Informeer andere spelers in de kamer dat er een nieuwe speler is
+    emit('player_joined', {
+        'player': room['players'][client_id]
+    }, room=room_id, include_self=False)
+
+@socketio.on('leave_room')
+def handle_leave_room(data):
+    """Verwerk een verzoek om een kamer te verlaten"""
+    client_id = request.sid
+    room_id = data.get('room_id')
+    
+    if room_id and room_id in active_rooms:
+        leave_game_room(client_id, room_id)
+        emit('room_left', {'room_id': room_id})
+
+@socketio.on('player_ready')
+def handle_player_ready(data):
+    """Verwerk een speler die aangeeft klaar te zijn om te beginnen"""
+    client_id = request.sid
+    ready = data.get('ready', True)
+    
+    client_info = connected_clients.get(client_id)
+    if not client_info or not client_info['room']:
+        return
+    
+    room_id = client_info['room']
+    if room_id in active_rooms:
+        room = active_rooms[room_id]
+        if client_id in room['players']:
+            room['players'][client_id]['ready'] = ready
+            connected_clients[client_id]['ready'] = ready
+            
+            # Broadcast de status update naar alle spelers in de kamer
+            emit('player_status_update', {
+                'player_id': client_id,
+                'ready': ready
+            }, room=room_id)
+            
+            # Controleer of alle spelers klaar zijn om te beginnen
+            all_ready = all(player['ready'] for player in room['players'].values())
+            if all_ready and len(room['players']) > 0:
+                # Start het spel als alle spelers klaar zijn
+                emit('game_starting', {'room_id': room_id, 'countdown': 3}, room=room_id)
+
+@socketio.on('update_player')
+def handle_update_player(data):
+    """Verwerk spelerupdates voor positie, snelheid, etc."""
+    client_id = request.sid
+    position = data.get('position')
+    velocity = data.get('velocity')
+    animal_type = data.get('animal_type')
+    
+    client_info = connected_clients.get(client_id)
+    if not client_info or not client_info['room']:
+        return
+    
+    room_id = client_info['room']
+    if room_id not in active_rooms:
+        return
+    
+    room = active_rooms[room_id]
+    if client_id not in room['players']:
+        return
+    
+    player = room['players'][client_id]
+    
+    # Update de speler informatie
+    if position:
+        player['position'] = position
+    if velocity:
+        player['velocity'] = velocity
+    if animal_type:
+        player['animal_type'] = animal_type
+        connected_clients[client_id]['animal_type'] = animal_type
+    
+    # Broadcast de update naar andere spelers
+    emit('player_update', {
+        'player_id': client_id,
+        'position': player['position'],
+        'velocity': player['velocity'],
+        'animal_type': player['animal_type']
+    }, room=room_id, include_self=False)
+
+@socketio.on('update_game_state')
+def handle_update_game_state(data):
+    """Verwerk updates voor de game state zoals puppy rescued, level complete, etc."""
+    client_id = request.sid
+    
+    client_info = connected_clients.get(client_id)
+    if not client_info or not client_info['room']:
+        return
+    
+    room_id = client_info['room']
+    if room_id not in active_rooms:
+        return
+    
+    room = active_rooms[room_id]
+    
+    # Controleer of dit de host is (alleen de host mag gamestate updaten)
+    if room['host'] != client_id:
+        return
+    
+    # Update de game state
+    if 'puppy_saved' in data:
+        room['game_state']['puppy_saved'] = data['puppy_saved']
+    
+    if 'game_over' in data:
+        room['game_state']['game_over'] = data['game_over']
+    
+    if 'level_completed' in data:
+        room['game_state']['level_completed'] = data['level_completed']
+    
+    if 'current_level' in data:
+        room['game_state']['current_level'] = data['current_level']
+        room['level'] = data['current_level']
+    
+    # Broadcast de gamestate update naar alle spelers
+    emit('game_state_update', room['game_state'], room=room_id)
+
+@socketio.on('get_rooms')
+def handle_get_rooms():
+    """Geef een lijst van beschikbare kamers"""
+    emit('room_list', {'active_rooms': get_public_rooms()})
+
+@socketio.on('chat_message')
+def handle_chat_message(data):
+    """Verwerk chat berichten tussen spelers"""
+    client_id = request.sid
+    message = data.get('message')
+    room_id = data.get('room_id')
+    
+    if not message or not room_id or room_id not in active_rooms:
+        return
+    
+    client_info = connected_clients.get(client_id)
+    if not client_info:
+        return
+    
+    username = client_info.get('username', f"Speler_{client_id[:4]}")
+    
+    # Broadcast het bericht naar alle spelers in de kamer
+    emit('chat_message', {
+        'sender_id': client_id,
+        'sender_name': username,
+        'message': message,
+        'timestamp': time.time()
+    }, room=room_id)
+
+# Helper functies
+def get_public_rooms():
+    """Krijg een lijst van publieke kamers die andere spelers kunnen joinen"""
+    public_rooms = []
+    for room_id, room in active_rooms.items():
+        if room['is_public'] and len(room['players']) < room['max_players']:
+            public_rooms.append({
+                'id': room_id,
+                'name': room['name'],
+                'host': room['host'],
+                'level': room['level'],
+                'player_count': len(room['players']),
+                'max_players': room['max_players']
+            })
+    return public_rooms
+
+def get_room_info(room_id):
+    """Krijg gedetailleerde informatie over een specifieke kamer"""
+    if room_id not in active_rooms:
+        return None
+    
+    room = active_rooms[room_id]
+    return {
+        'id': room['id'],
+        'name': room['name'],
+        'host': room['host'],
+        'level': room['level'],
+        'max_players': room['max_players'],
+        'is_public': room['is_public'],
+        'players': room['players'],
+        'game_state': room['game_state']
+    }
+
+def leave_game_room(client_id, room_id):
+    """Verwerk een speler die een kamer verlaat"""
+    if room_id not in active_rooms:
+        return
+    
+    room = active_rooms[room_id]
+    
+    # Verwijder de speler uit de kamer
+    if client_id in room['players']:
+        del room['players'][client_id]
+        
+        # Update de client informatie
+        if client_id in connected_clients:
+            connected_clients[client_id]['room'] = None
+        
+        # Verlaat de kamer (socketio)
+        leave_room(room_id)
+        
+        # Als de host vertrekt, kies een nieuwe host of sluit de kamer
+        if client_id == room['host']:
+            if room['players']:
+                # Kies een nieuwe host
+                new_host = next(iter(room['players']))
+                room['host'] = new_host
+                room['players'][new_host]['host'] = True
+                
+                # Informeer de spelers over de nieuwe host
+                emit('new_host', {'host_id': new_host}, room=room_id)
+            else:
+                # Sluit de kamer als er geen spelers meer zijn
+                del active_rooms[room_id]
+                emit('room_list_update', {'active_rooms': get_public_rooms()}, broadcast=True)
+                return
+        
+        # Informeer andere spelers dat deze speler is vertrokken
+        emit('player_left', {'player_id': client_id}, room=room_id)
+        
+        # Update de publieke kamer lijst als dit een publieke kamer is
+        if room['is_public']:
+            emit('room_list_update', {'active_rooms': get_public_rooms()}, broadcast=True)
+
+# Cleanup taak die draait als een thread om inactieve kamers op te ruimen
+def cleanup_inactive_rooms():
+    """Verwijder kamers die inactief zijn (geen spelers of te lang inactief)"""
+    while True:
+        current_time = time.time()
+        rooms_to_remove = []
+        
+        for room_id, room in active_rooms.items():
+            # Verwijder kamers zonder spelers die ouder zijn dan 5 minuten
+            if not room['players'] and (current_time - room['created_at']) > 300:
+                rooms_to_remove.append(room_id)
+        
+        # Verwijder de inactieve kamers
+        for room_id in rooms_to_remove:
+            del active_rooms[room_id]
+        
+        # Als er kamers zijn verwijderd, update de kamerlijst
+        if rooms_to_remove:
+            socketio.emit('room_list_update', {'active_rooms': get_public_rooms()}, broadcast=True)
+        
+        # Wacht 60 seconden voor de volgende check
+        time.sleep(60)
+
 if __name__ == '__main__':
-    ip = '10.1.1.236'
-    print(f"Starting Dieren Redders game server on http://{ip}:5000")
-    print(f"Level editor available at http://{ip}:5000/editor")
-    print("Om toegang vanaf je lokale netwerk toe te staan, pas de host aan naar je lokale IP adres")
-    app.run(host=ip, port=5000, debug=True)
+    import threading
+    
+    # Start de cleanup thread
+    cleanup_thread = threading.Thread(target=cleanup_inactive_rooms, daemon=True)
+    cleanup_thread.start()
+    
+    # Bepaal het lokale IP adres automatisch
+    import socket
+    hostname = socket.gethostname()
+    try:
+        ip = socket.gethostbyname(hostname)
+    except:
+        ip = '127.0.0.1'  # Fallback op localhost
+    
+    # Gebruik een andere poort (5050 in plaats van 5000)
+    port = 5050
+    
+    print(f"Starting Dieren Redders multiplayer game server on http://{ip}:{port}")
+    print(f"Level editor available at http://{ip}:{port}/editor")
+    print(f"Spelers in hetzelfde netwerk kunnen verbinden via dit IP adres")
+    print(f"Je kunt ook altijd localhost gebruiken: http://localhost:{port}")
+    
+    # Start de socketio server met de optie om CORS te negeren
+    socketio.run(app, host='0.0.0.0', port=port, debug=True, allow_unsafe_werkzeug=True)
