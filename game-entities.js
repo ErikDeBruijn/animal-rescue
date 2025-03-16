@@ -296,6 +296,53 @@ class Player {
                         // Andere dieren kunnen niet zwemmen
                         this.resetToStart();
                     }
+                } else if (platform.type === "TRAMPOLINE") {
+                    // Trampoline platform logica
+                    if (this.velY > 0 && 
+                        this.y + this.height < platform.y + 15 && 
+                        this.y + this.height > platform.y - 10) {
+                        
+                        // Controleer of de speler horizontaal binnen het platform is
+                        if (this.x + this.width * 0.3 < platform.x + platform.width &&
+                            this.x + this.width * 0.7 > platform.x) {
+                            
+                            // Initialiseer trampolinekracht als die nog niet bestaat
+                            if (platform.springForce === undefined) {
+                                platform.springForce = 0;
+                                platform.maxSpringForce = 15;
+                                platform.compressed = false;
+                            }
+                            
+                            // Als de speler pijltje-omlaag indrukt, compress de trampoline
+                            if (gameControls.keys[this.controls.down] || gameControls.keys[this.controls.down.toLowerCase()]) {
+                                platform.compressed = true;
+                                // Verhoog de springkracht wanneer trampoline wordt ingedrukt
+                                platform.springForce += 0.5;
+                                if (platform.springForce > platform.maxSpringForce) {
+                                    platform.springForce = platform.maxSpringForce;
+                                }
+                                
+                                // Plaats speler op het platform en beweeg licht omlaag om compressie te tonen
+                                this.y = platform.y - this.height + 5;
+                                this.velY = 0;
+                                this.onGround = true;
+                            } else {
+                                // De speler laat de pijltje-omlaag los, spring omhoog!
+                                if (platform.compressed) {
+                                    // Gebruik de opgeslagen springkracht voor de sprong
+                                    this.velY = -platform.springForce;
+                                    
+                                    // Reset de springkracht na gebruik
+                                    platform.springForce = 0;
+                                    platform.compressed = false;
+                                } else {
+                                    // Normale bouncing zonder compressie
+                                    this.velY = Math.min(-this.velY * 0.7, -5);
+                                }
+                                this.onGround = false;
+                            }
+                        }
+                    }
                 } else if (platform.type === "CLOUD") {
                     // Alleen de eenhoorn kan op wolken staan
                     if (this.animalType === "UNICORN") {
