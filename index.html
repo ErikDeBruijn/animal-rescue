@@ -144,7 +144,9 @@
             <p>🐿️ Eekhoorn: Kan hoog springen en in bomen klimmen</p>
             <p>🐢 Schildpad: Kan zwemmen door water</p>
             <p>🦄 Eenhoorn: Kan vliegen (met omhoog-toets) en kan op wolkenplatforms staan</p>
-            <p><strong>Pas op voor:</strong> 🦁 Leeuwen en 🐉 Draken - bij aanraking ga je dood!</p>
+            <p>🔴 Trampolines: Druk pijltje-omlaag in om op te laden en hoger te springen!</p>
+            <p><strong>Pas op voor:</strong> 🦁 Leeuwen en 🐉 Draken - bij aanraking ga je dood! Draken spuwen vuur aan het einde van hun patrol.</p>
+            <p><strong>Verzamel items:</strong> ⭐ Sterren om het level te voltooien, 🌶️ Pepertjes om tijdelijk vuur te kunnen spuwen</p>
             <p><strong>Missie:</strong> 🐶 Red de puppy van de vijanden voordat je de ster verzamelt!</p>
         </div>
     </div>
@@ -174,14 +176,14 @@
         <button class="test-button" id="testAllButton">Voer Alle Tests Uit</button>
     </div>
     
+    <!-- Laad de game modules in de juiste volgorde voor afhankelijkheden -->
     <script src="levels.js"></script>
     <script src="game-core.js"></script>
     <script src="game-controls.js"></script>
     <script src="game-entities.js"></script>
     <script src="game-rendering.js"></script>
-    <!-- Socket.IO client library -->
-    <script src="https://cdn.socket.io/4.6.0/socket.io.min.js" crossorigin="anonymous"></script>
-    <script src="game-multiplayer.js"></script>
+
+    <!-- Laad de hoofdgame code en testen als laatste -->
     <script src="game.js"></script>
     <script src="tests-automated.js"></script>
     

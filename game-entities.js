@@ -13,6 +13,9 @@ class Player {
         this.name = name;
         this.animalType = defaultAnimal;
         this.canSwitch = true;
+        this.canBreatheFire = false;
+        this.fireBreathTimer = 0;
+        this.facingRight = true; // Voor de richting van vuurspuwen
         
         // Levens-systeem
         this.lives = 3;
@@ -155,6 +158,7 @@ class Player {
             if (this.velX < -this.speed) {
                 this.velX = -this.speed;
             }
+            this.facingRight = false; // Speler kijkt naar links
         } else if (gameControls.keys[this.controls.right] || gameControls.keys[this.controls.right.toLowerCase()]) {
             // Geleidelijke versnelling naar rechts (positieve x)
             this.velX += acceleration;
@@ -162,6 +166,7 @@ class Player {
             if (this.velX > this.speed) {
                 this.velX = this.speed;
             }
+            this.facingRight = true; // Speler kijkt naar rechts
         } else {
             // Geleidelijk vertragen als er geen toetsen worden ingedrukt (wrijving)
             this.velX *= friction;
@@ -306,6 +311,53 @@ class Player {
                         // Andere dieren kunnen niet zwemmen
                         this.loseLife();
                     }
+                } else if (platform.type === "TRAMPOLINE") {
+                    // Trampoline platform logica
+                    if (this.velY > 0 && 
+                        this.y + this.height < platform.y + 15 && 
+                        this.y + this.height > platform.y - 10) {
+                        
+                        // Controleer of de speler horizontaal binnen het platform is
+                        if (this.x + this.width * 0.3 < platform.x + platform.width &&
+                            this.x + this.width * 0.7 > platform.x) {
+                            
+                            // Initialiseer trampolinekracht als die nog niet bestaat
+                            if (platform.springForce === undefined) {
+                                platform.springForce = 0;
+                                platform.maxSpringForce = 15;
+                                platform.compressed = false;
+                            }
+                            
+                            // Als de speler pijltje-omlaag indrukt, compress de trampoline
+                            if (gameControls.keys[this.controls.down] || gameControls.keys[this.controls.down.toLowerCase()]) {
+                                platform.compressed = true;
+                                // Verhoog de springkracht wanneer trampoline wordt ingedrukt
+                                platform.springForce += 0.5;
+                                if (platform.springForce > platform.maxSpringForce) {
+                                    platform.springForce = platform.maxSpringForce;
+                                }
+                                
+                                // Plaats speler op het platform en beweeg licht omlaag om compressie te tonen
+                                this.y = platform.y - this.height + 5;
+                                this.velY = 0;
+                                this.onGround = true;
+                            } else {
+                                // De speler laat de pijltje-omlaag los, spring omhoog!
+                                if (platform.compressed) {
+                                    // Gebruik de opgeslagen springkracht voor de sprong
+                                    this.velY = -platform.springForce;
+                                    
+                                    // Reset de springkracht na gebruik
+                                    platform.springForce = 0;
+                                    platform.compressed = false;
+                                } else {
+                                    // Normale bouncing zonder compressie
+                                    this.velY = Math.min(-this.velY * 0.7, -5);
+                                }
+                                this.onGround = false;
+                            }
+                        }
+                    }
                 } else if (platform.type === "CLOUD") {
                     // Alleen de eenhoorn kan op wolken staan
                     if (this.animalType === "UNICORN") {
@@ -405,13 +457,42 @@ class Player {
             }
         });
         
+        // Update vuurspuwen status als de speler een pepertje heeft gegeten
+        if (this.canBreatheFire) {
+            // Verlaag de timer en schakel vuurspuwen uit als de tijd voorbij is
+            this.fireBreathTimer--;
+            if (this.fireBreathTimer <= 0) {
+                this.canBreatheFire = false;
+            }
+        }
+        
         // Collectibles verzamelen
         
         collectibles.forEach((collectible, index) => {
             if (this.collidesWithObject(collectible)) {
                 // Alleen verzamelen als de puppy is gered in het level
                 const currentLevelData = window.levels[gameCore.currentLevel];
-                if (!currentLevelData.puppy || currentLevelData.puppy.saved || gameCore.gameState.puppySaved) {
+                
+                // Check of dit een pepertje is
+                if (collectible.type === "PEPPER") {
+                    // Verzamel het pepertje en activeer vuurspuwen
+                    collectibles.splice(index, 1);
+                    this.canBreatheFire = true;
+                    this.fireBreathTimer = 300; // 5 seconden vuurspuwen (300 frames)
+                    gameCore.gameState.message = "Vuur! Je kunt nu even vuur spuwen!";
+                    
+                    // Voeg een vertraging toe om het bericht te tonen
+                    setTimeout(() => {
+                        gameCore.gameState.message = "";
+                    }, 2000);
+                    
+                    // In multiplayer, laat de host de collectibles status updaten
+                    if (window.gameMultiplayer && gameMultiplayer.isHost && gameMultiplayer.socket) {
+                        // Stuur een onmiddellijke update om de collectibles status te synchroniseren
+                        gameMultiplayer.updateGameState();
+                    }
+                } else if (!currentLevelData.puppy || currentLevelData.puppy.saved || gameCore.gameState.puppySaved) {
+                    // Normale collectible (ster)
                     collectibles.splice(index, 1);
                     // Controleer of alle collectibles verzameld zijn
                     if (collectibles.length === 0) {
@@ -596,6 +677,13 @@ function updateEnemies(players) {
             enemy.onGround = false; // Of de vijand op de grond/platform staat
         }
         
+        // Initialiseer vuurspuwen voor draken
+        if (enemy.type === "DRAGON" && enemy.fireBreathingTimer === undefined) {
+            enemy.fireBreathingTimer = 0;
+            enemy.fireBreathing = false;
+            enemy.fireBreathCooldown = 0;
+        }
+        
         // Als deze vijand een patrolDistance heeft, update zijn positie
         if (enemy.patrolDistance > 0) {
             // Initialiseer bewegingsrichting en startpositie als die er nog niet zijn
@@ -699,9 +787,23 @@ function updateEnemies(players) {
                 if (enemy.x > enemy.startX + enemy.patrolDistance) {
                     enemy.direction = -1; // Draai om en ga naar links
                     enemy.x = enemy.startX + enemy.patrolDistance; // Zorg dat hij niet te ver gaat
+                    
+                    // Draak vuur aan het einde van de patrol
+                    if (enemy.type === "DRAGON" && enemy.fireBreathCooldown <= 0) {
+                        enemy.fireBreathing = true;
+                        enemy.fireBreathingTimer = 60; // Ongeveer 1 seconde vuur (60 frames)
+                        enemy.fireBreathCooldown = 180; // Ongeveer 3 seconden cooldown
+                    }
                 } else if (enemy.x < enemy.startX) {
                     enemy.direction = 1; // Draai om en ga naar rechts
                     enemy.x = enemy.startX; // Zorg dat hij niet te ver gaat
+                    
+                    // Draak vuur aan het einde van de patrol
+                    if (enemy.type === "DRAGON" && enemy.fireBreathCooldown <= 0) {
+                        enemy.fireBreathing = true;
+                        enemy.fireBreathingTimer = 60; // Ongeveer 1 seconde vuur (60 frames)
+                        enemy.fireBreathCooldown = 180; // Ongeveer 3 seconden cooldown
+                    }
                 }
             }
             
@@ -718,6 +820,20 @@ function updateEnemies(players) {
             
             // Reset grondstatus
             enemy.onGround = false;
+            
+            // Update vuurspuwen timers voor draak
+            if (enemy.type === "DRAGON") {
+                if (enemy.fireBreathingTimer > 0) {
+                    enemy.fireBreathingTimer--;
+                    if (enemy.fireBreathingTimer <= 0) {
+                        enemy.fireBreathing = false;
+                    }
+                }
+                
+                if (enemy.fireBreathCooldown > 0) {
+                    enemy.fireBreathCooldown--;
+                }
+            }
             
             // Controleer grondcollisie
             if (enemy.y + enemy.height >= gameCore.GROUND_LEVEL) {
