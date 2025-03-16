@@ -12,9 +12,15 @@ from pathlib import Path
 from flask_socketio import SocketIO, emit, join_room, leave_room
 
 # Configureer logging
+LOG_FILE = 'server.log'
 logging.basicConfig(level=logging.INFO, 
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+# Voeg een file handler toe
+file_handler = logging.FileHandler(LOG_FILE)
+file_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+logger.addHandler(file_handler)
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'dieren-redders-secret-key'
@@ -725,16 +731,22 @@ def file_monitor_thread():
         try:
             if check_for_file_changes():
                 # Stuur een bericht naar alle clients
-                socketio.emit('reload_needed', {
-                    'message': 'Er zijn updates beschikbaar. Het spel moet opnieuw geladen worden.',
-                    'timestamp': time.time()
-                }, broadcast=True)
-                logger.info("Reload signal sent to all clients")
+                try:
+                    logger.info("Sending reload signal to all clients")
+                    socketio.emit('reload_needed', {
+                        'message': 'Er zijn updates beschikbaar. Het spel moet opnieuw geladen worden.',
+                        'timestamp': time.time()
+                    })
+                    logger.info("Reload signal sent successfully")
+                except Exception as emit_error:
+                    logger.error(f"Error sending reload signal: {str(emit_error)}")
             
             # Wacht 5 seconden voor de volgende check
             time.sleep(5)
         except Exception as e:
             logger.error(f"Error in file monitor thread: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
             time.sleep(10)  # Wacht langer bij een fout
 
 def run_server_with_auto_reload():
