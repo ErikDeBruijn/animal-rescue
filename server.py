@@ -70,6 +70,61 @@ def get_levels():
             return jsonify({'success': True, 'content': content})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
+        
+@app.route('/api/levels/<int:level_index>', methods=['DELETE'])
+def delete_level(level_index):
+    """Verwijder een level"""
+    try:
+        logger.info(f"Verzoek om level {level_index} te verwijderen")
+        
+        # Lees het huidige levels.js bestand
+        with open(LEVELS_FILE, 'r', encoding='utf-8') as f:
+            current_content = f.read()
+        
+        # Maak een backup van het bestaande bestand
+        with open(f"{LEVELS_FILE}.bak", 'w', encoding='utf-8') as f:
+            f.write(current_content)
+        
+        # Extract alle levels
+        match = re.search(r'\s*return\s*\[\s*([\s\S]*?)\s*\];', current_content)
+        if not match:
+            return jsonify({'success': False, 'error': 'Could not find levels array'}), 500
+        
+        levels_content = match.group(1)
+        
+        # Split op de accolades om levels te scheiden
+        level_pattern = re.compile(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}')
+        levels = [m.group(0) for m in level_pattern.finditer(levels_content)]
+        
+        # Controleer of de index geldig is
+        if level_index < 0 or level_index >= len(levels):
+            return jsonify({'success': False, 'error': f'Level index {level_index} is out of range (max: {len(levels)-1})'}), 400
+        
+        # Verwijder het level
+        deleted_level = levels.pop(level_index)
+        
+        # Bouw de nieuwe inhoud op
+        if levels:
+            levels_string = ',\n        '.join(levels)
+            new_content = re.sub(r'\s*return\s*\[\s*[\s\S]*?\s*\];', 
+                            f'    return [\n        {levels_string}\n    ];', 
+                            current_content)
+        else:
+            # Als er geen levels meer zijn, maak een lege array
+            new_content = re.sub(r'\s*return\s*\[\s*[\s\S]*?\s*\];', 
+                            '    return [];\n', 
+                            current_content)
+        
+        # Schrijf de nieuwe inhoud naar het bestand
+        with open(LEVELS_FILE, 'w', encoding='utf-8') as f:
+            f.write(new_content)
+        
+        logger.info(f"Level {level_index} succesvol verwijderd!")
+        return jsonify({'success': True})
+    except Exception as e:
+        import traceback
+        logger.error(traceback.format_exc())
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/levels', methods=['POST'])
 def save_levels():

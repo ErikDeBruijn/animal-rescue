@@ -94,6 +94,9 @@ function initEditor() {
     updateObjectList();
     updatePropertiesPanel();
     updatePlayButton(); // Initialiseer de speel-knop
+    
+    // Initialiseer de verwijderknop status
+    updateDeleteButton();
 }
 
 // Vul de level selector met alle beschikbare levels
@@ -161,7 +164,7 @@ function loadLevel(levelIndex) {
     updateObjectList();
 }
 
-// Update de "Speel Dit Level" knop met de correcte link naar het huidige level
+// Update de UI knoppen op basis van het huidige level
 function updatePlayButton() {
     const playBtn = document.getElementById('play-level-btn');
     
@@ -176,6 +179,22 @@ function updatePlayButton() {
         const displayLevelNum = Number(editorState.currentLevel) + 1;
         playBtn.textContent = `Speel Level ${displayLevelNum}`;
         playBtn.disabled = false;
+    }
+}
+
+// Update de status van de verwijder knop
+function updateDeleteButton() {
+    const deleteBtn = document.getElementById('delete-level-btn');
+    
+    if (!deleteBtn) return; // Veiligheidscontrole
+    
+    // Verberg de verwijderoptie voor nieuwe levels
+    if (editorState.currentLevel === 'new') {
+        deleteBtn.disabled = true;
+        deleteBtn.style.opacity = '0.5';
+    } else {
+        deleteBtn.disabled = false;
+        deleteBtn.style.opacity = '1';
     }
 }
 
@@ -231,6 +250,9 @@ function setupEventListeners() {
     document.getElementById('level-select').addEventListener('change', function(e) {
         loadLevel(e.target.value);
         // updatePlayButton wordt al aangeroepen in loadLevel functie
+        
+        // Update verwijderknop status
+        updateDeleteButton();
     });
     
     // Nieuwe level knop
@@ -244,10 +266,110 @@ function setupEventListeners() {
         saveLevelToServer();
     });
     
+    // Verwijder level knop
+    document.getElementById('delete-level-btn').addEventListener('click', function() {
+        // Toon alleen delete optie voor bestaande levels, niet voor nieuwe
+        if (editorState.currentLevel === 'new') {
+            alert('Je kunt een nieuw level niet verwijderen. Sla het eerst op.');
+            return;
+        }
+        
+        // Toon de bevestigingsdialog
+        showDeleteConfirmation();
+    });
+    
+    // Bevestigingsdialog handlers
+    document.getElementById('cancel-delete-btn').addEventListener('click', function() {
+        hideDeleteConfirmation();
+    });
+    
+    document.getElementById('confirm-delete-btn').addEventListener('click', function() {
+        deleteLevelFromServer();
+    });
+    
     // Speel level knop
     document.getElementById('play-level-btn').addEventListener('click', function() {
         playCurrentLevel();
     });
+    
+    // Helper functies voor de bevestigingsdialog
+    function showDeleteConfirmation() {
+        const dialog = document.getElementById('delete-confirmation-dialog');
+        dialog.style.display = 'flex';
+        
+        // Toon het level nummer in de bevestigingstekst
+        const displayLevelNum = Number(editorState.currentLevel) + 1;
+        const confirmText = document.querySelector('#delete-confirmation-dialog p');
+        confirmText.textContent = `Weet je zeker dat je Level ${displayLevelNum} wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.`;
+    }
+    
+    function hideDeleteConfirmation() {
+        const dialog = document.getElementById('delete-confirmation-dialog');
+        dialog.style.display = 'none';
+    }
+    
+    // Functie om een level te verwijderen
+    function deleteLevelFromServer() {
+        const levelIndex = editorState.currentLevel;
+        
+        // Toon spinner of laadtekst
+        const deleteBtn = document.getElementById('delete-level-btn');
+        const originalText = deleteBtn.textContent;
+        deleteBtn.textContent = "Verwijderen...";
+        deleteBtn.disabled = true;
+        
+        // Stuur het verwijderverzoek naar de server
+        fetch(`/api/levels/${levelIndex}`, {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Ververs de lijst met levels
+                const levels = getLevels(GROUND_LEVEL);
+                populateLevelSelector(levels);
+                
+                // Als het level dat we verwijderden de laatste was, ga naar het nieuwe laatste level
+                if (levelIndex >= levels.length) {
+                    if (levels.length > 0) {
+                        // Als er nog levels over zijn, ga naar het laatste
+                        editorState.currentLevel = levels.length - 1;
+                    } else {
+                        // Als er geen levels meer over zijn, maak een nieuw level
+                        editorState.currentLevel = 'new';
+                    }
+                }
+                
+                // Update de dropdown
+                const levelSelect = document.getElementById('level-select');
+                levelSelect.value = editorState.currentLevel;
+                
+                // Laad het nieuwe level
+                loadLevel(editorState.currentLevel);
+                
+                // Update knoppen
+                updatePlayButton();
+                updateDeleteButton();
+                
+                // Verberg de bevestigingsdialog
+                hideDeleteConfirmation();
+                
+                alert('Level succesvol verwijderd!');
+            } else {
+                alert('Fout bij het verwijderen van het level: ' + data.error);
+            }
+            
+            // Reset button
+            deleteBtn.textContent = originalText;
+            deleteBtn.disabled = false;
+        })
+        .catch((error) => {
+            alert('Fout bij het verwijderen van het level: ' + error);
+            deleteBtn.textContent = originalText;
+            deleteBtn.disabled = false;
+            hideDeleteConfirmation();
+        });
+    }
     
     // Functie om levels op te slaan naar de server
     function saveLevelToServer() {
@@ -309,8 +431,9 @@ function setupEventListeners() {
                     editorState.tempNewLevelIndex = -1;
                 }
                 
-                // Update de "Speel Dit Level" knop
+                // Update de UI knoppen
                 updatePlayButton();
+                updateDeleteButton();
                 
                 alert('Level succesvol opgeslagen!');
             } else {
