@@ -349,7 +349,10 @@ class Player {
         platforms.forEach(platform => {
             if (this.collidesWithPlatform(platform)) {
                 // Collision handling afhankelijk van diersoort
-                if (platform.type === "WATER") {
+                if (platform.type === "LASER") {
+                    // Laser platforms are deadly for all animals
+                    this.loseLife();
+                } else if (platform.type === "WATER") {
                     if (this.animalType === "TURTLE") {
                         // Schildpad kan zwemmen
                         this.velY *= 0.5; // Langzamer vallen in water

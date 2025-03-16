@@ -285,6 +285,42 @@ function drawPlatform(platform) {
             gameCore.ctx.arc(platform.x + platform.width / 2 + 15, platform.y - leafSize / 2 - 5, leafSize / 3, 0, Math.PI * 2);
             gameCore.ctx.fill();
             break;
+        case "LASER":
+            // Draw the laser beam - a deadly horizontal platform
+            const laserTime = Date.now() / 200; // Fast animation
+            
+            // Container for the laser (dark metallic frame)
+            gameCore.ctx.fillStyle = '#333333';
+            gameCore.ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+            
+            // Inner glow effect (varies with time)
+            const glowIntensity = 0.5 + 0.5 * Math.sin(laserTime);
+            
+            // Core of the laser beam (bright red)
+            gameCore.ctx.fillStyle = `rgba(255, 0, 0, ${glowIntensity})`;
+            gameCore.ctx.fillRect(platform.x + 2, platform.y + 2, platform.width - 4, platform.height - 4);
+            
+            // White hot center
+            gameCore.ctx.fillStyle = `rgba(255, 255, 255, ${glowIntensity * 0.8})`;
+            gameCore.ctx.fillRect(platform.x + 4, platform.y + platform.height/2 - 2, platform.width - 8, 4);
+            
+            // Add warning stripes on the sides
+            gameCore.ctx.fillStyle = '#000000';
+            
+            // Left warning stripes
+            for (let i = 0; i < platform.height; i += 10) {
+                if (i % 20 < 10) {
+                    gameCore.ctx.fillRect(platform.x, platform.y + i, 5, 5);
+                }
+            }
+            
+            // Right warning stripes
+            for (let i = 0; i < platform.height; i += 10) {
+                if (i % 20 < 10) {
+                    gameCore.ctx.fillRect(platform.x + platform.width - 5, platform.y + i, 5, 5);
+                }
+            }
+            break;
     }
 }
 

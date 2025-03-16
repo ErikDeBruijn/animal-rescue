@@ -38,7 +38,8 @@ const objectColors = {
         TREE: '#8B4513',    // Bruin voor bomen
         CLOUD: '#ffffff',   // Wit voor wolken
         CLIMB: '#d3a87d',   // Lichter bruin voor klimoppervlakken
-        TRAMPOLINE: '#ff4d4d' // Rood voor trampolines
+        TRAMPOLINE: '#ff4d4d', // Rood voor trampolines
+        LASER: '#ff0000'    // Rood voor lasers (deadly platform)
     },
     enemy: {
         LION: '#ff9800',    // Oranje voor leeuwen
@@ -1690,6 +1691,17 @@ function renderEditor() {
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
+    // Show warning message when laser platform type is selected
+    if (editorState.selectedTool === 'place' && 
+        editorState.selectedObjectType === 'platform' && 
+        document.getElementById('platform-type').value === 'LASER') {
+        ctx.fillStyle = '#ff0000';
+        ctx.font = '14px Comic Sans MS';
+        ctx.textAlign = 'center';
+        ctx.fillText('⚠️ Let op: Laser platforms zijn dodelijk voor alle dieren! ⚠️', canvas.width/2, 30);
+        ctx.textAlign = 'left'; // Reset text alignment
+    }
+    
     // Teken de achtergrond (gras)
     ctx.fillStyle = '#45882f';
     ctx.fillRect(0, GROUND_LEVEL, canvas.width, canvas.height - GROUND_LEVEL);
@@ -1909,6 +1921,36 @@ function drawPlatform(platform) {
             ctx.moveTo(x, platform.y + platform.height);
             ctx.lineTo(x, platform.y + platform.height - platform.height * Math.random() * 0.5);
             ctx.stroke();
+        }
+    } else if (platform.type === 'LASER') {
+        // Draw the laser beam - a deadly horizontal platform
+        // Container for the laser (dark metallic frame)
+        ctx.fillStyle = '#333333';
+        ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+        
+        // Core of the laser beam (bright red)
+        ctx.fillStyle = 'rgba(255, 0, 0, 0.9)';
+        ctx.fillRect(platform.x + 2, platform.y + 2, platform.width - 4, platform.height - 4);
+        
+        // White hot center
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.fillRect(platform.x + 4, platform.y + platform.height/2 - 2, platform.width - 8, 4);
+        
+        // Add warning stripes on the sides
+        ctx.fillStyle = '#000000';
+        
+        // Left warning stripes
+        for (let i = 0; i < platform.height; i += 10) {
+            if (i % 20 < 10) {
+                ctx.fillRect(platform.x, platform.y + i, 5, 5);
+            }
+        }
+        
+        // Right warning stripes
+        for (let i = 0; i < platform.height; i += 10) {
+            if (i % 20 < 10) {
+                ctx.fillRect(platform.x + platform.width - 5, platform.y + i, 5, 5);
+            }
         }
     } else if (platform.type === 'TRAMPOLINE') {
         // Teken trampoline
