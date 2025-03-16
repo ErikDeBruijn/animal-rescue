@@ -13,6 +13,9 @@ class Player {
         this.name = name;
         this.animalType = defaultAnimal;
         this.canSwitch = true;
+        this.canBreatheFire = false;
+        this.fireBreathTimer = 0;
+        this.facingRight = true; // Voor de richting van vuurspuwen
         
         // Properties die afhankelijk zijn van diersoort
         this.updateAnimalProperties();
@@ -145,6 +148,7 @@ class Player {
             if (this.velX < -this.speed) {
                 this.velX = -this.speed;
             }
+            this.facingRight = false; // Speler kijkt naar links
         } else if (gameControls.keys[this.controls.right] || gameControls.keys[this.controls.right.toLowerCase()]) {
             // Geleidelijke versnelling naar rechts (positieve x)
             this.velX += acceleration;
@@ -152,6 +156,7 @@ class Player {
             if (this.velX > this.speed) {
                 this.velX = this.speed;
             }
+            this.facingRight = true; // Speler kijkt naar rechts
         } else {
             // Geleidelijk vertragen als er geen toetsen worden ingedrukt (wrijving)
             this.velX *= friction;
@@ -395,6 +400,15 @@ class Player {
             }
         });
         
+        // Update vuurspuwen status als de speler een pepertje heeft gegeten
+        if (this.canBreatheFire) {
+            // Verlaag de timer en schakel vuurspuwen uit als de tijd voorbij is
+            this.fireBreathTimer--;
+            if (this.fireBreathTimer <= 0) {
+                this.canBreatheFire = false;
+            }
+        }
+        
         // Collectibles verzamelen
         // In multiplayer modus, laat alleen de host collectibles verzamelen
         // Clients krijgen updates via game_state_update events
@@ -407,7 +421,27 @@ class Player {
             if (this.collidesWithObject(collectible)) {
                 // Alleen verzamelen als de puppy is gered in het level
                 const currentLevelData = window.levels[gameCore.currentLevel];
-                if (!currentLevelData.puppy || currentLevelData.puppy.saved || gameCore.gameState.puppySaved) {
+                
+                // Check of dit een pepertje is
+                if (collectible.type === "PEPPER") {
+                    // Verzamel het pepertje en activeer vuurspuwen
+                    collectibles.splice(index, 1);
+                    this.canBreatheFire = true;
+                    this.fireBreathTimer = 300; // 5 seconden vuurspuwen (300 frames)
+                    gameCore.gameState.message = "Vuur! Je kunt nu even vuur spuwen!";
+                    
+                    // Voeg een vertraging toe om het bericht te tonen
+                    setTimeout(() => {
+                        gameCore.gameState.message = "";
+                    }, 2000);
+                    
+                    // In multiplayer, laat de host de collectibles status updaten
+                    if (window.gameMultiplayer && gameMultiplayer.isHost && gameMultiplayer.socket) {
+                        // Stuur een onmiddellijke update om de collectibles status te synchroniseren
+                        gameMultiplayer.updateGameState();
+                    }
+                } else if (!currentLevelData.puppy || currentLevelData.puppy.saved || gameCore.gameState.puppySaved) {
+                    // Normale collectible (ster)
                     collectibles.splice(index, 1);
                     // Controleer of alle collectibles verzameld zijn
                     if (collectibles.length === 0) {
@@ -554,6 +588,13 @@ function updateEnemies(players) {
             enemy.onGround = false; // Of de vijand op de grond/platform staat
         }
         
+        // Initialiseer vuurspuwen voor draken
+        if (enemy.type === "DRAGON" && enemy.fireBreathingTimer === undefined) {
+            enemy.fireBreathingTimer = 0;
+            enemy.fireBreathing = false;
+            enemy.fireBreathCooldown = 0;
+        }
+        
         // Als deze vijand een patrolDistance heeft, update zijn positie
         if (enemy.patrolDistance > 0) {
             // Initialiseer bewegingsrichting en startpositie als die er nog niet zijn
@@ -657,9 +698,23 @@ function updateEnemies(players) {
                 if (enemy.x > enemy.startX + enemy.patrolDistance) {
                     enemy.direction = -1; // Draai om en ga naar links
                     enemy.x = enemy.startX + enemy.patrolDistance; // Zorg dat hij niet te ver gaat
+                    
+                    // Draak vuur aan het einde van de patrol
+                    if (enemy.type === "DRAGON" && enemy.fireBreathCooldown <= 0) {
+                        enemy.fireBreathing = true;
+                        enemy.fireBreathingTimer = 60; // Ongeveer 1 seconde vuur (60 frames)
+                        enemy.fireBreathCooldown = 180; // Ongeveer 3 seconden cooldown
+                    }
                 } else if (enemy.x < enemy.startX) {
                     enemy.direction = 1; // Draai om en ga naar rechts
                     enemy.x = enemy.startX; // Zorg dat hij niet te ver gaat
+                    
+                    // Draak vuur aan het einde van de patrol
+                    if (enemy.type === "DRAGON" && enemy.fireBreathCooldown <= 0) {
+                        enemy.fireBreathing = true;
+                        enemy.fireBreathingTimer = 60; // Ongeveer 1 seconde vuur (60 frames)
+                        enemy.fireBreathCooldown = 180; // Ongeveer 3 seconden cooldown
+                    }
                 }
             }
             
@@ -676,6 +731,20 @@ function updateEnemies(players) {
             
             // Reset grondstatus
             enemy.onGround = false;
+            
+            // Update vuurspuwen timers voor draak
+            if (enemy.type === "DRAGON") {
+                if (enemy.fireBreathingTimer > 0) {
+                    enemy.fireBreathingTimer--;
+                    if (enemy.fireBreathingTimer <= 0) {
+                        enemy.fireBreathing = false;
+                    }
+                }
+                
+                if (enemy.fireBreathCooldown > 0) {
+                    enemy.fireBreathCooldown--;
+                }
+            }
             
             // Controleer grondcollisie
             if (enemy.y + enemy.height >= gameCore.GROUND_LEVEL) {

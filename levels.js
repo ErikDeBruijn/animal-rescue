@@ -63,7 +63,8 @@ function getLevels(GROUND_LEVEL) {    return [
                 saved: false
             },
             collectibles: [
-                {x: 650, y: 200, width: 30, height: 30}
+                {x: 650, y: 200, width: 30, height: 30},
+                {x: 150, y: 150, width: 30, height: 30, type: "PEPPER"}
             ]
         },
         {
@@ -102,7 +103,8 @@ function getLevels(GROUND_LEVEL) {    return [
                 saved: false
             },
             collectibles: [
-                {x: 650, y: 80, width: 30, height: 30} // Verhoogd naar een positie die alleen bereikbaar is met wolken
+                {x: 650, y: 80, width: 30, height: 30}, // Verhoogd naar een positie die alleen bereikbaar is met wolken
+                {x: 400, y: 250, width: 30, height: 30, type: "PEPPER"}
             ]
         },
         {
