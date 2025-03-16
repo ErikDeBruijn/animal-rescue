@@ -23,6 +23,11 @@ function drawPlayer(player) {
         drawCat(player);
     }
     
+    // Draw fire breath if player is breathing fire
+    if (player.isBreathingFire) {
+        drawFireBreath(player);
+    }
+    
     // Reset globalAlpha if it was modified
     if (player.isInvulnerable) {
         gameCore.ctx.globalAlpha = 1.0;
@@ -36,12 +41,76 @@ function drawEnemies() {
     const enemies = currentLevelData.enemies || [];
     
     enemies.forEach(enemy => {
+        // Draw the appropriate enemy type
         if (enemy.type === "LION") {
             drawLion(enemy);
         } else if (enemy.type === "DRAGON") {
             drawDragon(enemy);
         }
+        
+        // Draw burning effect if the enemy is being hit by fire
+        if (enemy.burningEffect) {
+            drawBurningEffect(enemy);
+            
+            // Decrease burning timer
+            if (enemy.burningTimer !== undefined) {
+                enemy.burningTimer--;
+            }
+        }
     });
+}
+
+// Function to draw burning effect on enemies
+function drawBurningEffect(enemy) {
+    const time = Date.now() / 50; // Fast animation
+    
+    // Create flames on the enemy
+    for (let i = 0; i < 10; i++) {
+        const flameX = enemy.x + Math.random() * enemy.width;
+        const flameY = enemy.y + Math.random() * enemy.height * 0.8;
+        const flameHeight = 10 + Math.random() * 15;
+        const flameWidth = 5 + Math.random() * 8;
+        
+        // Gradient for the flame
+        const gradient = gameCore.ctx.createLinearGradient(
+            flameX, flameY + flameHeight,
+            flameX, flameY - flameHeight
+        );
+        gradient.addColorStop(0, 'rgba(255, 0, 0, 0.8)'); // Red base
+        gradient.addColorStop(0.5, 'rgba(255, 165, 0, 0.8)'); // Orange middle
+        gradient.addColorStop(1, 'rgba(255, 255, 0, 0.4)'); // Yellow tip
+        
+        gameCore.ctx.fillStyle = gradient;
+        
+        // Draw flame shape (triangle with curved top)
+        gameCore.ctx.beginPath();
+        gameCore.ctx.moveTo(flameX - flameWidth/2, flameY + flameHeight/4);
+        
+        // Left side
+        gameCore.ctx.quadraticCurveTo(
+            flameX - flameWidth/4,
+            flameY - flameHeight/2,
+            flameX,
+            flameY - flameHeight/2 + Math.sin(time + i) * 3
+        );
+        
+        // Right side
+        gameCore.ctx.quadraticCurveTo(
+            flameX + flameWidth/4,
+            flameY - flameHeight/2,
+            flameX + flameWidth/2,
+            flameY + flameHeight/4
+        );
+        
+        gameCore.ctx.closePath();
+        gameCore.ctx.fill();
+    }
+    
+    // Flash effect
+    if (enemy.burningTimer > 10) {
+        gameCore.ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+        gameCore.ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+    }
 }
 
 // Draw a lion
@@ -1183,6 +1252,153 @@ function drawCat(player) {
     }
 }
 
+// Function to draw fire breath for players
+function drawFireBreath(player) {
+    if (!player.isBreathingFire) return;
+    
+    const time = Date.now() / 100;
+    // Determine where the fire comes from based on direction
+    const facingLeft = !player.facingRight;
+    const fireStartX = facingLeft ? player.x : player.x + player.width;
+    const fireDirection = facingLeft ? -1 : 1;
+    
+    // Get intensity factor (0-100 normal, up to 150 at peak)
+    const intensityFactor = player.fireBreathingIntensity / 100;
+    
+    // Fire length and width parameters - modified by intensity
+    const baseLength = player.width * 2.0; // Base length 
+    const fireLength = baseLength * intensityFactor; // Scales with intensity
+    const fireWidth = player.height * 0.9 * intensityFactor; // 90% of player height, scaled
+    const maxOffset = 5 * intensityFactor; // For flame flickering effect
+    
+    // Calculate flickering effect - more intense with higher intensity
+    const flickerOffset = Math.sin(time) * maxOffset;
+    const flameSpread = Math.cos(time * 0.7) * (maxOffset * 0.5);
+    
+    // Transparency and glow based on intensity
+    const baseOpacity = Math.min(0.7, intensityFactor * 0.7);
+    
+    // Debug visualization of fire hitbox if needed
+    if (window.debugMode) {
+        // Fire hitbox for collision detection
+        const fireHitbox = {
+            x: facingLeft ? fireStartX - fireLength : fireStartX,
+            y: player.y + player.height * 0.1,
+            width: fireLength,
+            height: fireWidth
+        };
+        
+        // Debug visualization of the hitbox
+        gameCore.ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
+        gameCore.ctx.lineWidth = 2;
+        gameCore.ctx.strokeRect(
+            fireHitbox.x, 
+            fireHitbox.y, 
+            fireHitbox.width, 
+            fireHitbox.height
+        );
+    }
+    
+    // Draw the flame using a cone shape (triangle with curved base)
+    // Yellow outer flame
+    gameCore.ctx.fillStyle = `rgba(255, 255, 0, ${baseOpacity})`;
+    gameCore.ctx.beginPath();
+    // Start at the mouth position
+    gameCore.ctx.moveTo(fireStartX, player.y + player.height * 0.3);
+    // Top point of the flame
+    gameCore.ctx.quadraticCurveTo(
+        fireStartX + fireDirection * (fireLength * 0.6), 
+        player.y + player.height * (0.1 - intensityFactor * 0.05) + flickerOffset,
+        fireStartX + fireDirection * fireLength, 
+        player.y + player.height * 0.2 + flameSpread
+    );
+    // Bottom point of the flame
+    gameCore.ctx.quadraticCurveTo(
+        fireStartX + fireDirection * (fireLength * 0.6), 
+        player.y + player.height * (0.5 + intensityFactor * 0.05) - flickerOffset,
+        fireStartX, 
+        player.y + player.height * 0.3
+    );
+    gameCore.ctx.closePath();
+    gameCore.ctx.fill();
+    
+    // Orange middle flame (slightly smaller)
+    gameCore.ctx.fillStyle = `rgba(255, 165, 0, ${baseOpacity + 0.1})`;
+    gameCore.ctx.beginPath();
+    gameCore.ctx.moveTo(fireStartX, player.y + player.height * 0.3);
+    gameCore.ctx.quadraticCurveTo(
+        fireStartX + fireDirection * (fireLength * 0.5), 
+        player.y + player.height * (0.15 - intensityFactor * 0.02) + flickerOffset,
+        fireStartX + fireDirection * (fireLength * 0.85), 
+        player.y + player.height * 0.25 + flameSpread * 0.8
+    );
+    gameCore.ctx.quadraticCurveTo(
+        fireStartX + fireDirection * (fireLength * 0.5), 
+        player.y + player.height * (0.45 + intensityFactor * 0.02) - flickerOffset,
+        fireStartX, 
+        player.y + player.height * 0.3
+    );
+    gameCore.ctx.closePath();
+    gameCore.ctx.fill();
+    
+    // Red inner flame (smallest)
+    gameCore.ctx.fillStyle = `rgba(255, 0, 0, ${baseOpacity + 0.2})`;
+    gameCore.ctx.beginPath();
+    gameCore.ctx.moveTo(fireStartX, player.y + player.height * 0.3);
+    gameCore.ctx.quadraticCurveTo(
+        fireStartX + fireDirection * (fireLength * 0.4), 
+        player.y + player.height * 0.2 + flickerOffset/2,
+        fireStartX + fireDirection * (fireLength * 0.7), 
+        player.y + player.height * 0.3 + flameSpread * 0.5
+    );
+    gameCore.ctx.quadraticCurveTo(
+        fireStartX + fireDirection * (fireLength * 0.4), 
+        player.y + player.height * 0.4 - flickerOffset/2,
+        fireStartX, 
+        player.y + player.height * 0.3
+    );
+    gameCore.ctx.closePath();
+    gameCore.ctx.fill();
+    
+    // Add some fire particles for extra effect - more particles at higher intensity
+    const particleCount = Math.floor(5 + intensityFactor * 5); // 5-15 particles based on intensity
+    for (let i = 0; i < particleCount; i++) {
+        const particleSize = (3 + Math.random() * 4) * Math.min(1.5, intensityFactor);
+        // Particles stretch further with higher intensity
+        const particleDistanceFactor = Math.pow(Math.random(), 0.7); // Weight toward far end
+        const particleX = fireStartX + fireDirection * (particleDistanceFactor * fireLength);
+        const particleY = player.y + player.height * 0.3 + (Math.random() - 0.5) * fireWidth * 0.8;
+        
+        // Particle color (yellow to red) - with intensity-based opacity
+        const colors = [
+            `rgba(255,255,0,${baseOpacity})`, 
+            `rgba(255,165,0,${baseOpacity + 0.1})`, 
+            `rgba(255,0,0,${baseOpacity + 0.2})`
+        ];
+        gameCore.ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
+        
+        gameCore.ctx.beginPath();
+        gameCore.ctx.arc(particleX, particleY, particleSize, 0, Math.PI * 2);
+        gameCore.ctx.fill();
+    }
+    
+    // Add an extra glow effect at high intensity
+    if (intensityFactor > 1.0) {
+        // Extra glow for the peak phase
+        const glowIntensity = (intensityFactor - 1.0) * 0.3; // 0-0.15 range
+        gameCore.ctx.fillStyle = `rgba(255, 220, 50, ${glowIntensity})`;
+        gameCore.ctx.beginPath();
+        
+        // Large soft glow around the flame
+        const glowX = fireStartX + fireDirection * (fireLength * 0.5);
+        const glowY = player.y + player.height * 0.3;
+        const glowRadius = fireLength * 0.7;
+        
+        gameCore.ctx.arc(glowX, glowY, glowRadius, 0, Math.PI * 2);
+        gameCore.ctx.fill();
+    }
+}
+
 // Export the render functions
 window.gameCharacters = {
     drawPlayer,
@@ -1193,5 +1409,6 @@ window.gameCharacters = {
     drawSquirrel,
     drawTurtle,
     drawUnicorn,
-    drawCat
+    drawCat,
+    drawFireBreath
 };

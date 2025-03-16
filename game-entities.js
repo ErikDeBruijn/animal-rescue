@@ -25,6 +25,7 @@ class Player {
         this.canBreatheFire = false;
         this.fireBreathTimer = 0;
         this.isBreathingFire = false;
+        this.fireBreathActive = false; // Tracks if fire ability has been activated
         this.fireBreathingIntensity = 0; // Tracks the growth of the flame (0-100)
         
         // Life system
@@ -534,42 +535,53 @@ class Player {
         
         // Update vuurspuwen status als de speler een pepertje heeft gegeten
         if (this.canBreatheFire) {
-            // Verlaag de timer en schakel vuurspuwen uit als de tijd voorbij is
-            this.fireBreathTimer--;
-            
-            // Calculate fire breath intensity based on timer
-            const maxTime = 180; // 3 seconds at 60fps
+            // Constant values for timing
+            const maxTime = 300; // 5 seconds at 60fps
             const growPhase = 60; // First second (60 frames)
-            const peakPhase = 60; // Second second (60 frames)
+            const peakPhase = 180; // Middle 3 seconds (180 frames)
             const decreasePhase = 60; // Last second (60 frames)
-            
-            if (this.fireBreathTimer <= 0) {
-                // Time's up, reset everything
-                this.canBreatheFire = false;
-                this.fireBreathingIntensity = 0;
-            } else if (this.fireBreathTimer > (maxTime - growPhase)) {
-                // Growing phase (first second)
-                const progress = (maxTime - this.fireBreathTimer) / growPhase;
-                this.fireBreathingIntensity = 100 * progress; // 0 to 100
-            } else if (this.fireBreathTimer > decreasePhase) {
-                // Peak phase (second second)
-                this.fireBreathingIntensity = 100 * 1.5; // 50% bigger (150)
-            } else {
-                // Decreasing phase (last second)
-                const progress = this.fireBreathTimer / decreasePhase;
-                this.fireBreathingIntensity = 100 * progress * 1.5; // Tapering from 150 to 0
-            }
             
             // Activeer vuurspuwen met spatiebalk
             if (gameControls.keys[' ']) {
+                // When space is first pressed, start the timer
+                if (!this.fireBreathActive) {
+                    this.fireBreathActive = true;
+                    this.fireBreathTimer = maxTime; // 5 seconds of fire breath
+                    console.log("Fire breath activated! Timer set to 5 seconds");
+                }
                 this.isBreathingFire = true;
             } else {
                 this.isBreathingFire = false;
+            }
+            
+            // Once fire has been activated, count down the timer
+            if (this.fireBreathActive) {
+                // Verlaag de timer en schakel vuurspuwen uit als de tijd voorbij is
+                this.fireBreathTimer--;
+                
+                if (this.fireBreathTimer <= 0) {
+                    // Time's up, reset everything
+                    this.canBreatheFire = false;
+                    this.fireBreathActive = false;
+                    this.fireBreathingIntensity = 0;
+                } else if (this.fireBreathTimer > (maxTime - growPhase)) {
+                    // Growing phase (first second)
+                    const progress = (maxTime - this.fireBreathTimer) / growPhase;
+                    this.fireBreathingIntensity = 100 * progress; // 0 to 100
+                } else if (this.fireBreathTimer > decreasePhase) {
+                    // Peak phase (middle 3 seconds)
+                    this.fireBreathingIntensity = 100 * 1.5; // 50% bigger (150)
+                } else {
+                    // Decreasing phase (last second)
+                    const progress = this.fireBreathTimer / decreasePhase;
+                    this.fireBreathingIntensity = 100 * progress * 1.5; // Tapering from 150 to 0
+                }
             }
         } else {
             // Zorg ervoor dat de vuurspuwen status false is als de timer afgelopen is
             this.isBreathingFire = false;
             this.fireBreathingIntensity = 0;
+            this.fireBreathActive = false;
         }
         
         // Collectibles verzamelen
@@ -584,8 +596,8 @@ class Player {
                     // Verzamel het pepertje en activeer vuurspuwen
                     collectibles.splice(index, 1);
                     this.canBreatheFire = true;
-                    this.fireBreathTimer = 300; // 5 seconden vuurspuwen (300 frames)
-                    gameCore.gameState.message = "Vuur! Je kunt nu 5 seconden vuur spuwen met SPATIE!";
+                    this.fireBreathActive = false; // Track if fire has been used yet
+                    gameCore.gameState.message = "Vuur! Je kunt nu vuur spuwen met SPATIE!";
                     
                     // Voeg een vertraging toe om het bericht te tonen
                     setTimeout(() => {
@@ -633,16 +645,22 @@ class Player {
         // Vijanden controleren
         const currentLevelData = window.levels[gameCore.currentLevel];
         const enemies = currentLevelData.enemies || [];
-        enemies.forEach(enemy => {
+        
+        enemies.forEach((enemy, enemyIndex) => {
+            // Check direct collision with player
             if (this.collidesWithObject(enemy)) {
                 // Als kat met actieve klauwen vijand aanraakt, verwijder vijand
                 if (this.animalType === "CAT" && this.clawActive) {
-                    // Vind de index van de vijand in de array
-                    const enemyIndex = enemies.indexOf(enemy);
                     if (enemyIndex !== -1) {
                         // Verwijder de vijand uit de array
                         enemies.splice(enemyIndex, 1);
                         console.log("Kat heeft een vijand aangevallen!");
+                        
+                        // Add points for defeating enemy
+                        gameCore.gameState.score += 100;
+                        if (typeof gameRendering !== 'undefined' && typeof gameRendering.showPointsEarned === 'function') {
+                            gameRendering.showPointsEarned(enemy.x + enemy.width/2, enemy.y, 100);
+                        }
                         
                         // Laat de kat weer krabben na 2 seconden
                         setTimeout(() => {
@@ -652,6 +670,64 @@ class Player {
                 } else {
                     // Bij aanraking met een vijand, leven verliezen
                     this.loseLife();
+                }
+            }
+            
+            // Check if fire breath hits enemy
+            if (this.isBreathingFire && this.fireBreathingIntensity > 30) {
+                // Calculate fire breath hitbox
+                const facingLeft = !this.facingRight;
+                const fireStartX = facingLeft ? this.x : this.x + this.width;
+                const fireDirection = facingLeft ? -1 : 1;
+                
+                // Fire hitbox properties - scales with intensity
+                const fireLength = this.width * 2.0 * (this.fireBreathingIntensity / 100);
+                const fireWidth = this.height * 0.7;
+                
+                // Simplified hitbox for the fire breath
+                const fireHitbox = {
+                    x: facingLeft ? fireStartX - fireLength : fireStartX,
+                    y: this.y + this.height * 0.1,
+                    width: fireLength,
+                    height: fireWidth
+                };
+                
+                // Check if fire hitbox collides with enemy
+                if (collidesWithObjects(fireHitbox, enemy)) {
+                    // Remove enemy when hit by fire
+                    if (enemyIndex !== -1) {
+                        // Create a visual fire effect on the enemy before removing it
+                        if (!enemy.burningEffect) {
+                            // Add burning effect properties to the enemy
+                            enemy.burningEffect = true;
+                            enemy.burningTimer = 15; // Burning animation frames (0.25 seconds)
+                            
+                            // After the burning animation, remove the enemy
+                            setTimeout(() => {
+                                // Only remove if enemy is still in the array
+                                const currentIndex = enemies.indexOf(enemy);
+                                if (currentIndex !== -1) {
+                                    // Verwijder de vijand uit de array
+                                    enemies.splice(currentIndex, 1);
+                                    console.log("Vuur heeft een vijand verslagen!");
+                                    
+                                    // Add points for defeating enemy
+                                    gameCore.gameState.score += 100;
+                                    if (typeof gameRendering !== 'undefined' && typeof gameRendering.showPointsEarned === 'function') {
+                                        gameRendering.showPointsEarned(enemy.x + enemy.width/2, enemy.y, 100);
+                                    }
+                                    
+                                    // Show message about defeating enemy with fire
+                                    gameCore.gameState.message = "Vijand verslagen met vuur! +100 punten!";
+                                    setTimeout(() => {
+                                        if (gameCore.gameState.message === "Vijand verslagen met vuur! +100 punten!") {
+                                            gameCore.gameState.message = "";
+                                        }
+                                    }, 2000);
+                                }
+                            }, 250); // 250ms = 15 frames at 60fps
+                        }
+                    }
                 }
             }
         });

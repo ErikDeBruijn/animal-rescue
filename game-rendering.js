@@ -430,18 +430,26 @@ function drawBackground() {
     gameCore.ctx.fillStyle = '#87CEEB';
     gameCore.ctx.fillRect(0, 0, gameCore.canvas.width, gameCore.canvas.height);
     
-    // Background clouds (white and semi-transparent)
+    // Background clouds (white and semi-transparent) with drifting animation
     gameCore.ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+    
+    // Cloud drift animation based on time
+    const cloudDriftTime = Date.now() / 25000;
+    const drift1 = 20 * Math.sin(cloudDriftTime * Math.PI);
+    const drift2 = 15 * Math.cos(cloudDriftTime * Math.PI * 0.7);
+    
+    // First cloud group
     gameCore.ctx.beginPath();
-    gameCore.ctx.arc(100, 80, 30, 0, Math.PI * 2);
-    gameCore.ctx.arc(130, 70, 30, 0, Math.PI * 2);
-    gameCore.ctx.arc(160, 80, 25, 0, Math.PI * 2);
+    gameCore.ctx.arc(100 + drift1, 80, 30, 0, Math.PI * 2);
+    gameCore.ctx.arc(130 + drift1, 70, 30, 0, Math.PI * 2);
+    gameCore.ctx.arc(160 + drift1, 80, 25, 0, Math.PI * 2);
     gameCore.ctx.fill();
     
+    // Second cloud group
     gameCore.ctx.beginPath();
-    gameCore.ctx.arc(600, 100, 35, 0, Math.PI * 2);
-    gameCore.ctx.arc(650, 90, 30, 0, Math.PI * 2);
-    gameCore.ctx.arc(690, 100, 25, 0, Math.PI * 2);
+    gameCore.ctx.arc(600 + drift2, 100, 35, 0, Math.PI * 2);
+    gameCore.ctx.arc(650 + drift2, 90, 30, 0, Math.PI * 2);
+    gameCore.ctx.arc(690 + drift2, 100, 25, 0, Math.PI * 2);
     gameCore.ctx.fill();
 }
 
