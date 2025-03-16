@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dieren Redders - Level Editor</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <style>
         body {
             margin: 0;
@@ -306,5 +307,41 @@
 
     <script src="levels.js"></script>
     <script src="editor.js"></script>
+    
+    <!-- Auto-reload notification -->
+    <div id="reload-notification" style="display: none; position: fixed; bottom: 20px; right: 20px; background-color: rgba(69, 136, 47, 0.9); color: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 1000; max-width: 300px;">
+        <h3 style="margin-top: 0;">Updates beschikbaar</h3>
+        <p>Er zijn updates voor de editor beschikbaar.</p>
+        <button onclick="window.location.reload()" style="background-color: white; color: #45882f; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 5px;">Nu herladen</button>
+        <button onclick="document.getElementById('reload-notification').style.display = 'none';" style="background-color: transparent; color: white; border: 1px solid white; padding: 8px 15px; border-radius: 4px; cursor: pointer; margin-top: 5px; margin-left: 5px;">Later</button>
+    </div>
+    
+    <script>
+        // WebSocket connection for reload notifications
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof io !== 'undefined') {
+                const socket = io();
+                
+                socket.on('reload_needed', function(data) {
+                    console.log('Reload notification received:', data);
+                    
+                    // Check if there are unsaved changes in the editor
+                    const hasUnsavedChanges = editorState && editorState.editingLevel && 
+                                              document.getElementById('save-level-btn') && 
+                                              !document.getElementById('save-level-btn').disabled;
+                    
+                    if (!hasUnsavedChanges) {
+                        // Immediately reload if no unsaved changes
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    } else {
+                        // Show notification if there are unsaved changes
+                        document.getElementById('reload-notification').style.display = 'block';
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>

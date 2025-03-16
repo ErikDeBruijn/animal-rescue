@@ -5,11 +5,24 @@ import re
 import json
 import uuid
 import time
+import logging
+import threading
+import hashlib
+from pathlib import Path
 from flask_socketio import SocketIO, emit, join_room, leave_room
+
+# Configureer logging
+logging.basicConfig(level=logging.INFO, 
+                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'dieren-redders-secret-key'
 socketio = SocketIO(app, cors_allowed_origins="*")
+
+# Map met hash-waarden van assets voor het detecteren van wijzigingen
+asset_hashes = {}
+last_check_time = time.time()
 
 # Dictionary om game rooms bij te houden
 active_rooms = {}
@@ -20,6 +33,12 @@ connected_clients = {}
 # Directory waar de game bestanden staan
 GAME_DIR = os.path.dirname(os.path.abspath(__file__))
 LEVELS_FILE = os.path.join(GAME_DIR, 'levels.js')
+
+# Lijst van bestanden die gemonitord moeten worden voor wijzigingen
+MONITORED_FILES = [
+    'index.html', 'editor.html', 'game.js', 'game-core.js', 'game-entities.js', 
+    'game-rendering.js', 'game-controls.js', 'editor.js', 'levels.js'
+]
 
 @app.route('/')
 def index():
@@ -109,8 +128,12 @@ def save_levels():
             level_pattern = re.compile(r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}')
             levels = [m.group(0) for m in level_pattern.finditer(levels_content)]
             
+            # Als de index hoger is dan de beschikbare levels, voeg het toe als een nieuw level
             if level_index >= len(levels):
-                return jsonify({'success': False, 'error': f'Level index {level_index} is out of range (max: {len(levels)-1})'}), 400
+                logger.info(f"Level index {level_index} is buiten bereik (max: {len(levels)-1}), behandel als nieuw level")
+                # Voeg een komma toe
+                new_content = re.sub(r'(\s*)\];', f',\n        {level_code}\n\\1];', current_content)
+                return jsonify({'success': True}), 200
             
             # Vervang het level
             levels[level_index] = level_code
@@ -125,7 +148,7 @@ def save_levels():
         with open(LEVELS_FILE, 'w', encoding='utf-8') as f:
             f.write(new_content)
         
-        print(f"Level {'nieuw' if level_index == 'new' else level_index} succesvol opgeslagen!")
+        logger.info(f"Level {'nieuw' if level_index == 'new' else level_index} succesvol opgeslagen!")
         return jsonify({'success': True})
         
     except Exception as e:
@@ -649,15 +672,88 @@ def cleanup_inactive_rooms():
         # Wacht 60 seconden voor de volgende check
         time.sleep(60)
 
-if __name__ == '__main__':
-    import threading
+def calculate_file_hash(file_path):
+    """Bereken een hash voor een bestand om wijzigingen te detecteren"""
+    try:
+        with open(file_path, 'rb') as f:
+            file_content = f.read()
+            return hashlib.md5(file_content).hexdigest()
+    except Exception as e:
+        logger.error(f"Fout bij berekenen hash voor {file_path}: {str(e)}")
+        return None
+
+def init_file_hashes():
+    """Initialiseer de hash-waarden voor alle gemonitorde bestanden"""
+    global asset_hashes
+    for filename in MONITORED_FILES:
+        file_path = os.path.join(GAME_DIR, filename)
+        if os.path.exists(file_path):
+            asset_hashes[filename] = calculate_file_hash(file_path)
+            logger.info(f"Monitoring {filename} (hash: {asset_hashes[filename][:8]}...)")
+    
+    logger.info(f"Monitoring {len(asset_hashes)} bestanden voor wijzigingen")
+
+def check_for_file_changes():
+    """Controleer of gemonitorde bestanden zijn gewijzigd"""
+    global asset_hashes, last_check_time
+    
+    # Controleer niet te vaak (max eens per 5 seconden)
+    current_time = time.time()
+    if current_time - last_check_time < 5:
+        return False
+    
+    last_check_time = current_time
+    changes_detected = False
+    
+    for filename in MONITORED_FILES:
+        file_path = os.path.join(GAME_DIR, filename)
+        if not os.path.exists(file_path):
+            continue
+            
+        current_hash = calculate_file_hash(file_path)
+        if filename in asset_hashes and asset_hashes[filename] != current_hash:
+            logger.info(f"Wijziging gedetecteerd in {filename}")
+            asset_hashes[filename] = current_hash
+            changes_detected = True
+    
+    return changes_detected
+
+def file_monitor_thread():
+    """Achtergrondthread om bestanden te monitoren op wijzigingen"""
+    logger.info("File monitor thread started")
+    while True:
+        try:
+            if check_for_file_changes():
+                # Stuur een bericht naar alle clients
+                socketio.emit('reload_needed', {
+                    'message': 'Er zijn updates beschikbaar. Het spel moet opnieuw geladen worden.',
+                    'timestamp': time.time()
+                }, broadcast=True)
+                logger.info("Reload signal sent to all clients")
+            
+            # Wacht 5 seconden voor de volgende check
+            time.sleep(5)
+        except Exception as e:
+            logger.error(f"Error in file monitor thread: {str(e)}")
+            time.sleep(10)  # Wacht langer bij een fout
+
+def run_server_with_auto_reload():
+    """Start de server met automatische herstart bij code wijzigingen"""
+    import socket
+    import sys
     
     # Start de cleanup thread
     cleanup_thread = threading.Thread(target=cleanup_inactive_rooms, daemon=True)
     cleanup_thread.start()
     
+    # Initialiseer file hashes
+    init_file_hashes()
+    
+    # Start de file monitor thread
+    monitor_thread = threading.Thread(target=file_monitor_thread, daemon=True)
+    monitor_thread.start()
+    
     # Bepaal het lokale IP adres automatisch
-    import socket
     hostname = socket.gethostname()
     try:
         ip = socket.gethostbyname(hostname)
@@ -667,10 +763,19 @@ if __name__ == '__main__':
     # Gebruik een andere poort (5050 in plaats van 5000)
     port = 5050
     
-    print(f"Starting Dieren Redders multiplayer game server on http://{ip}:{port}")
-    print(f"Level editor available at http://{ip}:{port}/editor")
-    print(f"Spelers in hetzelfde netwerk kunnen verbinden via dit IP adres")
-    print(f"Je kunt ook altijd localhost gebruiken: http://localhost:{port}")
+    logger.info(f"Starting Dieren Redders multiplayer game server on http://{ip}:{port}")
+    logger.info(f"Level editor available at http://{ip}:{port}/editor")
+    logger.info(f"Spelers in hetzelfde netwerk kunnen verbinden via dit IP adres")
+    logger.info(f"Je kunt ook altijd localhost gebruiken: http://localhost:{port}")
     
-    # Start de socketio server met de optie om CORS te negeren
-    socketio.run(app, host='0.0.0.0', port=port, debug=True, allow_unsafe_werkzeug=True)
+    # Start de socketio server met auto-reload voor code wijzigingen
+    try:
+        socketio.run(app, host='0.0.0.0', port=port, debug=True, 
+                    use_reloader=True,
+                    allow_unsafe_werkzeug=True)
+    except KeyboardInterrupt:
+        logger.info("Server gestopt door gebruiker")
+        sys.exit(0)
+
+if __name__ == '__main__':
+    run_server_with_auto_reload()
