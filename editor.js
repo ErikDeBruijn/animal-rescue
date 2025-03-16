@@ -64,16 +64,29 @@ window.onload = function() {
             // Altijd standaard navigatie voorkomen
             e.preventDefault();
             
+            // Debug: toon huidige status van onopgeslagen wijzigingen
+            console.log('hasUnsavedChanges status:', editorState.hasUnsavedChanges);
+            
+            // Forceer een test dialog om te controleren of confirm werkt
+            const testConfirm = confirm('Test dialog: Wil je terug naar het spel?');
+            console.log('Test confirm result:', testConfirm);
+            
             // Controleer of er niet-opgeslagen wijzigingen zijn
             if (editorState.hasUnsavedChanges) {
                 // Als er onopgeslagen wijzigingen zijn, vraag bevestiging
-                if (confirm('Je hebt niet-opgeslagen wijzigingen. Weet je zeker dat je terug wilt naar het spel? Klik op Annuleren om terug te gaan en op te slaan.')) {
+                const confirmed = confirm('Je hebt niet-opgeslagen wijzigingen. Weet je zeker dat je terug wilt naar het spel? Klik op Annuleren om terug te gaan en op te slaan.');
+                console.log('Wijzigingen confirm result:', confirmed);
+                
+                if (confirmed) {
                     // Gebruiker heeft bevestigd, navigeer naar game
+                    console.log('Navigeren naar index.html');
                     window.location.href = 'index.html';
+                } else {
+                    console.log('Navigatie geannuleerd');
                 }
-                // Anders, blijf op de pagina (doe niets)
             } else {
                 // Geen onopgeslagen wijzigingen, navigeer direct naar game
+                console.log('Geen wijzigingen, direct navigeren');
                 window.location.href = 'index.html';
             }
         });
@@ -865,6 +878,9 @@ function hideAllPropertyPanels() {
 function markAsUnsaved() {
     // Marker dat er niet-opgeslagen wijzigingen zijn
     editorState.hasUnsavedChanges = true;
+    
+    // Log dat wijzigingen zijn gemarkeerd als onopgeslagen
+    console.log('Wijzigingen gemarkeerd als onopgeslagen');
     
     // Voeg een * toe aan de save-knop om aan te geven dat er niet-opgeslagen wijzigingen zijn
     const saveBtn = document.getElementById('save-level-btn');
