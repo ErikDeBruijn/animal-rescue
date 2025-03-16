@@ -340,21 +340,16 @@ function setupEventListeners() {
                     }
                 }
                 
-                // Update de dropdown
-                const levelSelect = document.getElementById('level-select');
-                levelSelect.value = editorState.currentLevel;
-                
-                // Laad het nieuwe level
-                loadLevel(editorState.currentLevel);
-                
-                // Update knoppen
-                updatePlayButton();
-                updateDeleteButton();
-                
                 // Verberg de bevestigingsdialog
                 hideDeleteConfirmation();
                 
-                alert('Level succesvol verwijderd!');
+                // Toon succesmelding en herlaad de pagina
+                alert('Level succesvol verwijderd! De pagina wordt nu herladen.');
+                
+                // Herlaad de pagina om de editor volledig te verversen
+                setTimeout(() => {
+                    window.location.reload();
+                }, 500);
             } else {
                 alert('Fout bij het verwijderen van het level: ' + data.error);
             }
