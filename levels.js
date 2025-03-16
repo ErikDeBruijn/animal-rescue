@@ -532,13 +532,14 @@ function getLevels(GROUND_LEVEL) {    return [
 },
         {
     name: "Spring maar naar boven!!!",
-    allowedAnimals: ["TURTLE", "CAT"],
+    allowedAnimals: ["TURTLE","CAT"],
     startPositions: [
         {x: 50, y: 350},
         {x: 100, y: 350}
     ],
     platforms: [
-        {x: 309, y: 369, width: 100, height: 20, type: "TRAMPOLINE"}
+        {x: 309, y: 369, width: 100, height: 20, type: "TRAMPOLINE"},
+        {x: 309, y: 37, width: 100, height: 20, type: "LASER"}
     ],
     traps: [
 
@@ -559,13 +560,14 @@ function getLevels(GROUND_LEVEL) {    return [
 },
         {
     name: "Wat veel sterren!!!",
-    allowedAnimals: ["TURTLE","UNICORN", "CAT"],
+    allowedAnimals: ["TURTLE","UNICORN","CAT"],
     startPositions: [
         {x: 50, y: 350},
         {x: 100, y: 350}
     ],
     platforms: [
-        {x: 238, y: 365, width: 553, height: 26, type: "TRAMPOLINE"}
+        {x: 238, y: 365, width: 553, height: 26, type: "TRAMPOLINE"},
+        {x: 296, y: 189, width: 100, height: 20, type: "LASER"}
     ],
     traps: [
 

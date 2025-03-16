@@ -67,6 +67,8 @@ MONITORED_FILES = [
 ]
 
 @app.route('/')
+@app.route('/index')
+@app.route('/index.html')
 def index():
     """Serveer de game zelf met dynamisch aangepaste content voor dev mode"""
     # Debug logging toevoegen
