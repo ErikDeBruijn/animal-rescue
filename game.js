@@ -1590,7 +1590,7 @@ function gameLoop() {
             ctx.fillText(gameState.message, canvas.width/2, 100);
         }
         
-        // Level naam
+        // Level naam (gebruiksvriendelijke 1-based nummering)
         ctx.font = '16px Comic Sans MS';
         ctx.fillStyle = 'black';
         ctx.textAlign = 'left';
