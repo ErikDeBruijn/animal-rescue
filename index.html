@@ -43,8 +43,7 @@
     <canvas id="gameCanvas" width="800" height="450"></canvas>
     
     <!-- Admin Panel voor tests (alleen zichtbaar in dev mode) -->
-    <a href="editor.html" class="nav-link" id="editor-link" style="display: none;">Level Editor</a>
-    <div class="admin-toggle" id="adminToggle" style="display: none;">⚙️</div>
+    <!-- DEV_MODE_PLACEHOLDER -->
     <div class="admin-panel" id="adminPanel">
         <h3>Test Panel</h3>
         <button class="test-button" id="testSwitchButton">Test Dier Wisselen</button>
@@ -60,31 +59,38 @@
     <script src="game-controls.js"></script>
     <script src="game-entities.js"></script>
     <script src="game-rendering.js"></script>
+    <script src="game-characters.js"></script>
 
     <!-- Laad de hoofdgame code en testen als laatste -->
     <script src="game.js"></script>
     <script src="tests-automated.js"></script>
     
     <script>
-        // Controleer of we in dev mode zijn op basis van de cookie
-        function isDevMode() {
-            const devModeCookie = document.cookie.split('; ').find(row => row.startsWith('dev_mode='));
-            return devModeCookie ? devModeCookie.split('=')[1] === 'true' : false;
-        }
-        
-        // Toon dev tools alleen in dev mode
+        // Admin panel functionaliteit - zonder cookie check omdat de server dit nu regelt
         document.addEventListener('DOMContentLoaded', function() {
-            if (isDevMode()) {
-                // Toon editor link en admin toggle in dev mode
-                document.getElementById('editor-link').style.display = 'block';
-                document.getElementById('adminToggle').style.display = 'block';
-                console.log("Development mode - Editor en test opties zijn beschikbaar");
+            console.log("DOM Content geladen. Controleren op dev-mode elementen...");
+            
+            // Controleer op editor link en toon resultaat
+            const editorLink = document.getElementById('editor-link');
+            console.log("Editor link element gevonden?", editorLink ? "JA" : "NEE");
+            
+            // De admin toggle kan alleen bestaan als we in dev mode zijn, dus controleer eerst of die bestaat
+            const adminToggle = document.getElementById('adminToggle');
+            console.log("Admin toggle element gevonden?", adminToggle ? "JA" : "NEE");
+            
+            if (adminToggle) {
+                console.log("Development mode - Admin panel beschikbaar");
+                // Alleen de eventlistener toevoegen als het element bestaat
+                adminToggle.addEventListener('click', function() {
+                    document.getElementById('adminPanel').classList.toggle('visible');
+                });
             } else {
-                // Verberg editor link en admin panel in productie mode
-                document.getElementById('editor-link').style.display = 'none';
-                document.getElementById('adminToggle').style.display = 'none';
-                document.getElementById('adminPanel').style.display = 'none';
-                console.log("Production mode - Editor en test opties zijn verborgen");
+                // In productie mode: zorg dat het admin panel verborgen blijft
+                const adminPanel = document.getElementById('adminPanel');
+                if (adminPanel) {
+                    adminPanel.style.display = 'none';
+                }
+                console.log("Production mode - Admin panel niet beschikbaar");
             }
         });
         
@@ -102,10 +108,7 @@
             }
         });
         
-        // Admin panel functionaliteit
-        document.getElementById('adminToggle').addEventListener('click', function() {
-            document.getElementById('adminPanel').classList.toggle('visible');
-        });
+        // Admin panel functionaliteit wordt nu geregeld in de bovenstaande DOMContentLoaded event
         
         // Test knoppen
         document.getElementById('testSwitchButton').addEventListener('click', function() {

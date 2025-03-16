@@ -68,13 +68,44 @@ MONITORED_FILES = [
 
 @app.route('/')
 def index():
-    """Serveer de game zelf"""
-    # Zet een cookie om aan de client te laten weten of we in dev mode zijn
-    response = send_from_directory(GAME_DIR, 'index.html')
-    response.set_cookie('dev_mode', str(app.config['DEV_MODE']).lower())
+    """Serveer de game zelf met dynamisch aangepaste content voor dev mode"""
+    # Debug logging toevoegen
+    app.logger.info(f"Serving index.html, DEV_MODE is: {app.config['DEV_MODE']}")
+    
+    # Lees de index.html file
+    with open(os.path.join(GAME_DIR, 'index.html'), 'r', encoding='utf-8') as f:
+        html_content = f.read()
+    
+    # Pas de HTML-inhoud aan op basis van de development mode status
+    if app.config['DEV_MODE']:
+        # In development mode: toon de editor-link en admin toggle
+        app.logger.info("Adding editor link and admin toggle to HTML (DEV MODE)")
+        replacement = '<a href="editor" class="nav-link" id="editor-link">Level Editor</a>\n    <div class="admin-toggle" id="adminToggle">⚙️</div>'
+        html_content = html_content.replace('<!-- DEV_MODE_PLACEHOLDER -->', replacement)
+        
+        # Debug check of de vervanging is gelukt
+        if replacement in html_content:
+            app.logger.info("Replacement successful - editor link added to HTML")
+        else:
+            app.logger.error("Replacement FAILED - placeholder not found in HTML!")
+    else:
+        # In productie mode: verberg de editor-link en admin toggle
+        app.logger.info("Running in PRODUCTION mode, not adding editor link")
+        html_content = html_content.replace(
+            '<!-- DEV_MODE_PLACEHOLDER -->', 
+            '<!-- Editor en admin controls zijn uitgeschakeld in productie modus -->'
+        )
+    
+    # Stuur de aangepaste HTML terug
+    response = app.response_class(
+        response=html_content,
+        status=200,
+        mimetype='text/html'
+    )
     return response
 
 @app.route('/editor')
+@app.route('/editor.html')
 def editor():
     """Serveer de level editor alleen in dev mode"""
     if not app.config['DEV_MODE']:
