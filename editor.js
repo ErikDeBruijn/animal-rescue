@@ -52,45 +52,39 @@ const objectColors = {
     startPos: '#00ff00'     // Groen voor startposities
 };
 
+// Functie voor de "Terug naar Game" link
+function handleBackToGame() {
+    // Debug: toon huidige status van onopgeslagen wijzigingen
+    console.log('handleBackToGame aangeroepen');
+    console.log('hasUnsavedChanges status:', editorState.hasUnsavedChanges);
+    
+    try {
+        // Controleer of er niet-opgeslagen wijzigingen zijn
+        if (editorState.hasUnsavedChanges) {
+            // Als er onopgeslagen wijzigingen zijn, vraag bevestiging
+            console.log('Toon bevestigingsdialoog...');
+            if (confirm('Je hebt niet-opgeslagen wijzigingen. Weet je zeker dat je terug wilt naar het spel? Klik op Annuleren om terug te gaan en op te slaan.')) {
+                // Gebruiker heeft bevestigd, navigeer naar game
+                console.log('Gebruiker bevestigde, navigeren naar index.html');
+                window.location.href = 'index.html';
+            } else {
+                // Gebruiker annuleerde
+                console.log('Gebruiker annuleerde navigatie');
+            }
+        } else {
+            // Geen onopgeslagen wijzigingen, navigeer direct naar game
+            console.log('Geen wijzigingen, direct navigeren');
+            window.location.href = 'index.html';
+        }
+    } catch (error) {
+        console.error('Fout in handleBackToGame:', error);
+    }
+}
+
 // Zet het venster op
 window.onload = function() {
     initEditor();
     setupEventListeners();
-    
-    // Voeg event listener toe voor "Terug naar Game" link
-    const backToGameLink = document.getElementById('back-to-game-link');
-    if (backToGameLink) {
-        backToGameLink.addEventListener('click', function(e) {
-            // Altijd standaard navigatie voorkomen
-            e.preventDefault();
-            
-            // Debug: toon huidige status van onopgeslagen wijzigingen
-            console.log('hasUnsavedChanges status:', editorState.hasUnsavedChanges);
-            
-            // Forceer een test dialog om te controleren of confirm werkt
-            const testConfirm = confirm('Test dialog: Wil je terug naar het spel?');
-            console.log('Test confirm result:', testConfirm);
-            
-            // Controleer of er niet-opgeslagen wijzigingen zijn
-            if (editorState.hasUnsavedChanges) {
-                // Als er onopgeslagen wijzigingen zijn, vraag bevestiging
-                const confirmed = confirm('Je hebt niet-opgeslagen wijzigingen. Weet je zeker dat je terug wilt naar het spel? Klik op Annuleren om terug te gaan en op te slaan.');
-                console.log('Wijzigingen confirm result:', confirmed);
-                
-                if (confirmed) {
-                    // Gebruiker heeft bevestigd, navigeer naar game
-                    console.log('Navigeren naar index.html');
-                    window.location.href = 'index.html';
-                } else {
-                    console.log('Navigatie geannuleerd');
-                }
-            } else {
-                // Geen onopgeslagen wijzigingen, navigeer direct naar game
-                console.log('Geen wijzigingen, direct navigeren');
-                window.location.href = 'index.html';
-            }
-        });
-    }
 };
 
 // Initialiseer de editor
