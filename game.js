@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Functie die controleert of alle benodigde game componenten geladen zijn
 function initializeGameWhenReady() {
-    if (!window.gameEntities || !window.gameCore || !window.gameControls) {
+    if (!window.gameEntities || !window.gameCore || !window.gameControls || !window.gameRendering || !window.gameCharacters) {
         // Als nog niet alle componenten geladen zijn, wacht dan 100ms en probeer opnieuw
         console.log("Wachten tot alle game componenten geladen zijn...");
         setTimeout(initializeGameWhenReady, 100);
@@ -85,6 +85,9 @@ function loadLevel(levelIndex) {
     gameCore.gameState.puppySaved = false;
     gameCore.gameState.message = "";
     gameCore.gameState.gameOver = false;
+    
+    // We behouden de score tussen levels, dus reset niet tenzij de URL expliciet veranderd is
+    // (bijvoorbeeld als de gebruiker een nieuw spel start)
 
     // Update de URL met het huidige level voor delen en refreshen
     window.location.hash = `level=${levelIndex}`;
@@ -201,7 +204,21 @@ function showPlayerInfo() {
     } else {
         console.warn("Element met class 'player-info' niet gevonden in de DOM.");
     }
+    
+    // Update de score weergave
+    updateScoreDisplay();
 }
+
+// Update de score weergave in de UI
+function updateScoreDisplay() {
+    const scoreElement = document.getElementById('game-score');
+    if (scoreElement) {
+        scoreElement.textContent = `Score: ${gameCore.gameState.score}`;
+    }
+}
+
+// Maak updateScoreDisplay globaal beschikbaar zodat andere modules het kunnen gebruiken
+window.updateScoreDisplay = updateScoreDisplay;
 
 // Update UI om de beschikbare dieren voor het huidige level te tonen
 function updateAvailableAnimalsUI() {
@@ -353,11 +370,15 @@ function gameLoop() {
         });
         
         // Vijanden tekenen
-        gameCharacters.drawEnemies();
+        if (typeof gameCharacters !== 'undefined' && typeof gameCharacters.drawEnemies === 'function') {
+            gameCharacters.drawEnemies();
+        }
         
         // Puppy tekenen
         if (currentLevelData.puppy) {
-            gameCharacters.drawPuppy(currentLevelData.puppy);
+            if (typeof gameCharacters !== 'undefined' && typeof gameCharacters.drawPuppy === 'function') {
+                gameCharacters.drawPuppy(currentLevelData.puppy);
+            }
         }
         
         // Collectibles tekenen
@@ -382,11 +403,15 @@ function gameLoop() {
         if (currentLevelData.allowedAnimals && currentLevelData.allowedAnimals.length > 1) {
             window.player2.update(window.player1, currentLevelData.platforms, currentLevelData.traps, currentLevelData.collectibles);
             // Teken speler 2
-            gameCharacters.drawPlayer(window.player2);
+            if (typeof gameCharacters !== 'undefined' && typeof gameCharacters.drawPlayer === 'function') {
+                gameCharacters.drawPlayer(window.player2);
+            }
         }
         
         // Teken speler 1 (altijd)
-        gameCharacters.drawPlayer(window.player1);
+        if (typeof gameCharacters !== 'undefined' && typeof gameCharacters.drawPlayer === 'function') {
+            gameCharacters.drawPlayer(window.player1);
+        }
         
         // Game berichten
         if (gameCore.gameState.message) {
@@ -394,6 +419,11 @@ function gameLoop() {
             gameCore.ctx.fillStyle = 'black';
             gameCore.ctx.textAlign = 'center';
             gameCore.ctx.fillText(gameCore.gameState.message, gameCore.canvas.width/2, 100);
+        }
+        
+        // Teken puntenpopups als die er zijn
+        if (typeof gameRendering !== 'undefined' && typeof gameRendering.drawPointsPopups === 'function') {
+            gameRendering.drawPointsPopups();
         }
         
         // Level naam (gebruiksvriendelijke 1-based nummering)

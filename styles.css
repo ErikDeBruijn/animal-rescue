@@ -150,6 +150,17 @@ button:hover {
     margin-left: auto;
 }
 
+.level-info {
+    text-align: center;
+    flex: 1;
+}
+
+#game-score {
+    color: #FF8C00;
+    font-weight: bold;
+    margin-top: 5px;
+}
+
 /* Admin panel styles */
 .admin-panel {
     position: fixed;

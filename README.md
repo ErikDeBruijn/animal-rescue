@@ -86,9 +86,10 @@ Het spel bevat meerdere levels met toenemende moeilijkheidsgraad:
 - **Bomen en Klimwanden**: De eekhoorn kan klimmen, de andere dieren niet
 - **Wolken**: Alleen de eenhoorn kan op wolkenplatforms staan
 - **Spikes**: Gevaarlijke vallen die alle dieren moeten vermijden
+- **Lasers**: Dodelijke horizontale stralen die niemand kan passeren
 - **Leeuwen en Draken**: Vijanden die het op jullie puppy hebben gemunt
 - **Puppy**: Red de puppy voordat je de ster verzamelt!
-- **Sterren**: Verzamel de ster om het level te voltooien (nadat je de puppy hebt gered)
+- **Sterren**: Verzamel de ster om het level te voltooien (nadat je de puppy hebt gered) en scoor 50 punten per ster
 
 ## Tip voor Ouders
 

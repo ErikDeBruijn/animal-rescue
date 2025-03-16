@@ -324,6 +324,55 @@ function drawPlatform(platform) {
     }
 }
 
+// Functie om punten aan te tonen wanneer ze verdiend worden
+function showPointsEarned(x, y, points) {
+    // Maak een nieuw punten popup object
+    const pointsPopup = {
+        x: x,
+        y: y,
+        points: points,
+        age: 0,
+        maxAge: 60 // 1 seconde bij 60 fps
+    };
+    
+    // Voeg toe aan de lijst met actieve popups
+    if (!window.pointsPopups) {
+        window.pointsPopups = [];
+    }
+    window.pointsPopups.push(pointsPopup);
+}
+
+// Teken alle actieve punten popups
+function drawPointsPopups() {
+    if (!window.pointsPopups) return;
+    
+    // Update en teken alle popups
+    for (let i = window.pointsPopups.length - 1; i >= 0; i--) {
+        const popup = window.pointsPopups[i];
+        
+        // Update leeftijd
+        popup.age++;
+        popup.y -= 1; // Beweeg omhoog
+        
+        // Bepaal opacity op basis van leeftijd
+        const opacity = 1 - (popup.age / popup.maxAge);
+        
+        // Teken de popup
+        gameCore.ctx.font = 'bold 16px Comic Sans MS';
+        gameCore.ctx.fillStyle = `rgba(255, 215, 0, ${opacity})`;
+        gameCore.ctx.textAlign = 'center';
+        gameCore.ctx.fillText(`+${popup.points}`, popup.x, popup.y);
+        
+        // Verwijder als te oud
+        if (popup.age >= popup.maxAge) {
+            window.pointsPopups.splice(i, 1);
+        }
+    }
+    
+    // Reset text alignment
+    gameCore.ctx.textAlign = 'left';
+}
+
 // Background drawing
 function drawBackground() {
     // Sky
@@ -361,5 +410,7 @@ window.gameRendering = {
     drawGround,
     drawPlatform,
     drawTrap,
-    drawCollectible
+    drawCollectible,
+    drawPointsPopups,
+    showPointsEarned
 };

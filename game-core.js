@@ -19,7 +19,8 @@ let gameState = {
     running: true,
     message: "",
     puppySaved: false, // Om bij te houden of de puppy gered is
-    gameOver: false    // Game over als de puppy wordt gevangen door een vijand
+    gameOver: false,   // Game over als de puppy wordt gevangen door een vijand
+    score: 0           // Score voor sterren (50 punten) en geredde puppy's (1000 punten)
 };
 
 // Dieren definities met speciale krachten

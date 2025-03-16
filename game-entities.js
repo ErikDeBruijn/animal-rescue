@@ -563,6 +563,16 @@ class Player {
                 } else if (!currentLevelData.puppy || currentLevelData.puppy.saved || gameCore.gameState.puppySaved) {
                     // Normale collectible (ster)
                     collectibles.splice(index, 1);
+                    
+                    // Voeg 50 punten toe aan de score voor het verzamelen van een ster
+                    gameCore.gameState.score += 50;
+                    updateScoreDisplay();
+                    
+                    // Toon puntenpopup
+                    if (typeof gameRendering !== 'undefined' && typeof gameRendering.showPointsEarned === 'function') {
+                        gameRendering.showPointsEarned(collectible.x + collectible.width/2, collectible.y, 50);
+                    }
+                    
                     // Controleer of alle collectibles verzameld zijn
                     if (collectibles.length === 0) {
                         gameCore.levelCompleted = true;
@@ -764,7 +774,17 @@ function updatePuppy() {
             // Game state update: puppy is saved
             puppy.saved = true;
             gameCore.gameState.puppySaved = true;
-            gameCore.gameState.message = "Je hebt de puppy gered! Verzamel nu de ster!";
+            
+            // Voeg 1000 punten toe voor het redden van de puppy
+            gameCore.gameState.score += 1000;
+            updateScoreDisplay();
+            
+            // Toon puntenpopup
+            if (typeof gameRendering !== 'undefined' && typeof gameRendering.showPointsEarned === 'function') {
+                gameRendering.showPointsEarned(puppy.x + puppy.width/2, puppy.y, 1000);
+            }
+            
+            gameCore.gameState.message = "Je hebt de puppy gered! +1000 punten! Verzamel nu de ster!";
             
             // Clear message after delay
             setTimeout(() => {
