@@ -42,6 +42,9 @@ const gameMultiplayer = {
     init: function() {
         console.log("Initialiseren van multiplayer systeem");
         
+        // Probeer gebruikersnaam uit localStorage te laden
+        this.loadUserPreferences();
+        
         // Verbind met de server
         this.connectToServer();
         
@@ -60,6 +63,67 @@ const gameMultiplayer = {
                 this.setPlayerReady(true);
             }
         });
+    },
+    
+    // Laad gebruikersvoorkeuren uit localStorage
+    loadUserPreferences: function() {
+        try {
+            // Probeer de opgeslagen naam te laden
+            const savedUsername = localStorage.getItem('animalRescue_username');
+            if (savedUsername) {
+                this.username = savedUsername;
+                console.log("Gebruikersnaam geladen uit localStorage:", this.username);
+            }
+            
+            // Probeer de opgeslagen kamer ID te laden
+            const savedRoomInfo = localStorage.getItem('animalRescue_lastRoom');
+            if (savedRoomInfo) {
+                try {
+                    this.lastRoomInfo = JSON.parse(savedRoomInfo);
+                    console.log("Laatst bezochte kamer geladen uit localStorage:", this.lastRoomInfo);
+                    
+                    // Onthoud deze informatie, maar join niet automatisch
+                    // We zullen een optie tonen om opnieuw deel te nemen aan de laatste kamer
+                } catch (parseError) {
+                    console.warn("Kon kamerinformatie niet parsen:", parseError);
+                }
+            }
+        } catch (e) {
+            console.warn("Kon gebruikersvoorkeuren niet laden uit localStorage:", e);
+        }
+    },
+    
+    // Sla gebruikersvoorkeuren op in localStorage
+    saveUserPreferences: function() {
+        try {
+            // Sla gebruikersnaam op
+            if (this.username) {
+                localStorage.setItem('animalRescue_username', this.username);
+                console.log("Gebruikersnaam opgeslagen in localStorage:", this.username);
+            }
+            
+            // Als we in een kamer zitten, sla de kamer ID op
+            if (this.roomId) {
+                const roomInfo = {
+                    roomId: this.roomId,
+                    lastJoined: new Date().getTime(),
+                    roomName: this.getRoomName()
+                };
+                
+                localStorage.setItem('animalRescue_lastRoom', JSON.stringify(roomInfo));
+                console.log("Kamer informatie opgeslagen in localStorage:", roomInfo);
+            }
+        } catch (e) {
+            console.warn("Kon gebruikersvoorkeuren niet opslaan in localStorage:", e);
+        }
+    },
+    
+    // Helper functie om de naam van de huidige kamer te krijgen
+    getRoomName: function() {
+        if (!this.roomId || !window.active_rooms) return "Onbekende kamer";
+        
+        const room = window.active_rooms[this.roomId];
+        return room ? room.name : "Onbekende kamer";
     },
     
     // Verbind met de server
@@ -92,6 +156,28 @@ const gameMultiplayer = {
         // Foutmeldingen
         this.socket.on('error', (data) => {
             console.error("Server fout:", data.message);
+            
+            // Controleer of de fout gaat over een niet-bestaande kamer
+            if (data.message.includes("Deze kamer bestaat niet") && this.lastRoomInfo) {
+                // Als we probeerden de laatst opgeslagen kamer te joinen, verwijder deze info
+                if (this.lastRoomInfo.roomId === data.roomId) {
+                    localStorage.removeItem('animalRescue_lastRoom');
+                    this.lastRoomInfo = null;
+                    
+                    // Toon een specifieke melding en ververs de kamerlijst
+                    alert("De laatst bezochte kamer bestaat niet meer. Maak een nieuwe kamer aan of join een bestaande kamer.");
+                    this.refreshRooms();
+                    
+                    // Vernieuwen van UI om de rejoin-optie te verwijderen
+                    if (this.ui.lobbyContainer) {
+                        this.createMultiplayerUI();
+                    }
+                    
+                    return;
+                }
+            }
+            
+            // Standaard foutmelding
             alert("Fout: " + data.message);
         });
         
@@ -121,6 +207,9 @@ const gameMultiplayer = {
             this.roomId = data.room_id;
             this.isHost = data.player_info.host;
             
+            // Sla de kamervaoorkeur op in localStorage
+            this.saveUserPreferences();
+            
             // Update UI voor de kamer
             this.joinRoomUI(data.room_info);
         });
@@ -128,6 +217,11 @@ const gameMultiplayer = {
         // Verlaten van een kamer
         this.socket.on('room_left', (data) => {
             console.log("Kamer verlaten:", data.room_id);
+            
+            // Sla de kamerinfo op voordat we de roomId resetten
+            // Zodat we deze kamer later kunnen terugvinden
+            this.saveUserPreferences();
+            
             this.roomId = null;
             this.isHost = false;
             this.otherPlayers = {};
@@ -153,6 +247,9 @@ const gameMultiplayer = {
             
             // Update de spelerslijst in de UI
             this.updatePlayersList();
+            
+            // Update de spelernamen in de header
+            this.updatePlayerNamesInUI();
             
             // Voeg een systeembericht toe aan de chat
             this.addChatMessage({
@@ -183,6 +280,9 @@ const gameMultiplayer = {
             
             // Update de spelerslijst in de UI
             this.updatePlayersList();
+            
+            // Update de spelernamen in de header (reset naar standaard als nodig)
+            this.updatePlayerNamesInUI();
             
             // Voeg een systeembericht toe aan de chat
             this.addChatMessage({
@@ -224,15 +324,103 @@ const gameMultiplayer = {
             
             // Update local game state
             if (!this.isHost) {
-                if ('puppy_saved' in data) gameCore.gameState.puppySaved = data.puppy_saved;
+                if ('puppy_saved' in data) {
+                    gameCore.gameState.puppySaved = data.puppy_saved;
+                    
+                    // Update ook de puppy in het huidige level
+                    const currentLevelData = window.levels[gameCore.currentLevel];
+                    if (currentLevelData.puppy) {
+                        currentLevelData.puppy.saved = data.puppy_saved;
+                        
+                        // Toon bericht als de puppy is gered
+                        if (data.puppy_saved) {
+                            gameCore.gameState.message = "Je hebt de puppy gered! Verzamel nu de ster!";
+                            
+                            // Verberg het bericht na 3 seconden
+                            setTimeout(() => {
+                                if (gameCore.gameState.message === "Je hebt de puppy gered! Verzamel nu de ster!") {
+                                    gameCore.gameState.message = "";
+                                }
+                            }, 3000);
+                        }
+                    }
+                }
+                
                 if ('game_over' in data) gameCore.gameState.gameOver = data.game_over;
                 if ('level_completed' in data) gameCore.levelCompleted = data.level_completed;
                 
+                // Als de collectibles informatie wordt meegestuurd, update dan de lokale collectibles
+                const currentLevelData = window.levels[gameCore.currentLevel];
+                
+                // Als hostplayer aangeeft dat alle collectibles verzameld zijn
+                if ('collectibles_completed' in data && data.collectibles_completed) {
+                    // Als alle collectibles verzameld zijn volgens de host, maak de local collectibles array leeg
+                    if (currentLevelData.collectibles.length > 0) {
+                        currentLevelData.collectibles = []; // Leeg de collectibles array
+                        
+                        // Toon level completed bericht
+                        gameCore.levelCompleted = true;
+                        gameCore.gameState.message = "Level voltooid! Druk op Spatie voor het volgende level";
+                    }
+                } 
+                // Als er collectibles informatie wordt meegestuurd, update de lokale collectibles array
+                else if ('collectibles' in data && Array.isArray(data.collectibles)) {
+                    // Bijwerken van de collectibles (sterren) op basis van wat de host stuurt
+                    // We moeten de lokale collectibles vervangen door alleen die collectibles die 
+                    // nog bestaan volgens de host
+                    
+                    // Bewaar de eigenschappen van het originele collectible-object voor elk item
+                    // dat nog bestaat, en behoud alles behalve de positie (die is al meegestuurd)
+                    if (currentLevelData.collectibles && currentLevelData.collectibles.length > 0) {
+                        // Maak een nieuwe array met alleen de collectibles die de host nog heeft
+                        const updatedCollectibles = [];
+                        
+                        // Voor elke collectible die de host heeft gestuurd
+                        data.collectibles.forEach(hostCollectible => {
+                            // Probeer het volledige object uit de huidige level data te vinden
+                            // Voeg deze toe aan de nieuwe array met behoud van alle eigenschappen
+                            if (currentLevelData.collectibles[hostCollectible.index]) {
+                                updatedCollectibles.push(currentLevelData.collectibles[hostCollectible.index]);
+                            }
+                        });
+                        
+                        // Vervang de huidige collectibles met de bijgewerkte lijst
+                        currentLevelData.collectibles = updatedCollectibles;
+                    }
+                }
+                
                 // Level verandering is complexer en vereist speciale behandeling
                 if ('current_level' in data && data.current_level !== gameCore.currentLevel) {
-                    if (typeof gameCore.nextLevel === 'function') {
-                        // Gebruik de bestaande functie om van level te wisselen
-                        gameCore.nextLevel();
+                    console.log("Level change detected:", data.current_level);
+                    gameCore.currentLevel = data.current_level;
+                    
+                    // Reset spelers
+                    if (window.player1) {
+                        player1.animalType = "SQUIRREL";
+                        player1.updateAnimalProperties();
+                        player1.x = window.levels[gameCore.currentLevel].startPositions[0].x;
+                        player1.y = window.levels[gameCore.currentLevel].startPositions[0].y;
+                    }
+                    
+                    if (window.player2) {
+                        player2.animalType = "TURTLE";
+                        player2.updateAnimalProperties();
+                        player2.x = window.levels[gameCore.currentLevel].startPositions[1].x;
+                        player2.y = window.levels[gameCore.currentLevel].startPositions[1].y;
+                    }
+                    
+                    // Reset game state
+                    gameCore.levelCompleted = false;
+                    gameCore.gameState.message = "";
+                    gameCore.gameState.puppySaved = false;
+                    gameCore.gameState.gameOver = false;
+                    
+                    // Update de URL fragment zonder de pagina opnieuw te laden
+                    window.location.hash = `level=${gameCore.currentLevel}`;
+                    
+                    // Update de editor link
+                    if (typeof gameCore.updateEditorLink === 'function') {
+                        gameCore.updateEditorLink();
                     }
                 }
             }
@@ -252,6 +440,7 @@ const gameMultiplayer = {
             // Als we een spelerobject hebben, update dat ook
             if (player.playerObj) {
                 if (data.position) {
+                    // Update positie direct
                     player.playerObj.x = data.position.x;
                     player.playerObj.y = data.position.y;
                 }
@@ -262,6 +451,28 @@ const gameMultiplayer = {
                 if (data.animal_type && data.animal_type !== player.playerObj.animalType) {
                     player.playerObj.animalType = data.animal_type;
                     player.playerObj.updateAnimalProperties();
+                }
+                
+                // Reset de onground-status op basis van de y-positie
+                const currentLevelData = window.levels[gameCore.currentLevel];
+                
+                // Check of de speler op de grond staat
+                if (player.playerObj.y + player.playerObj.height >= gameCore.GROUND_LEVEL) {
+                    player.playerObj.onGround = true;
+                } else {
+                    // Check of de speler op een platform staat
+                    player.playerObj.onGround = false;
+                    
+                    if (currentLevelData && currentLevelData.platforms) {
+                        currentLevelData.platforms.forEach(platform => {
+                            if (player.playerObj.y + player.playerObj.height >= platform.y - 5 &&
+                                player.playerObj.y + player.playerObj.height <= platform.y + 5 &&
+                                player.playerObj.x + player.playerObj.width/2 > platform.x &&
+                                player.playerObj.x + player.playerObj.width/2 < platform.x + platform.width) {
+                                player.playerObj.onGround = true;
+                            }
+                        });
+                    }
                 }
             }
         });
@@ -342,11 +553,25 @@ const gameMultiplayer = {
         this.ui.usernameInput = document.createElement('input');
         this.ui.usernameInput.type = 'text';
         this.ui.usernameInput.placeholder = 'Kies een naam...';
-        this.ui.usernameInput.value = 'Speler_' + Math.floor(Math.random() * 1000);
+        
+        // Gebruik de opgeslagen gebruikersnaam als die er is, anders een willekeurige naam
+        if (this.username) {
+            this.ui.usernameInput.value = this.username;
+        } else {
+            this.ui.usernameInput.value = 'Speler_' + Math.floor(Math.random() * 1000);
+        }
+        
         this.ui.usernameInput.style.width = '100%';
         this.ui.usernameInput.style.padding = '8px';
         this.ui.usernameInput.style.borderRadius = '5px';
         this.ui.usernameInput.style.border = '1px solid #ccc';
+        
+        // Update username wanneer input verandert
+        this.ui.usernameInput.addEventListener('change', () => {
+            this.username = this.ui.usernameInput.value.trim();
+            this.saveUserPreferences();
+        });
+        
         usernameSection.appendChild(this.ui.usernameInput);
         
         this.ui.lobbyContainer.appendChild(usernameSection);
@@ -379,6 +604,7 @@ const gameMultiplayer = {
         roomControls.style.marginTop = '10px';
         roomControls.style.display = 'flex';
         roomControls.style.gap = '10px';
+        roomControls.style.flexWrap = 'wrap';
         
         this.ui.createRoomBtn = document.createElement('button');
         this.ui.createRoomBtn.textContent = 'Nieuwe Kamer';
@@ -403,6 +629,41 @@ const gameMultiplayer = {
         this.ui.joinRoomBtn.style.cursor = 'pointer';
         this.ui.joinRoomBtn.onclick = () => this.refreshRooms();
         roomControls.appendChild(this.ui.joinRoomBtn);
+        
+        // Als er een laatst bezochte kamer is, toon dan een optie om terug te gaan
+        if (this.lastRoomInfo && this.lastRoomInfo.roomId) {
+            // Maak een section voor de laatste kamer
+            const lastRoomSection = document.createElement('div');
+            lastRoomSection.style.width = '100%';
+            lastRoomSection.style.marginTop = '10px';
+            lastRoomSection.style.padding = '10px';
+            lastRoomSection.style.borderRadius = '5px';
+            lastRoomSection.style.backgroundColor = '#f0f0f0';
+            
+            // Toon informatie over laatste kamer
+            const lastRoomInfo = document.createElement('div');
+            lastRoomInfo.innerHTML = `
+                <strong>Laatst bezocht:</strong> ${this.lastRoomInfo.roomName}<br>
+                <small>Room ID: ${this.lastRoomInfo.roomId}</small>
+            `;
+            lastRoomSection.appendChild(lastRoomInfo);
+            
+            // Voeg een knop toe om opnieuw deel te nemen
+            const rejoinBtn = document.createElement('button');
+            rejoinBtn.textContent = 'Opnieuw deelnemen';
+            rejoinBtn.style.backgroundColor = '#ff9800';
+            rejoinBtn.style.color = 'white';
+            rejoinBtn.style.border = 'none';
+            rejoinBtn.style.borderRadius = '5px';
+            rejoinBtn.style.padding = '8px 15px';
+            rejoinBtn.style.marginTop = '5px';
+            rejoinBtn.style.width = '100%';
+            rejoinBtn.style.cursor = 'pointer';
+            rejoinBtn.onclick = () => this.joinRoom(this.lastRoomInfo.roomId);
+            lastRoomSection.appendChild(rejoinBtn);
+            
+            roomControls.appendChild(lastRoomSection);
+        }
         
         roomListSection.appendChild(roomControls);
         
@@ -657,6 +918,9 @@ const gameMultiplayer = {
         
         this.username = username;
         
+        // Sla gebruikersnaam op in localStorage
+        this.saveUserPreferences();
+        
         // Haal het huidige level op
         const level = gameCore.currentLevel || 0;
         
@@ -683,13 +947,27 @@ const gameMultiplayer = {
         
         this.username = username;
         
-        // Stuur een verzoek om bij de kamer aan te sluiten
+        // Sla gebruikersnaam op in localStorage
+        this.saveUserPreferences();
+        
+        // Controleer eerst of de kamer bestaat
+        // Haal de actieve kamers op van de server
+        this.socket.emit('get_rooms');
+        
+        // Vervolgens proberen we aan te sluiten
+        // Als de kamer niet bestaat zal de server een foutmelding terugsturen
         this.socket.emit('join_room', {
             room_id: roomId,
             username: username
         });
         
-        console.log("Aansluiten bij kamer:", roomId, "als:", username);
+        console.log("Poging tot aansluiten bij kamer:", roomId, "als:", username);
+    },
+    
+    // Controleer of een kamer nog bestaat
+    checkRoomExists: function(roomId) {
+        if (!window.active_rooms) return false;
+        return roomId in window.active_rooms;
     },
     
     // Verlaat de huidige kamer
@@ -766,6 +1044,9 @@ const gameMultiplayer = {
         
         // Update de spelerslijst UI
         this.updatePlayersList();
+        
+        // Update de namen in de UI header
+        this.updatePlayerNamesInUI();
         
         // Toon de chat container
         this.ui.chatContainer.style.display = 'block';
@@ -1005,12 +1286,46 @@ const gameMultiplayer = {
             }
         }
         
+        // Update spelernamen in de UI
+        this.updatePlayerNamesInUI();
+        
         // TODO: Maak spelerobjecten voor de andere spelers
         
         // TODO: Start de game loop voor multiplayer
         
         // Zet de game state op running
         gameCore.gameState.running = true;
+    },
+    
+    // Update de gebruikers interface met de huidige speler informatie
+    updatePlayerNamesInUI: function() {
+        // Bijwerken van speler naam labels in de UI (boven het canvas)
+        const player1Label = document.querySelector('#player1-info h3');
+        const player2Label = document.querySelector('#player2-info h3');
+        
+        if (player1Label && this.username) {
+            // Set de naam van de lokale speler
+            player1Label.textContent = this.username;
+        }
+        
+        if (player2Label) {
+            // Als we in multiplayer modus zijn en er zijn andere spelers
+            if (this.roomId && Object.keys(this.otherPlayers).length > 0) {
+                // Pak de eerste andere speler
+                const otherPlayerKey = Object.keys(this.otherPlayers)[0];
+                const otherPlayer = this.otherPlayers[otherPlayerKey];
+                
+                // Zet de naam van de andere speler
+                if (otherPlayer && otherPlayer.username) {
+                    player2Label.textContent = otherPlayer.username;
+                } else {
+                    player2Label.textContent = "Speler 2";
+                }
+            } else {
+                // Anders, gebruik standaard naam
+                player2Label.textContent = "Speler 2";
+            }
+        }
     },
     
     // Update de game state en synchroniseer met andere spelers
@@ -1020,12 +1335,41 @@ const gameMultiplayer = {
         // Alleen de host mag de game state updaten
         if (!this.isHost) return;
         
+        // Haal de puppystatus op uit het huidige level
+        const currentLevelData = window.levels[gameCore.currentLevel];
+        let puppySaved = gameCore.gameState.puppySaved;
+        
+        // Als er een puppy in het level is, gebruik die status
+        if (currentLevelData.puppy) {
+            puppySaved = currentLevelData.puppy.saved || gameCore.gameState.puppySaved;
+        }
+        
+        // Controleer of alle collectibles verzameld zijn
+        const collectiblesStatus = currentLevelData.collectibles.length === 0;
+        
+        // Verzamel alle active collectibles om te synchroniseren
+        const activeCollectibles = [];
+        if (currentLevelData.collectibles) {
+            currentLevelData.collectibles.forEach((collectible, index) => {
+                // Stuur alleen de posities, niet de volledige objecten
+                activeCollectibles.push({
+                    x: collectible.x,
+                    y: collectible.y,
+                    width: collectible.width,
+                    height: collectible.height,
+                    index: index
+                });
+            });
+        }
+        
         // Stuur een update over de huidige game state
         this.socket.emit('update_game_state', {
-            puppy_saved: gameCore.gameState.puppySaved,
+            puppy_saved: puppySaved,
             game_over: gameCore.gameState.gameOver,
-            level_completed: gameCore.levelCompleted,
-            current_level: gameCore.currentLevel
+            level_completed: gameCore.levelCompleted || collectiblesStatus,
+            current_level: gameCore.currentLevel,
+            collectibles_completed: collectiblesStatus,
+            collectibles: activeCollectibles
         });
     }
 };

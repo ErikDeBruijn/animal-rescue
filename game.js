@@ -89,6 +89,13 @@ function nextLevel() {
     
     // Update de editor link
     gameCore.updateEditorLink();
+    
+    // Als we in multiplayer modus zijn en de host zijn, broadcast het nieuwe level
+    if (window.gameMultiplayer && gameMultiplayer.isHost && gameMultiplayer.socket) {
+        console.log("Broadcasting level change to all players:", gameCore.currentLevel);
+        // Update onmiddellijk de game state om het nieuwe level te synchroniseren
+        gameMultiplayer.updateGameState();
+    }
 }
 
 // Reset het huidige level (na game over door puppy verlies)
@@ -170,16 +177,23 @@ function gameLoop() {
         
         // Multiplayer-specifieke spelers tekenen en updaten (andere spelers in het netwerk)
         if (window.gameMultiplayer && gameMultiplayer.roomId) {
-            // Stuur onze positie naar andere spelers (alleen voor de lokale speler)
+            // Stuur onze positie naar andere spelers (voor beide lokale spelers)
             if (gameMultiplayer.socket) {
                 // Stuur elke 3 frames een update (om netwerkverkeer te beperken)
                 if (frameCount % 3 === 0) {
+                    // Stuur updates van beide spelers om correcte synchronisatie te garanderen
                     gameMultiplayer.sendPositionUpdate(player1);
+                    gameMultiplayer.sendPositionUpdate(player2);
                 }
                 
                 // Als we de host zijn, synchroniseer de game state (minder vaak)
-                if (gameMultiplayer.isHost && frameCount % 30 === 0) {
+                if (gameMultiplayer.isHost && frameCount % 15 === 0) {
                     gameMultiplayer.updateGameState();
+                }
+                
+                // Update de spelernamen in de UI periodiek (elke 150 frames = ongeveer elke 2.5 seconden)
+                if (frameCount % 150 === 0) {
+                    gameMultiplayer.updatePlayerNamesInUI();
                 }
             }
             

@@ -407,6 +407,13 @@ class Player {
                         gameCore.levelCompleted = true;
                         gameCore.gameState.message = "Level voltooid! Druk op Spatie voor het volgende level";
                     }
+                    
+                    // In multiplayer, laat de host de collectibles status updaten
+                    // We doen dit altijd, niet alleen bij level complete
+                    if (window.gameMultiplayer && gameMultiplayer.isHost && gameMultiplayer.socket) {
+                        // Stuur een onmiddellijke update om de collectibles status te synchroniseren
+                        gameMultiplayer.updateGameState();
+                    }
                 } else {
                     // Toon bericht dat puppy eerst gered moet worden
                     gameCore.gameState.message = "Red eerst de puppy!";
@@ -478,6 +485,12 @@ function updatePuppy() {
             puppy.saved = true;
             gameCore.gameState.puppySaved = true;
             gameCore.gameState.message = "Je hebt de puppy gered! Verzamel nu de ster!";
+            
+            // In multiplayer, laat de host de puppy-status updaten
+            if (window.gameMultiplayer && gameMultiplayer.isHost && gameMultiplayer.socket) {
+                // Stuur een onmiddellijke update om de puppystatus te synchroniseren
+                gameMultiplayer.updateGameState();
+            }
             
             // Voeg een vertraging toe om het bericht te tonen
             setTimeout(() => {
