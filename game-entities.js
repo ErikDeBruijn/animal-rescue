@@ -22,6 +22,12 @@ class Player {
         this.isInvulnerable = false;
         this.invulnerableTimer = 0;
         
+        // Zuurstof-systeem voor schildpad
+        this.oxygenLevel = 100;
+        this.maxOxygenLevel = 100;
+        this.isUnderwater = false;
+        this.lowOxygenWarning = false;
+        
         // Properties die afhankelijk zijn van diersoort
         this.updateAnimalProperties();
     }
@@ -103,11 +109,17 @@ class Player {
             // Bepaal het andere dier (welke het andere dier dan deze speler heeft)
             const otherAnimal = allowedAnimals.find(animal => animal !== this.animalType);
             
-            // Alleen wisselen als de andere speler een ander dier heeft
-            if (otherPlayer && otherPlayer.animalType !== this.animalType) {
-                console.log(`${this.name} wisselt van ${this.animalType} naar ${otherAnimal}`);
-                this.animalType = otherAnimal;
-                this.updateAnimalProperties();
+            // Wissel naar het andere dier en update UI
+            console.log(`${this.name} wisselt van ${this.animalType} naar ${otherAnimal}`);
+            this.animalType = otherAnimal;
+            this.updateAnimalProperties();
+            
+            // Zorg ervoor dat de andere speler ook wisselt
+            if (otherPlayer) {
+                const otherPlayersOtherAnimal = allowedAnimals.find(animal => animal !== otherPlayer.animalType);
+                console.log(`${otherPlayer.name} wisselt automatisch van ${otherPlayer.animalType} naar ${otherPlayersOtherAnimal}`);
+                otherPlayer.animalType = otherPlayersOtherAnimal;
+                otherPlayer.updateAnimalProperties();
             }
         } else {
             // Als er 3 dieren zijn, gebruik het normale cyclus-gedrag
@@ -145,6 +157,10 @@ class Player {
     update(otherPlayer, platforms, traps, collectibles) {
         // Update onkwetsbaarheidstimer als die actief is
         this.updateInvulnerability();
+        
+        // Reset underwater status aan het begin van elke update
+        // Wordt weer op true gezet als speler in water is
+        this.isUnderwater = false;
         
         // Beweging horizontaal met inertia
         const acceleration = 0.8; // Acceleratie waarde
@@ -290,6 +306,13 @@ class Player {
                     if (this.animalType === "TURTLE") {
                         // Schildpad kan zwemmen
                         this.velY *= 0.5; // Langzamer vallen in water
+                        
+                        // Markeer dat de schildpad onder water is
+                        this.isUnderwater = true;
+                        
+                        // Zuurstof wordt nu afgetrokken in game-rendering.js
+                        // Dit zorgt voor betere zichtbaarheid van het effect
+                        console.log("Schildpad is onder water");
                         
                         // Schildpad kan in water omhoog zwemmen
                         if (gameControls.keys[this.controls.up] || gameControls.keys[this.controls.up.toLowerCase()]) {
@@ -527,13 +550,37 @@ class Player {
                 this.loseLife();
             }
         });
+        
+        // Verhoog zuurstof alleen als de schildpad NIET onder water is
+        // Dit moet aan het eind van de update gebeuren nadat alle collisie-checks zijn gedaan
+        if (this.animalType === "TURTLE" && !this.isUnderwater && this.oxygenLevel < this.maxOxygenLevel) {
+            this.oxygenLevel += 0.5; // Zuurstof herstelt boven water
+            if (this.oxygenLevel > this.maxOxygenLevel) {
+                this.oxygenLevel = this.maxOxygenLevel;
+            }
+            
+            // Reset de waarschuwing als zuurstof weer boven 50% is
+            if (this.oxygenLevel > 50) {
+                this.lowOxygenWarning = false;
+            }
+        }
     }
     
     collidesWithPlatform(platform) {
-        return this.x < platform.x + platform.width &&
-               this.x + this.width > platform.x &&
-               this.y < platform.y + platform.height &&
-               this.y + this.height > platform.y;
+        // Verbeterde detectie specifiek voor waterplatforms - ruimere detectie
+        if (platform.type === "WATER" && this.animalType === "TURTLE") {
+            // Ruimere detectie voor schildpad in water (check of enig deel van de schildpad in water is)
+            return this.x < platform.x + platform.width &&
+                   this.x + this.width > platform.x &&
+                   this.y < platform.y + platform.height &&
+                   this.y + this.height > platform.y;
+        } else {
+            // Normale detectie voor andere platforms
+            return this.x < platform.x + platform.width &&
+                   this.x + this.width > platform.x &&
+                   this.y < platform.y + platform.height &&
+                   this.y + this.height > platform.y;
+        }
     }
     
     collidesWithObject(obj) {

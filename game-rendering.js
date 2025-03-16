@@ -865,6 +865,77 @@ function drawTurtle(player) {
     // Bepaal richting op basis van beweging
     const facingLeft = player.velX < 0;
     
+    // Controleer of de schildpad onder water is 
+    // en pas dan pas zuurstofafname toe
+    if (player.oxygenLevel !== undefined && player.isUnderwater) {
+        // Verminder zuurstof nog langzamer (4x zo langzaam als oorspronkelijk)
+        player.oxygenLevel = Math.max(0, player.oxygenLevel - 0.25);
+        console.log("Turtle zuurstofniveau onder water: " + player.oxygenLevel);
+    }
+    
+    // Teken zuurstofmeter boven de schildpad, maar alleen als het niet 100% is
+    if (player.oxygenLevel !== undefined && player.oxygenLevel < player.maxOxygenLevel) {
+        const meterWidth = player.width * 1.2;
+        const meterHeight = 5;
+        const meterX = player.x - (meterWidth - player.width) / 2;
+        const meterY = player.y - 15;
+        
+        // Achtergrond van de meter
+        gameCore.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+        gameCore.ctx.fillRect(meterX, meterY, meterWidth, meterHeight);
+        
+        // Actuele zuurstof
+        const fillWidth = (player.oxygenLevel / player.maxOxygenLevel) * meterWidth;
+        
+        // Kleur op basis van zuurstofniveau
+        let meterColor;
+        if (player.oxygenLevel > 70) {
+            meterColor = 'rgb(0, 255, 255)'; // Cyaan
+        } else if (player.oxygenLevel > 30) {
+            meterColor = 'rgb(0, 191, 255)'; // Diepblauw
+        } else {
+            meterColor = 'rgb(0, 0, 255)'; // Blauw
+        }
+        
+        gameCore.ctx.fillStyle = meterColor;
+        gameCore.ctx.fillRect(meterX, meterY, fillWidth, meterHeight);
+        
+        // Controleer hier ook op game-over conditie (wanneer zuurstof op is)
+        if (player.oxygenLevel <= 0) {
+            player.loseLife();
+            player.oxygenLevel = player.maxOxygenLevel * 0.3; // Reset naar 30% na een leven verloren
+        }
+        
+        // Check of zuurstof bijna op is (onder 30%)
+        if (player.oxygenLevel < 30 && !player.lowOxygenWarning) {
+            gameCore.gameState.message = "De schildpad heeft zuurstof nodig! Zwem naar boven!";
+            player.lowOxygenWarning = true;
+            
+            // Wis bericht na 2 seconden
+            setTimeout(() => {
+                if (gameCore.gameState.message === "De schildpad heeft zuurstof nodig! Zwem naar boven!") {
+                    gameCore.gameState.message = "";
+                }
+            }, 2000);
+        }
+        
+        // Teken bubbeleffect, maar alleen als de schildpad onder water is
+        if (player.isUnderwater) {
+            const time = Date.now() / 1000;
+            // Teken bubbles rond het hoofd van de schildpad (grotere en meer zichtbare bubbels)
+            for (let i = 0; i < 5; i++) {
+                const bubbleX = player.x + player.width * (facingLeft ? 0.2 : 0.8) + Math.sin(time * 2 + i) * 5;
+                const bubbleY = player.y + player.height * 0.2 - (time * 5 + i * 10) % 30;
+                const size = 3 + Math.sin(time + i) * 2; // Grotere bubbels
+                
+                gameCore.ctx.fillStyle = 'rgba(255, 255, 255, 0.9)'; // Meer zichtbaar
+                gameCore.ctx.beginPath();
+                gameCore.ctx.arc(bubbleX, bubbleY, size, 0, Math.PI * 2);
+                gameCore.ctx.fill();
+            }
+        }
+    }
+    
     // Schild
     gameCore.ctx.fillStyle = player.color;
     gameCore.ctx.beginPath();
@@ -959,8 +1030,8 @@ function drawUnicorn(player) {
     // Bepaal richting op basis van beweging
     const facingLeft = player.velX < 0;
     
-    // Teken vliegmeter boven de eenhoorn
-    if (player.flyingPower !== undefined) {
+    // Teken vliegmeter boven de eenhoorn, maar alleen als het niet 100% is
+    if (player.flyingPower !== undefined && player.flyingPower < player.flyingPowerMax) {
         const meterWidth = player.width * 1.2;
         const meterHeight = 5;
         const meterX = player.x - (meterWidth - player.width) / 2;
