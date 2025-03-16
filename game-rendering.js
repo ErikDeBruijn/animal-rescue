@@ -3,38 +3,89 @@
 
 // Collectible object rendering
 function drawCollectible(collectible) {
-    // Rescue star
-    gameCore.ctx.fillStyle = 'gold';
-    
-    // Draw the star
-    const centerX = collectible.x + collectible.width/2;
-    const centerY = collectible.y + collectible.height/2;
-    const spikes = 5;
-    const outerRadius = collectible.width/2;
-    const innerRadius = collectible.width/4;
-    
-    gameCore.ctx.beginPath();
-    for(let i = 0; i < spikes * 2; i++) {
-        const radius = i % 2 === 0 ? outerRadius : innerRadius;
-        const angle = Math.PI * i / spikes - Math.PI / 2;
-        const x = centerX + radius * Math.cos(angle);
-        const y = centerY + radius * Math.sin(angle);
+    if (collectible.type === "PEPPER") {
+        // Draw a pepper
+        const centerX = collectible.x + collectible.width/2;
+        const centerY = collectible.y + collectible.height/2;
         
-        if (i === 0) {
-            gameCore.ctx.moveTo(x, y);
-        } else {
-            gameCore.ctx.lineTo(x, y);
+        // Add rotation (15 degrees in radians)
+        const rotationAngle = 15 * Math.PI / 180;
+        gameCore.ctx.save();
+        gameCore.ctx.translate(centerX, centerY);
+        gameCore.ctx.rotate(rotationAngle);
+        
+        // Draw the pepper body (more elongated and pointy)
+        gameCore.ctx.fillStyle = 'red';
+        gameCore.ctx.beginPath();
+        // Make the pepper more elongated by decreasing the width
+        // and making it pointy at the bottom
+        gameCore.ctx.moveTo(0, -collectible.height / 1.8); // Top (stem)
+        gameCore.ctx.bezierCurveTo(
+            collectible.width / 4, -collectible.height / 2,  // Control point 1
+            collectible.width / 3, collectible.height / 3,   // Control point 2
+            0, collectible.height / 1.8                     // Bottom point (pointy)
+        );
+        gameCore.ctx.bezierCurveTo(
+            -collectible.width / 3, collectible.height / 3,  // Control point 3
+            -collectible.width / 4, -collectible.height / 2, // Control point 4
+            0, -collectible.height / 1.8                    // Back to top
+        );
+        gameCore.ctx.fill();
+        
+        // Draw the pepper stem
+        gameCore.ctx.fillStyle = 'green';
+        gameCore.ctx.beginPath();
+        gameCore.ctx.ellipse(0, -collectible.height / 1.8, collectible.width / 8, collectible.height / 12, 0, 0, Math.PI * 2);
+        gameCore.ctx.fill();
+        
+        // Highlight (to make it look shiny)
+        gameCore.ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+        gameCore.ctx.beginPath();
+        gameCore.ctx.ellipse(
+            -collectible.width/6, 
+            -collectible.height/6, 
+            collectible.width/8, 
+            collectible.height/10, 
+            0, 0, Math.PI * 2
+        );
+        gameCore.ctx.fill();
+        
+        // Restore the canvas transformation
+        gameCore.ctx.restore();
+    } else {
+        // Default: Draw a star (original code)
+        gameCore.ctx.fillStyle = 'gold';
+        
+        // Draw the star
+        const centerX = collectible.x + collectible.width/2;
+        const centerY = collectible.y + collectible.height/2;
+        const spikes = 5;
+        const outerRadius = collectible.width/2;
+        const innerRadius = collectible.width/4;
+        
+        gameCore.ctx.beginPath();
+        for(let i = 0; i < spikes * 2; i++) {
+            const radius = i % 2 === 0 ? outerRadius : innerRadius;
+            const angle = Math.PI * i / spikes - Math.PI / 2;
+            const x = centerX + radius * Math.cos(angle);
+            const y = centerY + radius * Math.sin(angle);
+            
+            if (i === 0) {
+                gameCore.ctx.moveTo(x, y);
+            } else {
+                gameCore.ctx.lineTo(x, y);
+            }
         }
+        gameCore.ctx.closePath();
+        gameCore.ctx.fill();
+        
+        // Sparkle effect
+        gameCore.ctx.fillStyle = 'white';
+        gameCore.ctx.beginPath();
+        gameCore.ctx.arc(centerX - collectible.width/5, centerY - collectible.height/5, 
+                collectible.width/10, 0, Math.PI * 2);
+        gameCore.ctx.fill();
     }
-    gameCore.ctx.closePath();
-    gameCore.ctx.fill();
-    
-    // Sparkle effect
-    gameCore.ctx.fillStyle = 'white';
-    gameCore.ctx.beginPath();
-    gameCore.ctx.arc(centerX - collectible.width/5, centerY - collectible.height/5, 
-            collectible.width/10, 0, Math.PI * 2);
-    gameCore.ctx.fill();
 }
 
 // Trap rendering

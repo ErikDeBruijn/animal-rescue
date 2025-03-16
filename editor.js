@@ -49,7 +49,10 @@ const objectColors = {
         SPIKES: '#8c8c8c'   // Grijs voor spikes
     },
     puppy: '#BE9B7B',       // Lichtbruin voor puppy
-    collectible: '#ffff00', // Geel voor ster
+    collectible: {
+        STAR: '#ffff00',     // Geel voor ster
+        PEPPER: '#d70000'    // Rood voor peper
+    },
     startPos: '#00ff00'     // Groen voor startposities
 };
 
@@ -722,8 +725,12 @@ function setupEventListeners() {
         setActiveObjectType('puppy');
     });
     
-    document.getElementById('collectible-btn').addEventListener('click', function() {
-        setActiveObjectType('collectible');
+    document.getElementById('collectible-star-btn').addEventListener('click', function() {
+        setActiveObjectType('collectible-star');
+    });
+    
+    document.getElementById('collectible-pepper-btn').addEventListener('click', function() {
+        setActiveObjectType('collectible-pepper');
     });
     
     document.getElementById('start-pos-btn').addEventListener('click', function() {
@@ -753,7 +760,8 @@ function setupEventListeners() {
         document.getElementById('platform-btn').classList.remove('selected');
         document.getElementById('enemy-btn').classList.remove('selected');
         document.getElementById('puppy-btn').classList.remove('selected');
-        document.getElementById('collectible-btn').classList.remove('selected');
+        document.getElementById('collectible-star-btn').classList.remove('selected');
+        document.getElementById('collectible-pepper-btn').classList.remove('selected');
         document.getElementById('start-pos-btn').classList.remove('selected');
         document.getElementById('trap-btn').classList.remove('selected');
         
@@ -864,12 +872,20 @@ function setActiveObjectType(type) {
     document.getElementById('platform-btn').classList.remove('selected');
     document.getElementById('enemy-btn').classList.remove('selected');
     document.getElementById('puppy-btn').classList.remove('selected');
-    document.getElementById('collectible-btn').classList.remove('selected');
+    document.getElementById('collectible-star-btn').classList.remove('selected');
+    document.getElementById('collectible-pepper-btn').classList.remove('selected');
     document.getElementById('start-pos-btn').classList.remove('selected');
     document.getElementById('trap-btn').classList.remove('selected');
     
     if (type) {
-        document.getElementById(type.replace('startPosition', 'start-pos') + '-btn').classList.add('selected');
+        // Handle special cases for the new collectible types
+        let buttonId;
+        if (type === 'collectible-star' || type === 'collectible-pepper') {
+            buttonId = type + '-btn';
+        } else {
+            buttonId = type.replace('startPosition', 'start-pos') + '-btn';
+        }
+        document.getElementById(buttonId).classList.add('selected');
         
         // We zijn al in plaatsingsmodus (panel is geopend)
         // dus we maken alleen een preview object aan
@@ -959,11 +975,21 @@ function createPlacementPreview(type) {
             };
             break;
             
-        case 'collectible':
+        case 'collectible-star':
             editorState.placementPreview = {
                 type: 'collectible',
                 width: 30,
-                height: 30
+                height: 30,
+                collectibleType: 'STAR'
+            };
+            break;
+            
+        case 'collectible-pepper':
+            editorState.placementPreview = {
+                type: 'collectible',
+                width: 30,
+                height: 30,
+                collectibleType: 'PEPPER'
             };
             break;
             
@@ -1071,7 +1097,8 @@ function handleCanvasMouseDown(e) {
             document.getElementById('platform-btn').classList.remove('selected');
             document.getElementById('enemy-btn').classList.remove('selected');
             document.getElementById('puppy-btn').classList.remove('selected');
-            document.getElementById('collectible-btn').classList.remove('selected');
+            document.getElementById('collectible-star-btn').classList.remove('selected');
+            document.getElementById('collectible-pepper-btn').classList.remove('selected');
             document.getElementById('start-pos-btn').classList.remove('selected');
             document.getElementById('trap-btn').classList.remove('selected');
             
@@ -1379,8 +1406,13 @@ function findObjectAtPosition(x, y) {
         const collectible = editorState.editingLevel.collectibles[i];
         if (x >= collectible.x && x <= collectible.x + collectible.width && 
             y >= collectible.y && y <= collectible.y + collectible.height) {
+            // Determine the specific type of collectible
+            let collectibleType = 'collectible-star'; // Default to star
+            if (collectible.type === 'PEPPER') {
+                collectibleType = 'collectible-pepper';
+            }
             return {
-                type: 'collectible',
+                type: collectibleType,
                 object: collectible,
                 index: i
             };
@@ -1467,16 +1499,30 @@ function createNewObject(x, y) {
             editorState.selectedObject = newPuppy;
             break;
             
-        case 'collectible':
-            const newCollectible = {
+        case 'collectible-star':
+            const newStarCollectible = {
                 x: x - 15,
                 y: y - 15,
                 width: 30,
-                height: 30
+                height: 30,
+                type: 'STAR'
             };
             
-            editorState.editingLevel.collectibles.push(newCollectible);
-            editorState.selectedObject = newCollectible;
+            editorState.editingLevel.collectibles.push(newStarCollectible);
+            editorState.selectedObject = newStarCollectible;
+            break;
+            
+        case 'collectible-pepper':
+            const newPepperCollectible = {
+                x: x - 15,
+                y: y - 15,
+                width: 30,
+                height: 30,
+                type: 'PEPPER'
+            };
+            
+            editorState.editingLevel.collectibles.push(newPepperCollectible);
+            editorState.selectedObject = newPepperCollectible;
             break;
             
         case 'startPosition':
@@ -1536,7 +1582,8 @@ function deleteSelectedObject() {
                 saved: false
             };
             break;
-        case 'collectible':
+        case 'collectible-star':
+        case 'collectible-pepper':
             editorState.editingLevel.collectibles = editorState.editingLevel.collectibles.filter(c => c !== object);
             break;
         case 'startPosition':
@@ -1626,7 +1673,7 @@ function updateObjectList() {
     }
     
     // Collectibles
-    addObjectsToList('Sterren', editorState.editingLevel.collectibles, 'collectible');
+    addObjectsToList('Sterren en pepers', editorState.editingLevel.collectibles, 'collectible');
     
     // Vallen
     addObjectsToList('Vallen', editorState.editingLevel.traps, 'trap');
@@ -1775,7 +1822,8 @@ function drawPlacementPreview() {
                 x: x - preview.width / 2,
                 y: y - preview.height / 2,
                 width: preview.width,
-                height: preview.height
+                height: preview.height,
+                type: preview.collectibleType || 'STAR'
             };
             drawCollectible(collectiblePreview);
             break;
@@ -2147,35 +2195,95 @@ function drawPuppy(puppy) {
     ctx.strokeRect(puppy.x, puppy.y, puppy.width, puppy.height);
 }
 
-// Teken een ster (collectible)
+// Teken een collectible (ster of peper)
 function drawCollectible(collectible) {
-    ctx.fillStyle = objectColors.collectible;
+    const type = collectible.type || 'STAR'; // Default type is STAR if not specified
     
-    // Teken een 5-puntige ster
-    const centerX = collectible.x + collectible.width / 2;
-    const centerY = collectible.y + collectible.height / 2;
-    const outerRadius = collectible.width / 2;
-    const innerRadius = collectible.width / 4;
-    
-    ctx.beginPath();
-    for (let i = 0; i < 10; i++) {
-        const radius = i % 2 === 0 ? outerRadius : innerRadius;
-        const angle = Math.PI * 2 * i / 10 - Math.PI / 2;
-        const x = centerX + radius * Math.cos(angle);
-        const y = centerY + radius * Math.sin(angle);
+    if (type === 'PEPPER') {
+        // Teken een peper
+        ctx.fillStyle = objectColors.collectible.PEPPER;
         
-        if (i === 0) {
-            ctx.moveTo(x, y);
-        } else {
-            ctx.lineTo(x, y);
+        const centerX = collectible.x + collectible.width / 2;
+        const centerY = collectible.y + collectible.height / 2;
+        
+        // Voeg rotatie toe (15 graden in radialen)
+        const rotationAngle = 15 * Math.PI / 180;
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.rotate(rotationAngle);
+        
+        // Teken het peperlichaam (meer langwerpig en puntig)
+        ctx.beginPath();
+        // Maak de peper meer langwerpig door de breedte te verkleinen
+        // en maak hem puntig aan de onderkant
+        ctx.moveTo(0, -collectible.height / 1.8); // Bovenkant (steeltje)
+        ctx.bezierCurveTo(
+            collectible.width / 4, -collectible.height / 2,  // Controle punt 1
+            collectible.width / 3, collectible.height / 3,   // Controle punt 2
+            0, collectible.height / 1.8                     // Onderste punt (spits)
+        );
+        ctx.bezierCurveTo(
+            -collectible.width / 3, collectible.height / 3,  // Controle punt 3
+            -collectible.width / 4, -collectible.height / 2, // Controle punt 4
+            0, -collectible.height / 1.8                    // Terug naar bovenkant
+        );
+        ctx.fill();
+        
+        // Teken het pepersteeltje
+        ctx.fillStyle = '#006400'; // Donkergroen voor steeltje
+        ctx.beginPath();
+        ctx.ellipse(0, -collectible.height / 1.8, collectible.width / 8, collectible.height / 12, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Omtrek van de peper
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, -collectible.height / 1.8); // Bovenkant (steeltje)
+        ctx.bezierCurveTo(
+            collectible.width / 4, -collectible.height / 2,  // Controle punt 1
+            collectible.width / 3, collectible.height / 3,   // Controle punt 2
+            0, collectible.height / 1.8                     // Onderste punt (spits)
+        );
+        ctx.bezierCurveTo(
+            -collectible.width / 3, collectible.height / 3,  // Controle punt 3
+            -collectible.width / 4, -collectible.height / 2, // Controle punt 4
+            0, -collectible.height / 1.8                    // Terug naar bovenkant
+        );
+        ctx.stroke();
+        
+        // Herstel de canvas transformatie
+        ctx.restore();
+    } else {
+        // Teken een ster (default type)
+        ctx.fillStyle = objectColors.collectible.STAR;
+        
+        // Teken een 5-puntige ster
+        const centerX = collectible.x + collectible.width / 2;
+        const centerY = collectible.y + collectible.height / 2;
+        const outerRadius = collectible.width / 2;
+        const innerRadius = collectible.width / 4;
+        
+        ctx.beginPath();
+        for (let i = 0; i < 10; i++) {
+            const radius = i % 2 === 0 ? outerRadius : innerRadius;
+            const angle = Math.PI * 2 * i / 10 - Math.PI / 2;
+            const x = centerX + radius * Math.cos(angle);
+            const y = centerY + radius * Math.sin(angle);
+            
+            if (i === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
         }
+        ctx.closePath();
+        ctx.fill();
+        
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
     }
-    ctx.closePath();
-    ctx.fill();
-    
-    ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
-    ctx.lineWidth = 2;
-    ctx.stroke();
 }
 
 // Teken een startpositie
@@ -2258,7 +2366,8 @@ function exportLevelCode() {
             x: 650,
             y: 150,
             width: 30, 
-            height: 30
+            height: 30,
+            type: 'STAR'
         });
     }
     
@@ -2377,7 +2486,11 @@ function exportLevelCode() {
     code += `    collectibles: [\n`;
     if (level.collectibles.length > 0) {
         level.collectibles.forEach((collectible, index) => {
-            code += `        {x: ${collectible.x}, y: ${collectible.y}, width: ${collectible.width}, height: ${collectible.height}}`;
+            if (collectible.type) {
+                code += `        {x: ${collectible.x}, y: ${collectible.y}, width: ${collectible.width}, height: ${collectible.height}, type: "${collectible.type}"}`;
+            } else {
+                code += `        {x: ${collectible.x}, y: ${collectible.y}, width: ${collectible.width}, height: ${collectible.height}}`;
+            }
             if (index < level.collectibles.length - 1) {
                 code += ',\n';
             }

@@ -24,6 +24,8 @@ class Player {
         // Special ability: Fire breathing
         this.canBreatheFire = false;
         this.fireBreathTimer = 0;
+        this.isBreathingFire = false;
+        this.fireBreathingIntensity = 0; // Tracks the growth of the flame (0-100)
         
         // Life system
         this.lives = 3;
@@ -534,9 +536,40 @@ class Player {
         if (this.canBreatheFire) {
             // Verlaag de timer en schakel vuurspuwen uit als de tijd voorbij is
             this.fireBreathTimer--;
+            
+            // Calculate fire breath intensity based on timer
+            const maxTime = 180; // 3 seconds at 60fps
+            const growPhase = 60; // First second (60 frames)
+            const peakPhase = 60; // Second second (60 frames)
+            const decreasePhase = 60; // Last second (60 frames)
+            
             if (this.fireBreathTimer <= 0) {
+                // Time's up, reset everything
                 this.canBreatheFire = false;
+                this.fireBreathingIntensity = 0;
+            } else if (this.fireBreathTimer > (maxTime - growPhase)) {
+                // Growing phase (first second)
+                const progress = (maxTime - this.fireBreathTimer) / growPhase;
+                this.fireBreathingIntensity = 100 * progress; // 0 to 100
+            } else if (this.fireBreathTimer > decreasePhase) {
+                // Peak phase (second second)
+                this.fireBreathingIntensity = 100 * 1.5; // 50% bigger (150)
+            } else {
+                // Decreasing phase (last second)
+                const progress = this.fireBreathTimer / decreasePhase;
+                this.fireBreathingIntensity = 100 * progress * 1.5; // Tapering from 150 to 0
             }
+            
+            // Activeer vuurspuwen met spatiebalk
+            if (gameControls.keys[' ']) {
+                this.isBreathingFire = true;
+            } else {
+                this.isBreathingFire = false;
+            }
+        } else {
+            // Zorg ervoor dat de vuurspuwen status false is als de timer afgelopen is
+            this.isBreathingFire = false;
+            this.fireBreathingIntensity = 0;
         }
         
         // Collectibles verzamelen
@@ -552,7 +585,7 @@ class Player {
                     collectibles.splice(index, 1);
                     this.canBreatheFire = true;
                     this.fireBreathTimer = 300; // 5 seconden vuurspuwen (300 frames)
-                    gameCore.gameState.message = "Vuur! Je kunt nu even vuur spuwen!";
+                    gameCore.gameState.message = "Vuur! Je kunt nu 5 seconden vuur spuwen met SPATIE!";
                     
                     // Voeg een vertraging toe om het bericht te tonen
                     setTimeout(() => {
