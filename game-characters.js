@@ -98,6 +98,16 @@ function drawEnemies() {
                 enemy.burningTimer--;
             }
         }
+        
+        // Draw claw effect if the enemy is being hit by cat claws
+        if (enemy.clawEffect) {
+            drawClawEffect(enemy);
+            
+            // Decrease claw timer
+            if (enemy.clawTimer !== undefined) {
+                enemy.clawTimer--;
+            }
+        }
     });
 }
 
@@ -152,6 +162,87 @@ function drawBurningEffect(enemy) {
         gameCore.ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
         gameCore.ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
     }
+}
+
+// Function to draw claw effect on enemies
+function drawClawEffect(enemy) {
+    const time = Date.now() / 50; // Fast animation
+    
+    // Draw scratch marks on the enemy
+    gameCore.ctx.strokeStyle = 'rgba(255, 0, 0, 0.9)'; // Brighter red claw marks
+    gameCore.ctx.lineWidth = 4; // Thicker lines for visibility
+    
+    // Draw multiple diagonal slash lines
+    for (let i = 0; i < 4; i++) { // More slashes
+        // Randomize position slightly for each slash
+        const startX = enemy.x + enemy.width * (0.2 + Math.random() * 0.1);
+        const startY = enemy.y + enemy.height * (0.2 + i * 0.15);
+        const endX = enemy.x + enemy.width * (0.8 - Math.random() * 0.1);
+        const endY = enemy.y + enemy.height * (0.35 + i * 0.15);
+        
+        // Draw the slash line
+        gameCore.ctx.beginPath();
+        gameCore.ctx.moveTo(startX, startY);
+        gameCore.ctx.lineTo(endX, endY);
+        gameCore.ctx.stroke();
+    }
+    
+    // Draw blood splatter effects - more realistic with various drop sizes
+    for (let i = 0; i < 15; i++) { // More splatters
+        // Blood inside the enemy
+        const splatterX = enemy.x + Math.random() * enemy.width;
+        const splatterY = enemy.y + Math.random() * enemy.height;
+        const splatterSize = 2 + Math.random() * 5; // Varied sizes
+        
+        gameCore.ctx.fillStyle = 'rgba(255, 0, 0, 0.9)'; // Deeper red, more opaque
+        gameCore.ctx.beginPath();
+        gameCore.ctx.arc(splatterX, splatterY, splatterSize, 0, Math.PI * 2);
+        gameCore.ctx.fill();
+    }
+    
+    // Blood spraying outward from the enemy
+    for (let i = 0; i < 12; i++) {
+        // Calculate position at the edge of the enemy
+        const angle = Math.random() * Math.PI * 2;
+        const edgeX = enemy.x + enemy.width/2 + Math.cos(angle) * enemy.width/2;
+        const edgeY = enemy.y + enemy.height/2 + Math.sin(angle) * enemy.height/2;
+        
+        // Create blood trail shooting outward
+        const sprayLength = 10 + Math.random() * 20;
+        const endX = edgeX + Math.cos(angle) * sprayLength;
+        const endY = edgeY + Math.sin(angle) * sprayLength;
+        
+        // Draw the blood spray trail
+        gameCore.ctx.strokeStyle = 'rgba(255, 0, 0, 0.7)';
+        gameCore.ctx.lineWidth = 1 + Math.random() * 2;
+        gameCore.ctx.beginPath();
+        gameCore.ctx.moveTo(edgeX, edgeY);
+        gameCore.ctx.lineTo(endX, endY);
+        gameCore.ctx.stroke();
+        
+        // Add a blood drop at the end of the spray
+        gameCore.ctx.fillStyle = 'rgba(255, 0, 0, 0.8)';
+        gameCore.ctx.beginPath();
+        gameCore.ctx.arc(endX, endY, 2 + Math.random() * 3, 0, Math.PI * 2);
+        gameCore.ctx.fill();
+    }
+    
+    // Flash effect similar to burning effect - more prominent
+    if (enemy.clawTimer > 5) {
+        // Alternating white flash for visibility
+        const flashIntensity = (enemy.clawTimer % 4 < 2) ? 0.5 : 0.2;
+        gameCore.ctx.fillStyle = `rgba(255, 255, 255, ${flashIntensity})`;
+        gameCore.ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+    }
+    
+    // Text above enemy showing it's being clawed - with outline for better visibility
+    gameCore.ctx.fillStyle = 'white';
+    gameCore.ctx.strokeStyle = 'red';
+    gameCore.ctx.lineWidth = 3;
+    gameCore.ctx.font = 'bold 16px Arial';
+    gameCore.ctx.textAlign = 'center';
+    gameCore.ctx.strokeText('CLAWED!', enemy.x + enemy.width/2, enemy.y - 15);
+    gameCore.ctx.fillText('CLAWED!', enemy.x + enemy.width/2, enemy.y - 15);
 }
 
 // Draw a lion
@@ -1255,6 +1346,7 @@ function drawCat(player) {
     
     // Draw claws if they are active
     if (player.clawActive) {
+        // Use dark gray for claws to match the cat's color
         gameCore.ctx.fillStyle = '#444444'; // Dark gray for claws
         
         if (facingLeft) {
@@ -1279,17 +1371,118 @@ function drawCat(player) {
             }
         }
         
-        // Claw effect around the cat
-        gameCore.ctx.strokeStyle = 'rgba(255, 0, 0, 0.3)';
+        // Add rotating slashing lines to better visualize the attack
+        const time = Date.now() / 50; // Fast rotation - more aggressive
+        
+        // Add multiple rotating slash lines for better attack visualization
+        gameCore.ctx.strokeStyle = 'rgba(120, 120, 120, 0.85)';
         gameCore.ctx.lineWidth = 3;
+        
+        // Draw 8 rotating lines to create a more aggressive slashing effect
+        for (let i = 0; i < 8; i++) {
+            // Base angle with fast rotation
+            const baseAngle = time + (i * Math.PI / 4); 
+            
+            // Add some oscillation for more dynamic movement
+            const angle = baseAngle + Math.sin(time * 2) * 0.2;
+            
+            // Make radius pulsate slightly
+            const radiusPulse = Math.sin(time * 3) * 0.15;
+            const innerRadius = player.width * (0.4 + radiusPulse);
+            const outerRadius = player.width * (1.1 + radiusPulse);
+            
+            const startX = player.x + player.width/2 + Math.cos(angle) * innerRadius;
+            const startY = player.y + player.height/2 + Math.sin(angle) * innerRadius;
+            const endX = player.x + player.width/2 + Math.cos(angle) * outerRadius;
+            const endY = player.y + player.height/2 + Math.sin(angle) * outerRadius;
+            
+            gameCore.ctx.beginPath();
+            gameCore.ctx.moveTo(startX, startY);
+            gameCore.ctx.lineTo(endX, endY);
+            gameCore.ctx.stroke();
+        }
+        
+        // Add a slashing circle to connect the lines
+        gameCore.ctx.strokeStyle = 'rgba(120, 120, 120, 0.4)';
+        gameCore.ctx.lineWidth = 1;
         gameCore.ctx.beginPath();
         gameCore.ctx.arc(
             player.x + player.width / 2,
             player.y + player.height / 2,
-            player.width * 0.8,
+            player.width * 1.0, // Larger radius for visibility
             0, Math.PI * 2
         );
         gameCore.ctx.stroke();
+        
+        // Check if there are any enemies in the current level
+        const currentLevelData = window.levels[gameCore.currentLevel];
+        const enemies = currentLevelData.enemies || [];
+        
+        // Only show blood effects if there are enemies being hit
+        let enemyHit = false;
+        
+        // Detect if any enemies are within the claw attack radius
+        for (let enemy of enemies) {
+            // Calculate distance from cat center to enemy center
+            const catCenterX = player.x + player.width/2;
+            const catCenterY = player.y + player.height/2;
+            const enemyCenterX = enemy.x + enemy.width/2;
+            const enemyCenterY = enemy.y + enemy.height/2;
+            
+            const distance = Math.sqrt(
+                Math.pow(catCenterX - enemyCenterX, 2) + 
+                Math.pow(catCenterY - enemyCenterY, 2)
+            );
+            
+            // If enemy is within attack range and not already affected
+            if (distance < player.width * 1.2 && !enemy.clawEffect) {
+                enemyHit = true;
+                break;
+            }
+        }
+        
+        // Only show blood effects if an enemy is being hit
+        if (enemyHit) {
+            // Blood splatter effect coming from edges of attack radius
+            for (let i = 0; i < 8; i++) {
+                // Calculate a random position at the edge of the attack radius
+                const angle = Math.random() * Math.PI * 2;
+                const distance = player.width * (0.9 + Math.random() * 0.2);
+                
+                const splatterX = player.x + player.width/2 + Math.cos(angle) * distance;
+                const splatterY = player.y + player.height/2 + Math.sin(angle) * distance;
+                const splatterSize = 2 + Math.random() * 3;
+                
+                // Draw blood splatter
+                gameCore.ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';
+                gameCore.ctx.beginPath();
+                gameCore.ctx.arc(splatterX, splatterY, splatterSize, 0, Math.PI * 2);
+                gameCore.ctx.fill();
+                
+                // Draw small blood streaks from the splatters
+                const streakLength = 5 + Math.random() * 8;
+                const streakEndX = splatterX + Math.cos(angle) * streakLength;
+                const streakEndY = splatterY + Math.sin(angle) * streakLength;
+                
+                gameCore.ctx.strokeStyle = 'rgba(255, 0, 0, 0.6)';
+                gameCore.ctx.lineWidth = 1 + Math.random();
+                gameCore.ctx.beginPath();
+                gameCore.ctx.moveTo(splatterX, splatterY);
+                gameCore.ctx.lineTo(streakEndX, streakEndY);
+                gameCore.ctx.stroke();
+            }
+        }
+        
+        // Text above cat showing it's using claws
+        gameCore.ctx.fillStyle = 'white';
+        gameCore.ctx.font = 'bold 14px Arial';
+        gameCore.ctx.textAlign = 'center';
+        gameCore.ctx.strokeStyle = 'black';
+        gameCore.ctx.lineWidth = 2;
+        
+        // Draw text with outline for better visibility
+        gameCore.ctx.strokeText('SLASH!', player.x + player.width/2, player.y - 15);
+        gameCore.ctx.fillText('SLASH!', player.x + player.width/2, player.y - 15);
     }
 }
 
@@ -1451,5 +1644,7 @@ window.gameCharacters = {
     drawTurtle,
     drawUnicorn,
     drawCat,
-    drawFireBreath
+    drawFireBreath,
+    drawBurningEffect,
+    drawClawEffect
 };

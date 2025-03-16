@@ -40,7 +40,7 @@ class Player {
         this.lowOxygenWarning = false;
         
         // Cat claw system
-        this.canClaw = false;
+        this.canClaw = true; // Start with the ability to claw
         this.clawTimer = 0;
         this.clawActive = false;
         
@@ -63,6 +63,14 @@ class Player {
         
         // Visual property (used by renderer)
         this.color = animal.color;
+        
+        // Reset claw ability when switching to cat
+        if (this.animalType === "CAT") {
+            console.log("Switching to CAT - resetting claw ability");
+            this.canClaw = true;
+            this.clawActive = false;
+            this.clawTimer = 0;
+        }
         
         // Update the UI with the current animal
         this.updateUI();
@@ -200,6 +208,8 @@ class Player {
                 this.clawTimer--;
                 if (this.clawTimer <= 0) {
                     this.clawActive = false;
+                    // Reset cooldown immediately for better responsiveness
+                    this.canClaw = true;
                 }
             }
         }
@@ -280,13 +290,30 @@ class Player {
         }
         
         // Activeer klauwen voor kat wanneer spatiebalk wordt ingedrukt
-        if (this.animalType === "CAT" && !this.clawActive) {
+        if (this.animalType === "CAT") {
+            // Always ensure canClaw is initialized
+            if (this.canClaw === undefined) {
+                this.canClaw = true;
+            }
+            
+            // Force reset if cat can't claw for too long
+            if (gameControls.keys[' '] && !this.canClaw && !this.clawActive) {
+                this.canClaw = true;
+            }
+            
             // Controleer of de spatiebalk is ingedrukt
-            if (gameControls.keys[' '] && this.canClaw) {
+            if (gameControls.keys[' '] && !this.clawActive && this.canClaw) {
                 this.clawActive = true;
                 this.clawTimer = 30; // Klauwen actief voor 30 frames (halve seconde)
                 this.canClaw = false; // Kan pas opnieuw gebruiken na afkoelen
-                console.log("Kat activeert klauwen!");
+                
+                // Feedback message
+                gameCore.gameState.message = "Kat gebruikt klauwen!";
+                setTimeout(() => {
+                    if (gameCore.gameState.message === "Kat gebruikt klauwen!") {
+                        gameCore.gameState.message = "";
+                    }
+                }, 1000);
             }
         }
         
@@ -679,22 +706,53 @@ class Player {
             // Check direct collision with player
             if (this.collidesWithObject(enemy)) {
                 // Als kat met actieve klauwen vijand aanraakt, verwijder vijand
-                if (this.animalType === "CAT" && this.clawActive) {
-                    if (enemyIndex !== -1) {
-                        // Verwijder de vijand uit de array
-                        enemies.splice(enemyIndex, 1);
-                        console.log("Kat heeft een vijand aangevallen!");
-                        
-                        // Add points for defeating enemy
-                        gameCore.gameState.score += 100;
-                        if (typeof gameRendering !== 'undefined' && typeof gameRendering.showPointsEarned === 'function') {
-                            gameRendering.showPointsEarned(enemy.x + enemy.width/2, enemy.y, 100);
+                if (this.animalType === "CAT") {
+                    console.log(`Cat colliding with enemy! clawActive: ${this.clawActive}`);
+                    
+                    if (this.clawActive) {
+                        console.log("CAT ATTACKING ENEMY WITH CLAWS!");
+                        // Create a visual claw effect on the enemy before removing it
+                        if (!enemy.clawEffect) {
+                            // Add claw effect properties to the enemy
+                            enemy.clawEffect = true;
+                            enemy.clawTimer = 15; // Claw animation frames (0.25 seconds)
+                            
+                            // Alert message for debugging
+                            console.log(`ENEMY HIT WITH CLAWS! Enemy type: ${enemy.type}, position: ${enemy.x},${enemy.y}`);
+                            
+                            // After the claw animation, remove the enemy
+                            setTimeout(() => {
+                                // Only remove if enemy is still in the array
+                                const currentIndex = enemies.indexOf(enemy);
+                                if (currentIndex !== -1) {
+                                    // Verwijder de vijand uit de array
+                                    enemies.splice(currentIndex, 1);
+                                    console.log("Kat heeft een vijand verslagen!");
+                                    
+                                    // Add points for defeating enemy
+                                    gameCore.gameState.score += 100;
+                                    if (typeof gameRendering !== 'undefined' && typeof gameRendering.showPointsEarned === 'function') {
+                                        gameRendering.showPointsEarned(enemy.x + enemy.width/2, enemy.y, 100);
+                                    }
+                                    
+                                    // Add points for defeating enemy
+                                    gameCore.gameState.score += 100;
+                                    updateScoreDisplay(); // Update score UI
+                                    
+                                    // Show message about defeating enemy with claws
+                                    gameCore.gameState.message = "Vijand verslagen met klauwen! +100 punten!";
+                                    setTimeout(() => {
+                                        if (gameCore.gameState.message === "Vijand verslagen met klauwen! +100 punten!") {
+                                            gameCore.gameState.message = "";
+                                        }
+                                    }, 2000);
+                                }
+                            }, 250); // 250ms = 15 frames at 60fps
                         }
-                        
-                        // Laat de kat weer krabben na 2 seconden
-                        setTimeout(() => {
-                            this.canClaw = true;
-                        }, 2000);
+                    } else {
+                        // Bij aanraking met een vijand, leven verliezen
+                        console.log("Cat collided with enemy but claws not active - losing life");
+                        this.loseLife();
                     }
                 } else {
                     // Bij aanraking met een vijand, leven verliezen

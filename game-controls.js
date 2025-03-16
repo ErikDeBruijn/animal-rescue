@@ -51,6 +51,8 @@ function setupInputListeners() {
         // Registreer de toets
         keys[e.key] = true;
         
+        // Space key handling is done in the game loop
+        
         // Voor WASD/pijltjes consistentie
         const action = getControlAction(e.key);
         if (action) {
@@ -60,14 +62,16 @@ function setupInputListeners() {
         }
         
         // Spatie om naar volgend level te gaan als level voltooid is
-        if (e.key === ' ' && gameCore.levelCompleted) {
-            window.gameCore.nextLevel();
-        }
-        
-        // Spatie om opnieuw te proberen als de puppy is gevangen
-        if (e.key === ' ' && gameCore.gameState.gameOver) {
-            // Reset het huidige level
-            window.gameCore.resetCurrentLevel();
+        // Deze check mag niet de normale spatiebalk functionaliteit blokkeren
+        if (e.key === ' ') {
+            if (gameCore.levelCompleted) {
+                window.gameCore.nextLevel();
+            } else if (gameCore.gameState.gameOver) {
+                // Reset het huidige level
+                window.gameCore.resetCurrentLevel();
+            } else {
+                console.log("SPACE pressed for normal gameplay use");
+            }
         }
     });
     
