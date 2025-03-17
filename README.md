@@ -118,10 +118,15 @@ De codebase is als volgt georganiseerd:
 - `game.js` - Hoofdlogica van het spel
 - `game-core.js` - Kernfunctionaliteit van het spel
 - `game-entities.js` - Speler, vijanden en andere game-entiteiten (gedrag)
-- `game-characters.js` - Functies voor het renderen van karakters
+- Character rendering modules:
+  - `game-characters-core.js` - Hoofdmodule voor karakterrendering
+  - `game-characters-players.js` - Functies voor het renderen van speelbare karakters
+  - `game-characters-npcs.js` - Functies voor het renderen van niet-speelbare karakters
+  - `game-characters-effects.js` - Functies voor het renderen van effecten
 - `game-rendering.js` - Functies voor het renderen van de omgeving
 - `game-controls.js` - Invoerverwerking
 - `levels.js` - Leveldefinities
+- `LEVELS.md` - Documentatie van level structuur
 - `server.py` - Python-server voor ontwikkelingsmodus en het opslaan van levels
 - `editor.html` / `editor.js` - Level-editor
 - `styles.css` / `editor-styles.css` - Styling
