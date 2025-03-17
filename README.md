@@ -2,6 +2,10 @@
 
 Een leuk platform-puzzelspel voor een ouder en kind om samen te spelen! In dit spel werken verschillende dieren samen om puzzels op te lossen, een puppy te redden en uitdagingen te overwinnen.
 
+## Speel Online
+
+Je kunt het spel online spelen via [GitHub Pages](https://erikdebruijn.github.io/animal-rescue/).
+
 ## Het Spel
 
 In Dieren Redders bestuur je samen met je kind verschillende dieren om levels te voltooien. Elk dier heeft zijn eigen vaardigheden:
