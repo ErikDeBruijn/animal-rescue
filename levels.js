@@ -224,7 +224,7 @@ function getLevels(GROUND_LEVEL) {    return [
 },
         {
     name: "Spannend!!!",
-    allowedAnimals: ["TURTLE","UNICORN", "CAT"],
+    allowedAnimals: ["TURTLE","UNICORN","CAT"],
     startPositions: [
         {x: 50, y: 350},
         {x: 100, y: 350}
@@ -237,7 +237,14 @@ function getLevels(GROUND_LEVEL) {    return [
         {x: 425, y: 32, width: 100, height: 20, type: "CLOUD"},
         {x: 684, y: 158, width: 100, height: 20, type: "TREE"},
         {x: 687, y: 129, width: 100, height: 20, type: "NORMAL"},
-        {x: 685, y: 191, width: 100, height: 20, type: "CLIMB"}
+        {x: 685, y: 191, width: 100, height: 20, type: "CLIMB"},
+        {x: 294, y: 308, width: 100, height: 20, type: "LASER"},
+        {x: 398, y: 314, width: 100, height: 20, type: "LASER"},
+        {x: 507, y: 303, width: 100, height: 20, type: "LASER"},
+        {x: 294, y: 380, width: 100, height: 20, type: "ICE"},
+        {x: 395, y: 383, width: 100, height: 20, type: "ICE"},
+        {x: 491, y: 385, width: 100, height: 20, type: "ICE"},
+        {x: 678, y: 372, width: 100, height: 20, type: "TRAMPOLINE"}
     ],
     traps: [
 
@@ -258,7 +265,7 @@ function getLevels(GROUND_LEVEL) {    return [
 },
         {
     name: "Wordt niet gepakt!!!",
-    allowedAnimals: ["UNICORN", "CAT"],
+    allowedAnimals: ["UNICORN","CAT"],
     startPositions: [
         {x: 50, y: 350},
         {x: 100, y: 350}
@@ -494,7 +501,7 @@ function getLevels(GROUND_LEVEL) {    return [
 },
         {
     name: "Zwemmen!!!",
-    allowedAnimals: ["TURTLE","UNICORN", "CAT"],
+    allowedAnimals: ["TURTLE","UNICORN","CAT"],
     startPositions: [
         {x: 50, y: 350},
         {x: 100, y: 350}
