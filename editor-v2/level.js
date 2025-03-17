@@ -227,24 +227,7 @@ editor.validateLevel = function() {
         errors.push('Level moet minstens één ster hebben om te kunnen voltooien');
     }
     
-    // If there's a puppy, check that there's a path to the puppy
-    if (level.puppy) {
-        // Simple check: are there platforms near the puppy?
-        let hasPlatformsNearPuppy = false;
-        if (level.platforms) {
-            for (let platform of level.platforms) {
-                // Check if platform is near the puppy (horizontally)
-                if (Math.abs(platform.x - level.puppy.x) < 200) {
-                    hasPlatformsNearPuppy = true;
-                    break;
-                }
-            }
-        }
-        
-        if (!hasPlatformsNearPuppy) {
-            errors.push('Er moeten platforms in de buurt van de puppy zijn');
-        }
-    }
+    // Geen vereiste meer voor platforms bij de puppy - verwijderd
     
     // Return if the level is valid
     return {

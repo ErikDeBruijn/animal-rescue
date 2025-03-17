@@ -638,10 +638,7 @@ function setupEventListeners() {
         const level = editorState.editingLevel;
         let errors = [];
         
-        // Check of er tenminste één platform is
-        if (level.platforms.length === 0) {
-            errors.push("Je level moet tenminste één platform hebben.");
-        }
+        // Platforms zijn optioneel, geen minimum vereist
         
         // Check of er tenminste één collectible (ster) is
         if (level.collectibles.length === 0) {
