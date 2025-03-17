@@ -696,16 +696,34 @@ class Player {
                                     // Treadmill conveyor belt effect
                                     this.onIce = false; // Not slippery like ice
                                     
-                                    // Apply horizontal force based on treadmill speed
+                                    // Haal treadmill speed op
                                     const treadmillSpeed = platform.speed !== undefined ? platform.speed : 2;
-                                    this.velX += treadmillSpeed * 0.1; // Apply gradual acceleration
-                                    
-                                    // BELANGRIJK: Verandering - Controleer of de speler bewust van richting is gewisseld
-                                    // Als de gebruiker bewust van richting is gewisseld, negeren we de richting
-                                    // van de loopband volledig, zodat de speler controle blijft houden
-                                    
-                                    // Cap the maximum speed based on treadmill direction and speed
                                     const maxTreadmillSpeed = Math.abs(treadmillSpeed) * 1.5;
+                                    
+                                    // Bepaal of de speler actief tegen de band in beweegt
+                                    const isPressingLeft = gameControls.keys[this.controls.left] || gameControls.keys[this.controls.left.toLowerCase()];
+                                    const isPressingRight = gameControls.keys[this.controls.right] || gameControls.keys[this.controls.right.toLowerCase()];
+                                    const isMovingAgainstTreadmill = (treadmillSpeed > 0 && isPressingLeft) || (treadmillSpeed < 0 && isPressingRight);
+                                    
+                                    if (isMovingAgainstTreadmill) {
+                                        // Tegen de loopband in bewegen - verminder het effect maar niet volledig
+                                        // Dit zorgt ervoor dat het nog steeds moeilijk is maar niet onmogelijk
+                                        this.velX += treadmillSpeed * 0.05; // Verminderde kracht
+                                    } else {
+                                        // Met de loopband mee bewegen of stilstaan
+                                        // Volledige kracht van de loopband + een minimumsnelheid garanderen
+                                        this.velX += treadmillSpeed * 0.2; // Sterkere versnelling
+                                        
+                                        // Zorg voor minimale beweging in de richting van de loopband
+                                        const minSpeed = treadmillSpeed * 0.5;
+                                        if (treadmillSpeed > 0 && this.velX < minSpeed) {
+                                            this.velX = minSpeed; // Minimale snelheid naar rechts
+                                        } else if (treadmillSpeed < 0 && this.velX > minSpeed) {
+                                            this.velX = minSpeed; // Minimale snelheid naar links
+                                        }
+                                    }
+                                    
+                                    // Begrens de maximale snelheid door de loopband
                                     if (treadmillSpeed > 0 && this.velX > maxTreadmillSpeed) {
                                         this.velX = maxTreadmillSpeed;
                                     } else if (treadmillSpeed < 0 && this.velX < -maxTreadmillSpeed) {
