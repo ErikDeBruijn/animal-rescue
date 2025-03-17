@@ -39,7 +39,7 @@ function getLevels(GROUND_LEVEL) {    return [
 },
         {
     name: "Jippie!!! TRAMPOLINE!!!",
-    allowedAnimals: ["SQUIRREL","UNICORN", "CAT"],
+    allowedAnimals: ["SQUIRREL","UNICORN","CAT"],
     startPositions: [
         {x: 50, y: 350},
         {x: 100, y: 350}
@@ -66,7 +66,8 @@ function getLevels(GROUND_LEVEL) {    return [
         saved: false
     },
     collectibles: [
-        {x: 32, y: 23, width: 30, height: 30}
+        {x: 32, y: 23, width: 30, height: 30},
+        {x: 54, y: 284, width: 30, height: 30, type: "PEPPER"}
     ]
 },
         {
@@ -261,7 +262,8 @@ function getLevels(GROUND_LEVEL) {    return [
         saved: false
     },
     collectibles: [
-        {x: 448, y: 251, width: 30, height: 30}
+        {x: 448, y: 251, width: 30, height: 30},
+        {x: 52, y: 356, width: 30, height: 30, type: "PEPPER"}
     ]
 },
         {
@@ -609,6 +611,72 @@ function getLevels(GROUND_LEVEL) {    return [
         {x: 695, y: 218, width: 30, height: 30},
         {x: 715, y: 153, width: 30, height: 30},
         {x: 742, y: 215, width: 30, height: 30}
+    ]
+},
+        {
+    name: "Nieuw Level",
+    allowedAnimals: ["SQUIRREL","TURTLE","UNICORN","CAT"],
+    startPositions: [
+        {x: 50, y: 350},
+        {x: 100, y: 350}
+    ],
+    platforms: [
+        {x: 703, y: 90, width: 100, height: 20, type: "WATER"},
+        {x: 704, y: 154, width: 100, height: 20, type: "WATER"},
+        {x: 703, y: 217, width: 100, height: 20, type: "WATER"},
+        {x: 695, y: 286, width: 100, height: 20, type: "WATER"}
+    ],
+    traps: [
+
+    ],
+    enemies: [
+        {x: 238, y: 354, width: 50, height: 40, type: "LION", patrolDistance: 100, speed: 1},
+        {x: 444, y: 355, width: 50, height: 40, type: "LION", patrolDistance: 100, speed: 1},
+        {x: 606, y: 359, width: 50, height: 40, type: "LION", patrolDistance: 100, speed: 1},
+        {x: 235, y: 5, width: 50, height: 40, type: "LION", patrolDistance: 100, speed: 1},
+        {x: 420, y: 1, width: 50, height: 40, type: "LION", patrolDistance: 100, speed: 1},
+        {x: 639, y: 4, width: 50, height: 40, type: "DRAGON", patrolDistance: 100, speed: 1},
+        {x: 314, y: -7, width: 60, height: 50, type: "DRAGON", patrolDistance: 100, speed: 1},
+        {x: 330, y: 351, width: 60, height: 50, type: "DRAGON", patrolDistance: 100, speed: 1},
+        {x: 505, y: 348, width: 60, height: 50, type: "DRAGON", patrolDistance: 100, speed: 1},
+        {x: 659, y: 348, width: 60, height: 50, type: "DRAGON", patrolDistance: 100, speed: 1}
+    ],
+    puppy: {
+        x: 763, 
+        y: 370, 
+        width: 30, 
+        height: 25, 
+        saved: false
+    },
+    collectibles: [
+        {x: 770, y: 119, width: 30, height: 30, type: "STAR"}
+    ]
+},
+        {
+    name: "Nieuw Level",
+    allowedAnimals: ["SQUIRREL","TURTLE","UNICORN","CAT"],
+    startPositions: [
+        {x: 50, y: 350},
+        {x: 100, y: 350}
+    ],
+    platforms: [
+
+    ],
+    traps: [
+
+    ],
+    enemies: [
+
+    ],
+    puppy: {
+        x: 350, 
+        y: 375, 
+        width: 30, 
+        height: 25, 
+        saved: false
+    },
+    collectibles: [
+        {x: 650, y: 150, width: 30, height: 30, type: "STAR"}
     ]
 }
     ];
