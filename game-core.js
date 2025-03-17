@@ -20,7 +20,8 @@ let gameState = {
     message: "",
     puppySaved: false, // Om bij te houden of de puppy gered is
     gameOver: false,   // Game over als de puppy wordt gevangen door een vijand
-    score: 0           // Score voor sterren (50 punten) en geredde puppy's (1000 punten)
+    score: 0,          // Score voor sterren (50 punten) en geredde puppy's (1000 punten)
+    debugLevel: 0      // Debug niveau: 0=uit, 1=basis, 2=uitgebreid
 };
 
 // Dieren definities met speciale krachten
@@ -61,6 +62,16 @@ const animalTypes = {
         jumpPower: -7,
         speed: 4,
         ability: "Klauwen voor aanvallen"
+    },
+    MOLE: {
+        name: "Mol",
+        color: "#4A2B12", // Donkerbruin
+        width: 35,
+        height: 25,
+        jumpPower: -6,
+        speed: 3.5,
+        ability: "Graven door muren en grond",
+        canDig: true // Speciale eigenschap voor graven
     }
 };
 
@@ -78,8 +89,10 @@ function resetCurrentLevel() {
     // omdat deze toegang nodig heeft tot de spelers
 }
 
-// Controleer of er een level is gespecificeerd in de URL
+// Controleer of er een level is gespecificeerd in de URL en haal debug mode op
 function getStartLevel() {
+    let startLevel = 0;
+    
     // Controleer eerst de fragment identifier (#level=X)
     const hash = window.location.hash;
     if (hash && hash.startsWith('#level=')) {
@@ -87,7 +100,7 @@ function getStartLevel() {
         const levelIndex = parseInt(levelParam);
         // Controleer of het een geldige level index is
         if (!isNaN(levelIndex) && levelIndex >= 0) {
-            return levelIndex;
+            startLevel = levelIndex;
         }
     }
 
@@ -99,11 +112,21 @@ function getStartLevel() {
         const levelIndex = parseInt(queryLevelParam);
         // Controleer of het een geldige level index is
         if (!isNaN(levelIndex) && levelIndex >= 0) {
-            return levelIndex;
+            startLevel = levelIndex;
         }
     }
     
-    return 0; // Standaard naar het eerste level
+    // Check debug parameter
+    const debugParam = urlParams.get('debug');
+    if (debugParam !== null) {
+        const debugLevel = parseInt(debugParam);
+        if (!isNaN(debugLevel) && debugLevel >= 0) {
+            gameState.debugLevel = debugLevel;
+            console.log("Debug mode ingeschakeld, niveau:", debugLevel);
+        }
+    }
+    
+    return startLevel; // Geef het level terug
 }
 
 // Update de editor link om terug te gaan naar hetzelfde level

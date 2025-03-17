@@ -442,5 +442,18 @@ function gameLoop() {
     // Incrementeer frame telling voor debug doeleinden
     frameCount++;
     
+    // Debug indicator als debug mode is ingeschakeld
+    if (gameCore.gameState.debugLevel >= 1) {
+        gameCore.ctx.font = '14px Courier New';
+        gameCore.ctx.fillStyle = 'rgba(255, 0, 0, 0.8)';
+        gameCore.ctx.textAlign = 'right';
+        gameCore.ctx.fillText("DEBUG MODE " + gameCore.gameState.debugLevel, gameCore.canvas.width - 10, 20);
+        
+        // Voeg melding toe over hoe keys worden gelezen
+        if (frameCount % 300 === 0) { // Elke 5 seconden (bij 60fps)
+            console.log("Debug mode actief (niveau " + gameCore.gameState.debugLevel + "). Activeer graven met G (speler 1) of Control (speler 2)");
+        }
+    }
+    
     requestAnimationFrame(gameLoop);
 }

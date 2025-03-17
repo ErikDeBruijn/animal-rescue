@@ -5,27 +5,45 @@
 const keys = {};
 
 // Debug functie om de huidige toetsenstaat te tonen
+// Wordt alleen uitgevoerd als debug mode aan staat
 function debugKeyState() {
-    console.log("Huidige toetsenstaat:", {
-        // Actie keys
-        left: keys['left'],
-        right: keys['right'],
-        up: keys['up'],
-        down: keys['down'],
-        switch: keys['switch'],
+    // Check of debug level 1 of hoger is
+    if (window.gameCore && window.gameCore.gameState && window.gameCore.gameState.debugLevel >= 1) {
+        console.log("Huidige toetsenstaat:", {
+            // Actie keys
+            left: keys['left'],
+            right: keys['right'],
+            up: keys['up'],
+            down: keys['down'],
+            switch: keys['switch'],
+            
+            // Belangrijke speciale toetsen
+            space: keys[' '],
+            g: keys['g'] || keys['G'],
+            Control: keys['Control'] || keys['ControlLeft'] || keys['ControlRight'],
+            
+            // Bewegingstoetsen
+            ArrowLeft: keys['ArrowLeft'],
+            ArrowRight: keys['ArrowRight'],
+            ArrowUp: keys['ArrowUp'],
+            ArrowDown: keys['ArrowDown'],
+            w: keys['w'],
+            a: keys['a'],
+            s: keys['s'],
+            d: keys['d'],
+            f: keys['f'],
+            Shift: keys['Shift']
+        });
         
-        // Echte toetsen
-        ArrowLeft: keys['ArrowLeft'],
-        ArrowRight: keys['ArrowRight'],
-        ArrowUp: keys['ArrowUp'],
-        ArrowDown: keys['ArrowDown'],
-        w: keys['w'],
-        a: keys['a'],
-        s: keys['s'],
-        d: keys['d'],
-        f: keys['f'],
-        Shift: keys['Shift']
-    });
+        // Extra debug info voor speciale toetsen
+        if ((keys['g'] || keys['G']) && window.gameCore.gameState.debugLevel >= 1) {
+            console.log("🦔 G-toets ingedrukt! Dit zou graven moeten activeren voor speler 1 als die een mol is.");
+        }
+        
+        if ((keys['Control'] || keys['ControlLeft'] || keys['ControlRight']) && window.gameCore.gameState.debugLevel >= 1) {
+            console.log("🦔 Control-toets ingedrukt! Dit zou graven moeten activeren voor speler 2 als die een mol is.");
+        }
+    }
 }
 
 // Vertaal toetsen naar acties

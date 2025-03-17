@@ -45,6 +45,13 @@ class Player {
         this.clawTimer = 0;
         this.clawActive = false;
         
+        // Mole digging system
+        this.canDig = true; // Start with the ability to dig
+        this.isDigging = false; 
+        this.digTimer = 0;
+        this.digCooldown = 0;
+        this.diggedThroughWall = false;
+        
         // Surface-specific properties
         this.onIce = false;  // For ice physics
         
@@ -73,6 +80,16 @@ class Player {
             this.clawTimer = 0;
         }
         
+        // Reset digging ability when switching to mole
+        if (this.animalType === "MOLE") {
+            console.log("Switching to MOLE - resetting digging ability");
+            this.canDig = true;
+            this.isDigging = false;
+            this.digTimer = 0;
+            this.digCooldown = 0;
+            this.diggedThroughWall = false;
+        }
+        
         // Update the UI with the current animal
         this.updateUI();
     }
@@ -97,6 +114,9 @@ class Player {
                 break;
             case "CAT":
                 animalEmoji = "🐱";
+                break;
+            case "MOLE":
+                animalEmoji = "🦔"; // Using hedgehog emoji since there's no mole emoji
                 break;
         }
         
@@ -761,6 +781,20 @@ class Player {
             }
         });
         
+        // Check if mole should activate digging with G (player 1) or Control (player 2)
+        if (this.animalType === "MOLE" && this.canDig && !this.isDigging) {
+            // For player 1, check G key
+            if (this.name === "Speler 1" && (gameControls.keys['g'] || gameControls.keys['G'])) {
+                this.activateDigging();
+                console.log("Player 1 Mole digging activated with G key");
+            }
+            // For player 2, check Control key
+            else if (this.name === "Speler 2" && (gameControls.keys['Control'] || gameControls.keys['ControlLeft'] || gameControls.keys['ControlRight'])) {
+                this.activateDigging();
+                console.log("Player 2 Mole digging activated with Control key");
+            }
+        }
+        
         // Update vuurspuwen status als de speler een pepertje heeft gegeten
         if (this.canBreatheFire) {
             // Constant values for timing
@@ -1126,6 +1160,174 @@ class Player {
         
         // UI update
         this.updatePlayerInfoUI();
+    }
+    
+    /**
+     * Activates the mole's digging ability
+     * Allows passing through walls and ground
+     */
+    activateDigging() {
+        // Debug logging - alleen als debug mode aan staat
+        if (gameCore.gameState.debugLevel >= 1) {
+            console.log("activateDigging called for", this.name, "canDig:", this.canDig, "isDigging:", this.isDigging, "animalType:", this.animalType);
+        }
+        
+        if (!this.canDig || this.isDigging || this.animalType !== "MOLE") {
+            if (gameCore.gameState.debugLevel >= 1) {
+                console.log("Digging activation rejected:", !this.canDig ? "on cooldown" : (this.isDigging ? "already digging" : "not a mole"));
+            }
+            return;
+        }
+        
+        // Altijd loggen als er gegraven wordt, ongeacht debug level
+        console.log("DIGGING ACTIVATED! 🦔💪");
+        
+        this.isDigging = true;
+        this.digTimer = 30; // Digging active for 30 frames (half second)
+        this.canDig = false; // Can't use again until cooldown
+        
+        // Feedback message
+        gameCore.gameState.message = "Mol graaft door muren!";
+        setTimeout(() => {
+            if (gameCore.gameState.message === "Mol graaft door muren!") {
+                gameCore.gameState.message = "";
+            }
+        }, 1000);
+        
+        // Check collisions with walls and allow passing through them
+        this.digThroughWalls();
+        
+        // Reset digging state after a short time
+        setTimeout(() => {
+            this.isDigging = false;
+            if (gameCore.gameState.debugLevel >= 1) {
+                console.log("Digging state reset to false");
+            }
+        }, 500);
+        
+        // Start cooldown timer
+        setTimeout(() => {
+            this.canDig = true;
+            if (gameCore.gameState.debugLevel >= 1) {
+                console.log("Digging cooldown complete - can dig again");
+            }
+        }, 2000); // 2 second cooldown
+    }
+    
+    /**
+     * Checks if the mole can dig through walls and handles the digging
+     */
+    digThroughWalls() {
+        if (gameCore.gameState.debugLevel >= 1) {
+            console.log("digThroughWalls check for", this.name, "isDigging:", this.isDigging, "animalType:", this.animalType);
+        }
+        
+        if (!this.isDigging || this.animalType !== "MOLE") {
+            if (gameCore.gameState.debugLevel >= 1) {
+                console.log("Cannot dig through walls:", !this.isDigging ? "not in digging state" : "not a mole");
+            }
+            return;
+        }
+        
+        // Get all platforms in the level
+        const currentLevelData = window.levels[gameCore.currentLevel];
+        const platforms = currentLevelData.platforms || [];
+        
+        if (gameCore.gameState.debugLevel >= 1) {
+            console.log("Checking", platforms.length, "platforms for digging");
+        }
+        
+        // Flag to track if we've dug through something
+        let dugThrough = false;
+        
+        // Check for walls in front of the mole
+        platforms.forEach(platform => {
+            // Only dig through vertical walls and normal platforms
+            if (platform.type === "VERTICAL" || platform.type === "NORMAL") {
+                const facingLeft = !this.facingRight;
+                const moleRight = this.x + this.width;
+                const moleLeft = this.x;
+                
+                if (gameCore.gameState.debugLevel >= 1) {
+                    console.log("Checking", platform.type, "wall at (", platform.x, ",", platform.y, ") - Mole at (", this.x, ",", this.y, ") facing", facingLeft ? "left" : "right");
+                }
+                
+                // Check if wall is directly in front of the mole
+                if ((facingLeft && moleLeft > platform.x && moleLeft < platform.x + platform.width + 5) ||
+                    (!facingLeft && moleRight < platform.x + platform.width && moleRight > platform.x - 5)) {
+                    
+                    if (gameCore.gameState.debugLevel >= 1) {
+                        console.log("Wall is in front of mole! Checking vertical alignment...");
+                    }
+                    
+                    // Check if mole is vertically aligned with the wall 
+                    if (this.y + this.height > platform.y && this.y < platform.y + platform.height) {
+                        // Altijd loggen als er door een muur gegraven wordt, ongeacht debug level
+                        console.log("FOUND WALL TO DIG THROUGH! 🦔💪🧱");
+                        
+                        // Set a flag that mole dug through a wall
+                        this.diggedThroughWall = true;
+                        dugThrough = true;
+                        
+                        // Give the mole a boost through the wall
+                        if (facingLeft) {
+                            this.x = platform.x - this.width - 5; // Position left of the wall
+                            this.velX = -this.speed; // Boost in facing direction
+                            if (gameCore.gameState.debugLevel >= 1) {
+                                console.log("Digging through to the left, new position:", this.x);
+                            }
+                        } else {
+                            this.x = platform.x + platform.width + 5; // Position right of the wall
+                            this.velX = this.speed; // Boost in facing direction
+                            if (gameCore.gameState.debugLevel >= 1) {
+                                console.log("Digging through to the right, new position:", this.x);
+                            }
+                        }
+                        
+                        // Display digging success message
+                        gameCore.gameState.message = "Doorheen gegraven!";
+                        setTimeout(() => {
+                            if (gameCore.gameState.message === "Doorheen gegraven!") {
+                                gameCore.gameState.message = "";
+                            }
+                        }, 1000);
+                    } else if (gameCore.gameState.debugLevel >= 1) {
+                        console.log("Mole not vertically aligned with wall - Cannot dig through");
+                    }
+                }
+            }
+        });
+        
+        // Check if we need to dig through the ground
+        if (!dugThrough && this.onGround) {
+            if (gameCore.gameState.debugLevel >= 1) {
+                console.log("No wall found, checking if we can dig through ground. onGround:", this.onGround);
+            }
+            
+            // If on ground and facing down key is pressed, dig down through the ground
+            if (gameControls.keys[this.controls.down] || gameControls.keys[this.controls.down.toLowerCase()]) {
+                // Altijd loggen als er door de grond gegraven wordt, ongeacht debug level
+                console.log("Down key pressed while on ground - DIGGING DOWN! 🦔⬇️");
+                
+                this.y += this.height + 10; // Move down below current ground
+                this.velY = 5; // Give some downward momentum
+                this.onGround = false;
+                
+                // Display digging success message
+                gameCore.gameState.message = "Doorheen gegraven!";
+                setTimeout(() => {
+                    if (gameCore.gameState.message === "Doorheen gegraven!") {
+                        gameCore.gameState.message = "";
+                    }
+                }, 1000);
+            } else if (gameCore.gameState.debugLevel >= 1) {
+                console.log("Down key not pressed - can't dig down");
+            }
+        }
+        
+        if (!dugThrough && gameCore.gameState.debugLevel >= 1) {
+            console.log("No suitable digging targets found");
+        }
     }
     
     /**
