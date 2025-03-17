@@ -124,6 +124,57 @@ De codebase is als volgt georganiseerd:
 - `editor.html` / `editor.js` - Level-editor
 - `styles.css` / `editor-styles.css` - Styling
 - `test_server.py` / `test_dev_mode.py` - Geautomatiseerde tests
+- `run-tests.js` - JavaScript tests voor het spelmechanisme
+- `tests.js` / `tests-automated.js` - Testdefinities voor spelgedrag
+
+## Ontwikkeling
+
+### Kwaliteitschecks
+
+Voor het bijdragen aan dit project, zorg ervoor dat alle wijzigingen voldoen aan de volgende kwaliteitscriteria:
+
+1. **Geen syntaxfouten** - Alle JavaScript code moet syntactisch correct zijn
+2. **Tests slagen** - Voer de tests uit met `node run-tests.js` om te verifiëren dat alle functionaliteit correct werkt
+3. **Visuele controle** - Test het spel in de browser om te controleren of visuele elementen correct werken
+
+### Pre-commit Hook Installeren
+
+Je kunt een pre-commit hook instellen om automatisch tests uit te voeren voordat je wijzigingen commit:
+
+1. Kopieer het onderstaande script naar `.git/hooks/pre-commit`
+2. Maak het uitvoerbaar met `chmod +x .git/hooks/pre-commit`
+
+```bash
+#!/bin/bash
+
+echo "Running pre-commit checks..."
+
+# Controleer JavaScript syntax
+echo "Checking JavaScript syntax..."
+for file in $(git diff --cached --name-only --diff-filter=ACMR | grep "\.js$"); do
+    if ! node --check "$file"; then
+        echo "❌ Syntax error in $file"
+        exit 1
+    fi
+done
+echo "✅ JavaScript syntax checks passed"
+
+# Voer tests uit
+echo "Running tests..."
+TEST_OUTPUT=$(node run-tests.js)
+if [[ $TEST_OUTPUT == *"Mislukt: 0"* ]]; then
+    echo "✅ All tests passed"
+else
+    echo "❌ Some tests failed:"
+    echo "$TEST_OUTPUT"
+    exit 1
+fi
+
+echo "✅ All checks passed!"
+exit 0
+```
+
+Als je ESLint of een andere linter wilt toevoegen aan het project, installeer dan de benodigde pakketten en voeg de linting stap toe aan de pre-commit hook.
 
 ## Toevoegen van een nieuw platformtype
 
