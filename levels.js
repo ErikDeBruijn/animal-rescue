@@ -200,6 +200,7 @@ function getLevels(GROUND_LEVEL) {    return [
 },
         {
     name: "Springen maar!!!",
+    allowedAnimals: ["SQUIRREL","TURTLE","UNICORN","CAT"],
     startPositions: [
         {x: 50, y: 350},
         {x: 100, y: 350}
