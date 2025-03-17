@@ -65,6 +65,8 @@ DIERENREDDERS_DEV_MODE=true python server.py
 
 In development mode is de level editor beschikbaar op: http://localhost:5050/editor
 
+**Belangrijk**: Tijdens ontwikkeling hoeft de server niet handmatig herstart te worden. De server detecteert automatisch wijzigingen in de code en herlaadt de browser wanneer bestanden worden bijgewerkt.
+
 ## Level Editor
 
 Je kunt je eigen levels maken en bewerken met de level editor (alleen beschikbaar in development mode).
