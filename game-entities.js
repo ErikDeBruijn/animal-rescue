@@ -1460,6 +1460,33 @@ function updateEnemies(players) {
                     enemy.velY = 0;
                     enemy.onGround = true;
                 }
+                
+                // Voeg collisiedetectie toe voor VERTICAL platforms voor vijanden
+                if (platform.type === "VERTICAL") {
+                    // Bereken collision box
+                    const enemyBottom = enemy.y + enemy.height;
+                    const enemyTop = enemy.y;
+                    const enemyLeft = enemy.x;
+                    const enemyRight = enemy.x + enemy.width;
+                    
+                    const platformTop = platform.y;
+                    const platformBottom = platform.y + platform.height;
+                    const platformLeft = platform.x;
+                    const platformRight = platform.x + platform.width;
+                    
+                    // Check of vijand tegen de zijkant van de muur botst
+                    if (enemyBottom > platformTop + 5 && enemyTop < platformBottom - 5) {
+                        if (enemy.direction > 0 && enemyRight > platformLeft && enemyLeft < platformLeft) {
+                            // Botst tegen de linkerkant van de muur
+                            enemy.x = platformLeft - enemy.width;
+                            enemy.direction *= -1; // Verander richting
+                        } else if (enemy.direction < 0 && enemyLeft < platformRight && enemyRight > platformRight) {
+                            // Botst tegen de rechterkant van de muur
+                            enemy.x = platformRight;
+                            enemy.direction *= -1; // Verander richting
+                        }
+                    }
+                }
             });
         }
     });
