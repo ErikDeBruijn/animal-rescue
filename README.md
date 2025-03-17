@@ -73,6 +73,8 @@ Je kunt je eigen levels maken en bewerken met de level editor (alleen beschikbaa
 
 Wanneer je de server gebruikt, kun je levels opslaan met de "Opslaan" knop en worden deze direct in het spel beschikbaar.
 
+Voor meer informatie over de structuur van levels, zie [LEVELS.md](LEVELS.md).
+
 ### Nieuwe features in de editor
 
 1. Geselecteerde objecten kunnen worden verwijderd met de delete toets
