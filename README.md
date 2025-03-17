@@ -137,42 +137,42 @@ Voor het bijdragen aan dit project, zorg ervoor dat alle wijzigingen voldoen aan
 2. **Tests slagen** - Voer de tests uit met `node run-tests.js` om te verifiëren dat alle functionaliteit correct werkt
 3. **Visuele controle** - Test het spel in de browser om te controleren of visuele elementen correct werken
 
-### Pre-commit Hook Installeren
+### Syntax Controle Werktuigen
 
-Je kunt een pre-commit hook instellen om automatisch tests uit te voeren voordat je wijzigingen commit:
+Dit project bevat verschillende hulpmiddelen om syntax fouten te voorkomen:
 
-1. Kopieer het onderstaande script naar `.git/hooks/pre-commit`
-2. Maak het uitvoerbaar met `chmod +x .git/hooks/pre-commit`
+#### 1. check-syntax.js
+
+Een JavaScript syntax checker die extra controles uitvoert die node's ingebouwde checker niet altijd detecteert:
 
 ```bash
-#!/bin/bash
+# Controleer één JS bestand
+node check-syntax.js game-entities.js
 
-echo "Running pre-commit checks..."
-
-# Controleer JavaScript syntax
-echo "Checking JavaScript syntax..."
-for file in $(git diff --cached --name-only --diff-filter=ACMR | grep "\.js$"); do
-    if ! node --check "$file"; then
-        echo "❌ Syntax error in $file"
-        exit 1
-    fi
-done
-echo "✅ JavaScript syntax checks passed"
-
-# Voer tests uit
-echo "Running tests..."
-TEST_OUTPUT=$(node run-tests.js)
-if [[ $TEST_OUTPUT == *"Mislukt: 0"* ]]; then
-    echo "✅ All tests passed"
-else
-    echo "❌ Some tests failed:"
-    echo "$TEST_OUTPUT"
-    exit 1
-fi
-
-echo "✅ All checks passed!"
-exit 0
+# Controleer alle JS bestanden in het project
+node check-syntax.js
 ```
+
+Deze checker controleert op:
+- Ongelijke accolades `{}`
+- Ongelijke haakjes `()`
+- Ontbrekende sluithaakjes na function calls
+- Andere veelvoorkomende syntax errors
+
+#### 2. Pre-commit Hook Installeren
+
+Installeer de pre-commit hook om syntax checks automatisch uit te voeren voordat je wijzigingen commit:
+
+1. De hook wordt automatisch gekopieerd naar `.git/hooks/pre-commit` wanneer je de repository kloont
+2. Zorg ervoor dat het script uitvoerbaar is: `chmod +x .git/hooks/pre-commit`
+
+Wat de pre-commit hook doet:
+- JavaScript syntax controle op alle gewijzigde bestanden
+- Meer uitgebreide syntax controle met `check-syntax.js`
+- Controleert alle JavaScript bestanden om problemen in afhankelijke bestanden te vinden
+- Voert alle tests uit om te controleren of alles nog werkt
+
+Door deze combinatie van syntax controles wordt voorkomen dat er per ongeluk code met fouten wordt gecommit die de browser niet correct kan uitvoeren.
 
 Als je ESLint of een andere linter wilt toevoegen aan het project, installeer dan de benodigde pakketten en voeg de linting stap toe aan de pre-commit hook.
 

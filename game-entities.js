@@ -1280,15 +1280,43 @@ function updateEnemies(players) {
             
             // Als er een speler dichtbij is, ga die achterna
             if (nearestPlayer) {
-                // Bepaal richting naar speler
-                if (enemy.x < nearestPlayer.x) {
-                    enemy.direction = 1; // Naar rechts (richting speler)
-                } else {
-                    enemy.direction = -1; // Naar links (richting speler)
-                }
+                // Controleer of de speler boven de vijand staat
+                const playerIsAbove = nearestPlayer.y < enemy.y - enemy.height/2;
+                const playerIsClose = Math.abs(enemy.x - nearestPlayer.x) < enemy.width;
                 
-                // Bereken beweging (nog niet toepassen)
-                moveX = enemy.speed * enemy.direction;
+                // Als de speler boven de vijand staat en dichtbij genoeg is, blijf stilstaan of maak rustige bewegingen
+                if (playerIsAbove && playerIsClose) {
+                    // De vijand blijft rustig en verandert niet continu van richting
+                    // Maak af en toe een kleine beweging om het natuurlijker te laten lijken
+                    if (!enemy.waitTimer || enemy.waitTimer <= 0) {
+                        // Kies een willekeurige richting en wachttijd wanneer de timer afloopt
+                        enemy.direction = Math.random() > 0.5 ? 1 : -1;
+                        enemy.waitTimer = 60 + Math.random() * 60; // Wacht tussen 1-2 seconden
+                        enemy.isWaiting = true;
+                    } else {
+                        // Verminder de timer
+                        enemy.waitTimer--;
+                        
+                        // Beweeg langzaam in de geselecteerde richting
+                        if (enemy.isWaiting) {
+                            moveX = enemy.speed * 0.3 * enemy.direction;
+                        }
+                    }
+                } else {
+                    // Reset de wachttimer als de speler niet boven de vijand staat
+                    enemy.isWaiting = false;
+                    enemy.waitTimer = 0;
+                    
+                    // Normaal gedrag: ga richting de speler
+                    if (enemy.x < nearestPlayer.x) {
+                        enemy.direction = 1; // Naar rechts (richting speler)
+                    } else {
+                        enemy.direction = -1; // Naar links (richting speler)
+                    }
+                    
+                    // Bereken beweging (nog niet toepassen)
+                    moveX = enemy.speed * enemy.direction;
+                }
             }
             // Anders, als er een puppy is, ga daar naartoe als die zichtbaar is
             else if (currentLevelData.puppy && !currentLevelData.puppy.saved) {
