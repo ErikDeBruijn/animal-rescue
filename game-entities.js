@@ -568,7 +568,7 @@ class Player {
                             }
                         }
                     }
-                } else if (platform.type === "NORMAL" || platform.type === "CLIMB" || platform.type === "TREE" || platform.type === "ICE" || platform.type === "VERTICAL") {
+                } else if (platform.type === "NORMAL" || platform.type === "CLIMB" || platform.type === "TREE" || platform.type === "ICE" || platform.type === "VERTICAL" || platform.type === "TREADMILL") {
                     // Als de eenhoorn vliegt, stop het vliegen als de eenhoorn een platform raakt
                     // Dit moet altijd als eerste worden gecontroleerd om door-vliegen te voorkomen
                     if (this.animalType === "UNICORN" && this.flying) {
@@ -666,10 +666,25 @@ class Player {
                                 this.velY = 0;
                                 this.onGround = true;
                                 
-                                // Speciale fysica voor ijsplatforms
+                                // Speciale fysica voor platformtypes
                                 if (platform.type === "ICE") {
                                     // Markeer dat we op ijs staan
                                     this.onIce = true;
+                                } else if (platform.type === "TREADMILL") {
+                                    // Treadmill conveyor belt effect
+                                    this.onIce = false; // Not slippery like ice
+                                    
+                                    // Apply horizontal force based on treadmill speed
+                                    const treadmillSpeed = platform.speed !== undefined ? platform.speed : 2;
+                                    this.velX += treadmillSpeed * 0.1; // Apply gradual acceleration
+                                    
+                                    // Cap the maximum speed based on treadmill direction and speed
+                                    const maxTreadmillSpeed = Math.abs(treadmillSpeed) * 1.5;
+                                    if (treadmillSpeed > 0 && this.velX > maxTreadmillSpeed) {
+                                        this.velX = maxTreadmillSpeed;
+                                    } else if (treadmillSpeed < 0 && this.velX < -maxTreadmillSpeed) {
+                                        this.velX = -maxTreadmillSpeed;
+                                    }
                                 } else {
                                     this.onIce = false;
                                 }

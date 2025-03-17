@@ -41,7 +41,8 @@ const objectColors = {
         TRAMPOLINE: '#ff4d4d', // Rood voor trampolines
         LASER: '#ff0000',   // Rood voor lasers (deadly platform)
         ICE: '#A5F2F3',     // Lichtblauw voor ijs
-        VERTICAL: '#cc7722'  // Oranjebruin voor verticale muren
+        VERTICAL: '#cc7722',  // Oranjebruin voor verticale muren
+        TREADMILL: '#444444' // Donkergrijs voor loopbanden
     },
     enemy: {
         LION: '#ff9800',    // Oranje voor leeuwen
@@ -788,9 +789,14 @@ function setupEventListeners() {
 // Setup event listeners voor object eigenschappen
 function setupPropertyChangeListeners() {
     // Platform eigenschappen
-    document.getElementById('platform-type').addEventListener('change', updateSelectedObjectProperty);
+    document.getElementById('platform-type').addEventListener('change', function() {
+        updateSelectedObjectProperty();
+        // Show or hide treadmill speed property based on platform type
+        updateTreadmillSpeedVisibility();
+    });
     document.getElementById('platform-width').addEventListener('input', updateSelectedObjectProperty);
     document.getElementById('platform-height').addEventListener('input', updateSelectedObjectProperty);
+    document.getElementById('treadmill-speed').addEventListener('input', updateSelectedObjectProperty);
     
     // Vijand eigenschappen
     document.getElementById('enemy-type').addEventListener('change', updateSelectedObjectProperty);
@@ -801,6 +807,18 @@ function setupPropertyChangeListeners() {
     document.getElementById('trap-type').addEventListener('change', updateSelectedObjectProperty);
     document.getElementById('trap-width').addEventListener('input', updateSelectedObjectProperty);
     document.getElementById('trap-height').addEventListener('input', updateSelectedObjectProperty);
+}
+
+// Show or hide treadmill speed property based on platform type
+function updateTreadmillSpeedVisibility() {
+    const platformType = document.getElementById('platform-type').value;
+    const treadmillSpeedRow = document.getElementById('treadmill-speed-row');
+    
+    if (platformType === 'TREADMILL') {
+        treadmillSpeedRow.style.display = 'block';
+    } else {
+        treadmillSpeedRow.style.display = 'none';
+    }
 }
 
 // Update de eigenschappen van het geselecteerde object
@@ -817,6 +835,12 @@ function updateSelectedObjectProperty() {
         
         if (!isNaN(width) && width > 0) object.width = width;
         if (!isNaN(height) && height > 0) object.height = height;
+        
+        // Update treadmill speed if this is a treadmill platform
+        if (object.type === 'TREADMILL') {
+            const speed = parseFloat(document.getElementById('treadmill-speed').value);
+            if (!isNaN(speed)) object.speed = speed;
+        }
     } else if (objectType === 'enemy') {
         object.type = document.getElementById('enemy-type').value;
         
@@ -934,12 +958,22 @@ function createPlacementPreview(type) {
             const platformHeight = parseInt(document.getElementById('platform-height').value);
             const platformType = document.getElementById('platform-type').value;
             
-            editorState.placementPreview = {
+            const previewObj = {
                 type: 'platform',
                 width: platformWidth,
                 height: platformHeight,
                 platformType: platformType
             };
+            
+            // Include treadmill speed if it's a treadmill platform
+            if (platformType === 'TREADMILL') {
+                const treadmillSpeed = parseFloat(document.getElementById('treadmill-speed').value);
+                if (!isNaN(treadmillSpeed)) {
+                    previewObj.speed = treadmillSpeed; // Use "speed" property, not "treadmillSpeed"
+                }
+            }
+            
+            editorState.placementPreview = previewObj;
             break;
             
         case 'enemy':
@@ -1453,6 +1487,16 @@ function createNewObject(x, y) {
                 type: platformType
             };
             
+            // Add speed property for treadmill platforms
+            if (platformType === 'TREADMILL') {
+                const treadmillSpeed = parseFloat(document.getElementById('treadmill-speed').value);
+                if (!isNaN(treadmillSpeed)) {
+                    newPlatform.speed = treadmillSpeed;
+                } else {
+                    newPlatform.speed = 2; // Default speed
+                }
+            }
+            
             editorState.editingLevel.platforms.push(newPlatform);
             editorState.selectedObject = newPlatform;
             break;
@@ -1618,6 +1662,15 @@ function updatePropertiesPanel() {
         document.getElementById('platform-type').value = object.type || 'NORMAL';
         document.getElementById('platform-width').value = object.width;
         document.getElementById('platform-height').value = object.height;
+        
+        // Show or hide treadmill speed input based on platform type
+        const treadmillSpeedRow = document.getElementById('treadmill-speed-row');
+        if (object.type === 'TREADMILL') {
+            treadmillSpeedRow.style.display = 'block';
+            document.getElementById('treadmill-speed').value = object.speed || 2;
+        } else {
+            treadmillSpeedRow.style.display = 'none';
+        }
     } else if (type === 'enemy') {
         document.getElementById('enemy-props').style.display = 'block';
         document.getElementById('enemy-type').value = object.type || 'LION';
@@ -2480,10 +2533,20 @@ function exportLevelCode() {
     // Platforms
     code += `    platforms: [\n`;
     level.platforms.forEach((platform, index) => {
-        code += `        {x: ${platform.x}, y: ${platform.y}, width: ${platform.width}, height: ${platform.height}, type: "${platform.type}"}`;
-        if (index < level.platforms.length - 1) {
-            code += ',\n';
+        let platformCode = `        {x: ${platform.x}, y: ${platform.y}, width: ${platform.width}, height: ${platform.height}, type: "${platform.type}"`;
+        
+        // Add speed property for treadmill platforms
+        if (platform.type === "TREADMILL" && platform.speed !== undefined) {
+            platformCode += `, speed: ${platform.speed}`;
         }
+        
+        platformCode += `}`;
+        
+        if (index < level.platforms.length - 1) {
+            platformCode += ',\n';
+        }
+        
+        code += platformCode;
     });
     code += `\n    ],\n`;
     

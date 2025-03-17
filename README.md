@@ -95,6 +95,7 @@ Het spel bevat meerdere levels met toenemende moeilijkheidsgraad:
 - **Bomen en Klimwanden**: De eekhoorn kan klimmen, de andere dieren niet.
 - **Wolken**: Alleen de eenhoorn kan op wolkenplatforms staan.
 - **Trampolines**: Springplatforms die alle dieren hoger kunnen laten springen.
+- **Loopbanden**: Platforms die spelers automatisch naar links of rechts bewegen.
 - **Spikes**: Gevaarlijke vallen die alle dieren moeten vermijden.
 - **Lasers**: Dodelijke horizontale stralen die niemand kan passeren.
 - **Leeuwen**: Gevaarlijke vijanden die het op jullie puppy hebben gemunt.
@@ -123,6 +124,26 @@ De codebase is als volgt georganiseerd:
 - `editor.html` / `editor.js` - Level-editor
 - `styles.css` / `editor-styles.css` - Styling
 - `test_server.py` / `test_dev_mode.py` - Geautomatiseerde tests
+
+## Toevoegen van een nieuw platformtype
+
+Wil je een nieuw platformtype toevoegen aan het spel? Volg dan deze stappen:
+
+1. **Editor kleuren toevoegen**: Voeg een nieuwe kleur toe aan `objectColors.platform` in `editor.js`.
+2. **Editor UI bijwerken**: Voeg een nieuwe optie toe aan het `platform-type` dropdown menu in `editor.html`.
+3. **Rendering toevoegen**: Implementeer de tekenroutine voor het nieuwe platformtype in de `drawPlatform` functie in `game-rendering.js`.
+4. **Gedrag toevoegen**: Implementeer de fysica en het gedrag van het platform in `game-entities.js`.
+5. **Collision detectie toevoegen**: Voeg het nieuwe platformtype toe aan de if-statement met platformtypes in `game-entities.js` om ervoor te zorgen dat spelers niet door het platform vallen.
+6. **Eigenschappen ondersteunen**: Indien nodig, voeg extra eigenschappen toe aan het platform object (zoals `speed` voor loopbanden).
+7. **Export code aanpassen**: Als je extra eigenschappen hebt toegevoegd (zoals `speed`), zorg ervoor dat deze ook worden geëxporteerd in de `exportLevelCode` functie in `editor.js`.
+8. **README bijwerken**: Voeg informatie over het nieuwe platformtype toe aan de README.
+
+**Belangrijk**: Als je speciale eigenschappen toevoegt, zoals `speed` voor loopbanden, zorg er dan voor dat:
+- De eigenschap consistent wordt gebruikt in de code (zelfde naam overal)
+- De eigenschap correct wordt opgeslagen in het level-object
+- De eigenschap wordt meegenomen in de `exportLevelCode` functie voor het opslaan naar de server
+
+Voorbeeld: Het "Loopband" platformtype is toegevoegd om spelers automatisch naar links of rechts te bewegen, met een instelbare snelheid. De waarde kan positief (rechts) of negatief (links) zijn en bepaalt zowel de richting als snelheid waarmee spelers worden verplaatst.
 
 ---
 

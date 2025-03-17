@@ -114,6 +114,112 @@ function drawTrap(trap) {
 // Platform rendering
 function drawPlatform(platform) {
     switch(platform.type) {
+        case "TREADMILL":
+            // Base treadmill color - dark gray for the main belt
+            gameCore.ctx.fillStyle = '#444444'; 
+            gameCore.ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+            
+            // Animation time and direction
+            const treadTime = Date.now() / 150; // Animation speed
+            const treadDirection = platform.speed === undefined ? 1 : Math.sign(platform.speed);
+            const treadSpeed = platform.speed === undefined ? 2 : Math.abs(platform.speed);
+            const rotationSpeed = treadSpeed * 0.1; // Scale rotation speed with treadmill speed
+            const animRotation = (treadTime * rotationSpeed * treadDirection) % (Math.PI * 2);
+            
+            // Add side rollers (light gray circles at each end) with rotating spokes
+            const rollerRadius = platform.height / 2;
+            
+            // Left roller
+            gameCore.ctx.save();
+            gameCore.ctx.translate(platform.x, platform.y + rollerRadius);
+            gameCore.ctx.rotate(animRotation);
+            
+            // Draw roller base
+            gameCore.ctx.fillStyle = '#777777';
+            gameCore.ctx.beginPath();
+            gameCore.ctx.arc(0, 0, rollerRadius, 0, Math.PI * 2);
+            gameCore.ctx.fill();
+            
+            // Draw spokes
+            gameCore.ctx.strokeStyle = '#333333';
+            gameCore.ctx.lineWidth = 2;
+            for (let i = 0; i < 4; i++) {
+                const angle = i * Math.PI / 2;
+                gameCore.ctx.beginPath();
+                gameCore.ctx.moveTo(0, 0);
+                gameCore.ctx.lineTo(Math.cos(angle) * rollerRadius, Math.sin(angle) * rollerRadius);
+                gameCore.ctx.stroke();
+            }
+            gameCore.ctx.restore();
+            
+            // Right roller
+            gameCore.ctx.save();
+            gameCore.ctx.translate(platform.x + platform.width, platform.y + rollerRadius);
+            gameCore.ctx.rotate(animRotation);
+            
+            // Draw roller base
+            gameCore.ctx.fillStyle = '#777777';
+            gameCore.ctx.beginPath();
+            gameCore.ctx.arc(0, 0, rollerRadius, 0, Math.PI * 2);
+            gameCore.ctx.fill();
+            
+            // Draw spokes
+            gameCore.ctx.strokeStyle = '#333333';
+            gameCore.ctx.lineWidth = 2;
+            for (let i = 0; i < 4; i++) {
+                const angle = i * Math.PI / 2;
+                gameCore.ctx.beginPath();
+                gameCore.ctx.moveTo(0, 0);
+                gameCore.ctx.lineTo(Math.cos(angle) * rollerRadius, Math.sin(angle) * rollerRadius);
+                gameCore.ctx.stroke();
+            }
+            gameCore.ctx.restore();
+            
+            // No more vertical tread lines - removed as requested
+            
+            // Add highlights on top edge
+            gameCore.ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            gameCore.ctx.fillRect(platform.x, platform.y, platform.width, 3);
+            
+            // Draw direction arrows along the belt
+            const arrowSpacing = 50; // Space between arrows
+            const arrowSize = Math.min(12, platform.height * 0.4);
+            
+            // Yellow arrows showing movement direction
+            gameCore.ctx.fillStyle = '#FFCC00';
+            
+            // Starting position for first arrow (slightly offset from edge)
+            let startPos = platform.x + 25;
+            
+            // Adjust arrow position based on animation time
+            const arrowOffset = (treadTime * treadDirection * 0.5) % arrowSpacing;
+            startPos += arrowOffset;
+            
+            // Draw the arrows
+            for (let x = startPos; x < platform.x + platform.width - arrowSize; x += arrowSpacing) {
+                // Skip arrows too close to the edge
+                if (x < platform.x + arrowSize || x > platform.x + platform.width - arrowSize) {
+                    continue;
+                }
+                
+                // Draw triangle pointing in the direction of movement
+                gameCore.ctx.beginPath();
+                if (treadDirection >= 0) {
+                    // Right pointing triangle
+                    gameCore.ctx.moveTo(x + arrowSize, platform.y + platform.height/2);
+                    gameCore.ctx.lineTo(x, platform.y + platform.height/2 - arrowSize/2);
+                    gameCore.ctx.lineTo(x, platform.y + platform.height/2 + arrowSize/2);
+                } else {
+                    // Left pointing triangle
+                    gameCore.ctx.moveTo(x - arrowSize, platform.y + platform.height/2);
+                    gameCore.ctx.lineTo(x, platform.y + platform.height/2 - arrowSize/2);
+                    gameCore.ctx.lineTo(x, platform.y + platform.height/2 + arrowSize/2);
+                }
+                gameCore.ctx.closePath();
+                gameCore.ctx.fill();
+            }
+            break;
+            
         case "ICE":
             // Base ice color - light blue for ice
             gameCore.ctx.fillStyle = '#A5F2F3'; 
