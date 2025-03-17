@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <!-- Voeg beforeunload event toe om te waarschuwen voor niet-opgeslagen wijzigingen -->
+    <script>
+        window.addEventListener('beforeunload', function(e) {
+            // Controleer of er niet-opgeslagen wijzigingen zijn
+            if (window.editor && window.editor.hasUnsavedChanges()) {
+                // Standaard "wijzigingen onopgeslagen" bericht
+                const message = 'Je hebt niet-opgeslagen wijzigingen. Als je de pagina verlaat gaan deze wijzigingen verloren.';
+                e.returnValue = message; // Standaard dialoogvenster
+                return message; // Voor oudere browsers
+            }
+        });
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dieren Redders - Level Editor (Modular)</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <link rel="stylesheet" href="editor-styles.css">
+    
+    <!-- Load modular editor scripts -->
+    <script src="editor-v2/core.js"></script>
+    <script src="editor-v2/rendering.js"></script>
+    <script src="editor-v2/objects.js"></script>
+    <script src="editor-v2/level.js"></script>
+    <script src="editor-v2/properties.js"></script>
+    <script src="editor-v2/ui.js"></script>
+    <script src="editor-v2/init.js"></script>
+</head>
+<body>
+    <a href="#" class="nav-link" id="back-to-game-link">Terug naar Game</a>
+    <div class="editor-container">
+        <div class="sidebar">
+            <h2>Level Editor</h2>
+            
+            <div class="panel">
+                <div class="level-selector">
+                    <label for="level-select">Level:</label>
+                    <select id="level-select">
+                        <option value="0">Level 1 - Samen werken</option>
+                        <option value="1">Level 2 - Klimmen en zwemmen</option>
+                        <option value="2">Level 3 - Samen naar de top</option>
+                        <option value="new">Nieuw level</option>
+                    </select>
+                    <div style="display: flex; justify-content: space-between; margin-top: 5px;">
+                        <button id="new-level-btn">Nieuw</button>
+                        <button id="save-level-btn">Opslaan</button>
+                        <button id="delete-level-btn" style="background-color: #d9534f;">Verwijderen</button>
+                    </div>
+                    <div style="margin-top: 10px;">
+                        <button id="play-level-btn" style="width: 100%;">Speel Dit Level</button>
+                    </div>
+                </div>
+                
+                <div class="prop-row">
+                    <label for="level-name">Naam:</label>
+                    <input type="text" id="level-name" placeholder="Level naam">
+                </div>
+            </div>
+            
+            <div class="panel tool-group">
+                <h3>Tools</h3>
+                <div class="type-selector">
+                    <button id="select-tool">Selecteren</button>
+                    <button id="move-tool" class="selected">Verplaatsen</button>
+                    <button id="delete-tool">Verwijderen</button>
+                    <button id="resize-tool">Formaat</button>
+                    <button id="place-tool">Plaatsen</button>
+                </div>
+            </div>
+            
+            <div class="panel tool-group" id="object-panel" style="display: none;">
+                <h3>Objecten</h3>
+                <div class="type-selector">
+                    <button id="platform-btn">Platform</button>
+                    <button id="enemy-btn">Vijand</button>
+                    <button id="puppy-btn">Puppy</button>
+                    <button id="collectible-star-btn">Ster</button>
+                    <button id="collectible-pepper-btn">Peper</button>
+                    <button id="start-pos-btn">Start positie</button>
+                    <button id="trap-btn">Val</button>
+                </div>
+                <button id="exit-placement-btn" style="width: 100%; margin-top: 10px;">Terug naar Bewerken</button>
+                
+                <!-- Platform eigenschappen (worden getoond wanneer platform is geselecteerd) -->
+                <div id="platform-props" class="object-props" style="display: none;">
+                    <h4>Platform eigenschappen</h4>
+                    <div class="prop-row">
+                        <label for="platform-type">Type:</label>
+                        <select id="platform-type">
+                            <option value="NORMAL">Normaal</option>
+                            <option value="WATER">Water</option>
+                            <option value="TREE">Boom</option>
+                            <option value="CLOUD">Wolk</option>
+                            <option value="CLIMB">Klimwand</option>
+                            <option value="TRAMPOLINE">Trampoline</option>
+                            <option value="LASER">Laser</option>
+                            <option value="ICE">IJs</option>
+                        </select>
+                    </div>
+                    <div class="prop-row">
+                        <label for="platform-width">Breedte:</label>
+                        <input type="number" id="platform-width" value="100" min="20" max="300">
+                    </div>
+                    <div class="prop-row">
+                        <label for="platform-height">Hoogte:</label>
+                        <input type="number" id="platform-height" value="20" min="10" max="300">
+                    </div>
+                </div>
+                
+                <!-- Vijand eigenschappen -->
+                <div id="enemy-props" class="object-props" style="display: none;">
+                    <h4>Vijand eigenschappen</h4>
+                    <div class="prop-row">
+                        <label for="enemy-type">Type:</label>
+                        <select id="enemy-type">
+                            <option value="LION">Leeuw</option>
+                            <option value="DRAGON">Draak</option>
+                        </select>
+                    </div>
+                    <div class="prop-row">
+                        <label for="enemy-patrol">Patrouille:</label>
+                        <input type="number" id="enemy-patrol" value="100" min="0" max="400">
+                    </div>
+                    <div class="prop-row">
+                        <label for="enemy-speed">Snelheid:</label>
+                        <input type="number" id="enemy-speed" value="1.0" min="0" max="3.0" step="0.1">
+                    </div>
+                </div>
+                
+                <!-- Trap eigenschappen -->
+                <div id="trap-props" class="object-props" style="display: none;">
+                    <h4>Val eigenschappen</h4>
+                    <div class="prop-row">
+                        <label for="trap-type">Type:</label>
+                        <select id="trap-type">
+                            <option value="SPIKES">Spikes</option>
+                        </select>
+                    </div>
+                    <div class="prop-row">
+                        <label for="trap-width">Breedte:</label>
+                        <input type="number" id="trap-width" value="40" min="20" max="200">
+                    </div>
+                    <div class="prop-row">
+                        <label for="trap-height">Hoogte:</label>
+                        <input type="number" id="trap-height" value="20" min="10" max="50">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <h3>Toegestane Dieren</h3>
+                <div class="animal-selection">
+                    <div class="prop-row">
+                        <label><input type="checkbox" id="animal-squirrel" value="SQUIRREL" checked> Eekhoorn 🐿️</label>
+                    </div>
+                    <div class="prop-row">
+                        <label><input type="checkbox" id="animal-turtle" value="TURTLE" checked> Schildpad 🐢</label>
+                    </div>
+                    <div class="prop-row">
+                        <label><input type="checkbox" id="animal-unicorn" value="UNICORN" checked> Eenhoorn 🦄</label>
+                    </div>
+                    <div class="prop-row">
+                        <label><input type="checkbox" id="animal-cat" value="CAT" checked> Kat 🐱</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <h3>Objecten in level</h3>
+                <div class="object-list" id="object-list">
+                    <!-- Objecten worden hier dynamisch toegevoegd -->
+                </div>
+            </div>
+            
+            <div class="panel export-section">
+                <h3>Exporteren</h3>
+                <button id="export-btn">Export Level Code</button>
+                <div class="code-panel" id="export-code"></div>
+            </div>
+        </div>
+        
+        <div class="preview-area">
+            <h1>Dieren Redders - Level Preview</h1>
+            <canvas id="editorCanvas" width="800" height="450"></canvas>
+            
+            <div class="panel" style="width: 90%;">
+                <h3>Instructies</h3>
+                <p>1. Kies een bestaand level of maak een nieuw level</p>
+                <p>2. Selecteer een tool en object type</p>
+                <p>3. Klik op de canvas om objecten te plaatsen</p>
+                <p>4. Selecteer objecten om ze te wijzigen of te verplaatsen</p>
+                <p>5. Exporteer je level code om te kopiëren naar levels.js</p>
+                <p><strong>Tip:</strong> Je kunt de preview spelen om je level te testen</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="levels.js"></script>
+    <!-- Editor script is loaded from separate modules in the head -->
+    
+    <!-- Auto-reload notification -->
+    <div id="reload-notification">
+        <h3>Updates beschikbaar</h3>
+        <p>Er zijn updates voor de editor beschikbaar.</p>
+        <button onclick="window.location.reload()">Nu herladen</button>
+        <button onclick="document.getElementById('reload-notification').style.display = 'none';">Later</button>
+    </div>
+    
+    <script>
+        // WebSocket connection for reload notifications
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof io !== 'undefined') {
+                const socket = io();
+                
+                socket.on('reload_needed', function(data) {
+                    console.log('Reload notification received:', data);
+                    
+                    // Toon welke bestanden er gewijzigd zijn
+                    if (data.modified_files && data.modified_files.length > 0) {
+                        console.log('Gewijzigde bestanden:', data.modified_files.join(', '));
+                        
+                        // Update de melding met welke bestanden er gewijzigd zijn
+                        let message = '';
+                        if (data.modified_files.includes('editor-v2.html') || data.modified_files.some(file => file.startsWith('editor-v2/'))) {
+                            message = 'Er zijn updates voor de editor beschikbaar.';
+                        } else if (data.modified_files.includes('levels.js')) {
+                            message = 'Er zijn nieuwe levels of level wijzigingen beschikbaar.';
+                        } else {
+                            message = 'Er zijn updates voor het spel beschikbaar.';
+                        }
+                        
+                        const notificationText = document.querySelector('#reload-notification p');
+                        if (notificationText) {
+                            notificationText.textContent = message;
+                        }
+                    }
+                    
+                    // Check if there are unsaved changes in the editor
+                    const hasUnsavedChanges = editorState && editorState.editingLevel && 
+                                              document.getElementById('save-level-btn') && 
+                                              !document.getElementById('save-level-btn').disabled;
+                    
+                    if (!hasUnsavedChanges) {
+                        // Immediately reload if no unsaved changes
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    } else {
+                        // Show notification if there are unsaved changes
+                        document.getElementById('reload-notification').style.display = 'block';
+                    }
+                });
+            }
+        });
+    </script>
+    <!-- Confirmation Dialog -->
+    <div id="delete-confirmation-dialog" class="confirmation-dialog">
+        <div class="confirmation-dialog-content">
+            <h3>Level verwijderen?</h3>
+            <p>Weet je zeker dat je dit level wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.</p>
+            <div class="confirmation-dialog-buttons">
+                <button id="cancel-delete-btn" class="cancel">Annuleren</button>
+                <button id="confirm-delete-btn" class="confirm">Verwijderen</button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
