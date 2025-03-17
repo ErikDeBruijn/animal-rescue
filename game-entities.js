@@ -379,6 +379,10 @@ class Player {
             }
         }
         
+        // Bewaar oude positie voordat we deze bijwerken (voor collision resolution)
+        const oldX = this.x;
+        const oldY = this.y;
+        
         // Positie bijwerken
         this.x += this.velX;
         this.y += this.velY;
@@ -394,6 +398,70 @@ class Player {
             this.velY = 0;
             this.onGround = true;
             this.onIce = false; // Reset ijs-status op standaard grond
+        }
+        
+        // Check collision met andere speler
+        if (otherPlayer && typeof otherPlayer.x !== 'undefined' && this.collidesWithObject(otherPlayer)) {
+            // Bepaal collision-richting
+            const collisionFromLeft = this.x + this.width/2 < otherPlayer.x + otherPlayer.width/2;
+            const collisionFromTop = this.y + this.height/2 < otherPlayer.y + otherPlayer.height/2;
+            
+            // Bereken de indringingsdiepte (hoe ver spelers elkaar overlappen)
+            const overlapX = collisionFromLeft ? 
+                (this.x + this.width) - otherPlayer.x : 
+                (otherPlayer.x + otherPlayer.width) - this.x;
+                
+            const overlapY = collisionFromTop ? 
+                (this.y + this.height) - otherPlayer.y : 
+                (otherPlayer.y + otherPlayer.height) - this.y;
+                
+            // Bepaal of het een horizontale of verticale collision is gebaseerd op kleinste overlap
+            if (overlapX < overlapY) {
+                // Horizontale collision
+                if (collisionFromLeft) {
+                    this.x = otherPlayer.x - this.width; // Tegen linkerkant van andere speler
+                } else {
+                    this.x = otherPlayer.x + otherPlayer.width; // Tegen rechterkant van andere speler
+                }
+                
+                // Gedeeltelijke overdracht van momentum (minder dan 100% voor betere spelervaring)
+                const momentumTransfer = 0.5;
+                
+                // Check of beide spelers in dezelfde richting bewegen
+                if ((this.velX > 0 && otherPlayer.velX > 0) || (this.velX < 0 && otherPlayer.velX < 0)) {
+                    // Beweging in dezelfde richting - lichte afname van snelheid
+                    this.velX *= 0.7;
+                } else {
+                    // Botsing in tegengestelde richting - meer weerstand
+                    // Overdracht van momentum + richtingsverandering
+                    const tempVelX = this.velX;
+                    this.velX = -this.velX * 0.3 + otherPlayer.velX * momentumTransfer;
+                    
+                    // Als andere speler een Player instantie is (niet een dummy), pas ook zijn snelheid aan
+                    if (otherPlayer instanceof Player) {
+                        otherPlayer.velX = -otherPlayer.velX * 0.3 + tempVelX * momentumTransfer;
+                    }
+                }
+            } else {
+                // Verticale collision
+                if (collisionFromTop) {
+                    // Deze speler landt op de andere speler
+                    this.y = otherPlayer.y - this.height;
+                    this.velY = 0;
+                    this.onGround = true; // Kan springen vanaf andere speler!
+                    
+                    // Duw de andere speler licht naar beneden
+                    if (otherPlayer instanceof Player) {
+                        otherPlayer.velY += 0.5; // Kleine extra zwaartekracht voor de onderste speler
+                    }
+                } else {
+                    // De andere speler landt op deze speler
+                    this.y = otherPlayer.y + otherPlayer.height;
+                    this.velY = 0;
+                    
+                    // Andere speler behoudt zijn 'op de grond' status (wordt in zijn eigen update geregeld)
+                }
+            }
         }
         
         // Platform collisions
