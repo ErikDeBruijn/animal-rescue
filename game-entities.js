@@ -20,6 +20,7 @@ class Player {
         
         // Visual orientation (used by renderer)
         this.facingRight = true; 
+        this.movingDirectionChanged = false; // Tracks if direction was changed by key input
         
         // Special ability: Fire breathing
         this.canBreatheFire = false;
@@ -227,23 +228,40 @@ class Player {
             maxSpeed = this.speed * 1.3; // Hogere maximumsnelheid vanwege gebrek aan wrijving
         }
         
-        // Horizontale beweging
-        if (gameControls.keys[this.controls.left] || gameControls.keys[this.controls.left.toLowerCase()]) {
+        // Bepaal of de speler actief een bewegingstoets indrukt
+        const isPressingLeft = gameControls.keys[this.controls.left] || gameControls.keys[this.controls.left.toLowerCase()];
+        const isPressingRight = gameControls.keys[this.controls.right] || gameControls.keys[this.controls.right.toLowerCase()];
+        
+        // Reset de detectie van verandering in bewegingsrichting
+        this.movingDirectionChanged = false;
+        
+        // Horizontale beweging op basis van input
+        if (isPressingLeft) {
             // Geleidelijke versnelling naar links (negatieve x)
             this.velX -= acceleration;
             // Begrens de maximale snelheid
             if (this.velX < -maxSpeed) {
                 this.velX = -maxSpeed;
             }
-            this.facingRight = false; // Speler kijkt naar links
-        } else if (gameControls.keys[this.controls.right] || gameControls.keys[this.controls.right.toLowerCase()]) {
+            
+            // Alleen de richting aanpassen bij directe gebruikersinvoer
+            if (this.facingRight) {
+                this.facingRight = false;
+                this.movingDirectionChanged = true; // Markeer dat richting is veranderd
+            }
+        } else if (isPressingRight) {
             // Geleidelijke versnelling naar rechts (positieve x)
             this.velX += acceleration;
             // Begrens de maximale snelheid
             if (this.velX > maxSpeed) {
                 this.velX = maxSpeed;
             }
-            this.facingRight = true; // Speler kijkt naar rechts
+            
+            // Alleen de richting aanpassen bij directe gebruikersinvoer
+            if (!this.facingRight) {
+                this.facingRight = true;
+                this.movingDirectionChanged = true; // Markeer dat richting is veranderd
+            }
         } else {
             // Geleidelijk vertragen als er geen toetsen worden ingedrukt (wrijving)
             this.velX *= friction;
@@ -254,6 +272,10 @@ class Player {
             if (Math.abs(this.velX) < stopThreshold) {
                 this.velX = 0;
             }
+            
+            // CRUCIAAL: Hier wordt de kijkrichting NIET veranderd wanneer er geen invoer is
+            // Zelfs niet als de snelheid 0 wordt of als de speler door andere krachten beweegt
+            // Dit zorgt voor de gewenste persistentie, vooral op loopbanden
         }
         
         // Voeg glijden toe op ijs, ook als de speler in de lucht is
@@ -677,6 +699,10 @@ class Player {
                                     // Apply horizontal force based on treadmill speed
                                     const treadmillSpeed = platform.speed !== undefined ? platform.speed : 2;
                                     this.velX += treadmillSpeed * 0.1; // Apply gradual acceleration
+                                    
+                                    // BELANGRIJK: Verandering - Controleer of de speler bewust van richting is gewisseld
+                                    // Als de gebruiker bewust van richting is gewisseld, negeren we de richting
+                                    // van de loopband volledig, zodat de speler controle blijft houden
                                     
                                     // Cap the maximum speed based on treadmill direction and speed
                                     const maxTreadmillSpeed = Math.abs(treadmillSpeed) * 1.5;

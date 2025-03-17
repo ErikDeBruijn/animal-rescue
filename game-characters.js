@@ -787,8 +787,8 @@ function drawPuppy(puppy) {
 }
 
 function drawSquirrel(player) {
-    // Determine direction based on movement
-    const facingLeft = player.velX < 0;
+    // Determine direction based on player's facingRight property
+    const facingLeft = !player.facingRight;
     
     // Body
     gameCore.ctx.fillStyle = player.color;
@@ -836,8 +836,8 @@ function drawSquirrel(player) {
 }
 
 function drawTurtle(player) {
-    // Determine direction based on movement
-    const facingLeft = player.velX < 0;
+    // Determine direction based on player's facingRight property
+    const facingLeft = !player.facingRight;
     
     // Check if the turtle is underwater 
     // and only then subtract oxygen
@@ -1001,8 +1001,8 @@ function drawTurtle(player) {
 }
 
 function drawUnicorn(player) {
-    // Determine direction based on movement
-    const facingLeft = player.velX < 0;
+    // Determine direction based on player's facingRight property
+    const facingLeft = !player.facingRight;
     
     // Draw flying meter above the unicorn, but only if it's not 100%
     if (player.flyingPower !== undefined && player.flyingPower < player.flyingPowerMax) {
@@ -1200,8 +1200,8 @@ function drawUnicorn(player) {
 
 // Draw the cat
 function drawCat(player) {
-    // Determine direction based on movement
-    const facingLeft = player.velX < 0;
+    // Determine direction based on player's facingRight property
+    const facingLeft = !player.facingRight;
     
     // Body
     gameCore.ctx.fillStyle = player.color;
