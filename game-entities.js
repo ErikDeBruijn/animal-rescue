@@ -500,7 +500,7 @@ class Player {
                             }
                         }
                     }
-                } else if (platform.type === "NORMAL" || platform.type === "CLIMB" || platform.type === "TREE" || platform.type === "ICE") {
+                } else if (platform.type === "NORMAL" || platform.type === "CLIMB" || platform.type === "TREE" || platform.type === "ICE" || platform.type === "VERTICAL") {
                     // Als de eenhoorn vliegt, stop het vliegen als de eenhoorn een platform raakt
                     // Dit moet altijd als eerste worden gecontroleerd om door-vliegen te voorkomen
                     if (this.animalType === "UNICORN" && this.flying) {
@@ -539,27 +539,72 @@ class Player {
                         }
                     }
                     
-                    // Normale platformcollisiedetectie voor alle dieren
-                    // Check of de speler op het platform landt
-                    if (this.velY > 0 && 
-                        this.y + this.height < platform.y + 15 && 
-                        this.y + this.height > platform.y - 10) {
+                    // Check platform type for vertical walls
+                    if (platform.type === "VERTICAL") {
+                        // Vertical platforms are walls for all animals
                         
-                        // Controleer of de speler horizontaal binnen het platform is
-                        if (this.x + this.width * 0.3 < platform.x + platform.width &&
-                            this.x + this.width * 0.7 > platform.x) {
+                        // Bereken collision box
+                        const playerBottom = this.y + this.height;
+                        const playerTop = this.y;
+                        const playerLeft = this.x;
+                        const playerRight = this.x + this.width;
+                        
+                        const platformTop = platform.y;
+                        const platformBottom = platform.y + platform.height;
+                        const platformLeft = platform.x;
+                        const platformRight = platform.x + platform.width;
+                        
+                        // Check of speler tegen de zijkant van de muur botst
+                        if (playerBottom > platformTop + 5 && playerTop < platformBottom - 5) {
+                            if (this.velX > 0 && playerRight > platformLeft && playerLeft < platformLeft) {
+                                // Botst tegen de linkerkant van de muur
+                                this.x = platformLeft - this.width;
+                                this.velX = 0;
+                            } else if (this.velX < 0 && playerLeft < platformRight && playerRight > platformRight) {
+                                // Botst tegen de rechterkant van de muur
+                                this.x = platformRight;
+                                this.velX = 0;
+                            }
+                        }
+                        
+                        // Check of speler op de muur landt
+                        if (this.velY > 0 && 
+                            playerBottom < platformTop + 10 && 
+                            playerBottom > platformTop - 10) {
                             
-                            // Plaats speler netjes op het platform
-                            this.y = platform.y - this.height;
-                            this.velY = 0;
-                            this.onGround = true;
+                            // Controleer of de speler horizontaal binnen het platform is
+                            if (playerRight - 10 > platformLeft && 
+                                playerLeft + 10 < platformRight) {
+                                
+                                // Plaats speler bovenop de muur
+                                this.y = platformTop - this.height;
+                                this.velY = 0;
+                                this.onGround = true;
+                            }
+                        }
+                    } else {
+                        // Normale platformcollisiedetectie voor alle dieren
+                        // Check of de speler op het platform landt
+                        if (this.velY > 0 && 
+                            this.y + this.height < platform.y + 15 && 
+                            this.y + this.height > platform.y - 10) {
                             
-                            // Speciale fysica voor ijsplatforms
-                            if (platform.type === "ICE") {
-                                // Markeer dat we op ijs staan
-                                this.onIce = true;
-                            } else {
-                                this.onIce = false;
+                            // Controleer of de speler horizontaal binnen het platform is
+                            if (this.x + this.width * 0.3 < platform.x + platform.width &&
+                                this.x + this.width * 0.7 > platform.x) {
+                                
+                                // Plaats speler netjes op het platform
+                                this.y = platform.y - this.height;
+                                this.velY = 0;
+                                this.onGround = true;
+                                
+                                // Speciale fysica voor ijsplatforms
+                                if (platform.type === "ICE") {
+                                    // Markeer dat we op ijs staan
+                                    this.onIce = true;
+                                } else {
+                                    this.onIce = false;
+                                }
                             }
                         }
                     }

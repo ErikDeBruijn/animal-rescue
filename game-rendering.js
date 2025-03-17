@@ -156,6 +156,45 @@ function drawPlatform(platform) {
             gameCore.ctx.lineTo(platform.x + platform.width * 0.9, platform.y + platform.height * 0.5);
             gameCore.ctx.stroke();
             break;
+        case "VERTICAL":
+            // Draw vertical wall
+            // Base color - orange-brown for the wall
+            gameCore.ctx.fillStyle = '#cc7722';
+            gameCore.ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+            
+            // Add vertical lines for texture
+            gameCore.ctx.strokeStyle = 'rgba(60, 30, 0, 0.6)';
+            gameCore.ctx.lineWidth = 1;
+            for (let x = platform.x + 8; x < platform.x + platform.width; x += 15) {
+                gameCore.ctx.beginPath();
+                gameCore.ctx.moveTo(x, platform.y);
+                gameCore.ctx.lineTo(x, platform.y + platform.height);
+                gameCore.ctx.stroke();
+            }
+            
+            // Add some horizontal bars for grip
+            gameCore.ctx.fillStyle = '#8B4513'; // Darker brown for the grip bars
+            for (let y = platform.y + 10; y < platform.y + platform.height; y += 20) {
+                gameCore.ctx.fillRect(platform.x, y, platform.width, 5);
+            }
+            
+            // Highlight edges to indicate it's a wall
+            gameCore.ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+            gameCore.ctx.lineWidth = 2;
+            
+            // Left edge highlight
+            gameCore.ctx.beginPath();
+            gameCore.ctx.moveTo(platform.x + 1, platform.y);
+            gameCore.ctx.lineTo(platform.x + 1, platform.y + platform.height);
+            gameCore.ctx.stroke();
+            
+            // Right edge shadow
+            gameCore.ctx.strokeStyle = 'rgba(0, 0, 0, 0.4)';
+            gameCore.ctx.beginPath();
+            gameCore.ctx.moveTo(platform.x + platform.width - 1, platform.y);
+            gameCore.ctx.lineTo(platform.x + platform.width - 1, platform.y + platform.height);
+            gameCore.ctx.stroke();
+            break;
         case "TRAMPOLINE":
             // Determine the compression of the trampoline
             let trampolineHeight = platform.height;

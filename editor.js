@@ -40,7 +40,8 @@ const objectColors = {
         CLIMB: '#d3a87d',   // Lichter bruin voor klimoppervlakken
         TRAMPOLINE: '#ff4d4d', // Rood voor trampolines
         LASER: '#ff0000',   // Rood voor lasers (deadly platform)
-        ICE: '#A5F2F3'      // Lichtblauw voor ijs
+        ICE: '#A5F2F3',     // Lichtblauw voor ijs
+        VERTICAL: '#cc7722'  // Oranjebruin voor verticale muren
     },
     enemy: {
         LION: '#ff9800',    // Oranje voor leeuwen
@@ -2001,6 +2002,45 @@ function drawPlatform(platform) {
                 ctx.fillRect(platform.x + platform.width - 5, platform.y + i, 5, 5);
             }
         }
+    } else if (platform.type === 'VERTICAL') {
+        // Vertical platform drawing
+        
+        // Draw base
+        ctx.fillStyle = objectColors.platform.VERTICAL;
+        ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+        
+        // Add vertical lines for texture
+        ctx.strokeStyle = 'rgba(60, 30, 0, 0.6)';
+        ctx.lineWidth = 1;
+        for (let x = platform.x + 8; x < platform.x + platform.width; x += 15) {
+            ctx.beginPath();
+            ctx.moveTo(x, platform.y);
+            ctx.lineTo(x, platform.y + platform.height);
+            ctx.stroke();
+        }
+        
+        // Add some horizontal bars for grip
+        ctx.fillStyle = '#8B4513'; // Darker brown for the grip bars
+        for (let y = platform.y + 10; y < platform.y + platform.height; y += 20) {
+            ctx.fillRect(platform.x, y, platform.width, 5);
+        }
+        
+        // Highlight edges to indicate it's a wall
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.lineWidth = 2;
+        
+        // Left edge highlight
+        ctx.beginPath();
+        ctx.moveTo(platform.x + 1, platform.y);
+        ctx.lineTo(platform.x + 1, platform.y + platform.height);
+        ctx.stroke();
+        
+        // Right edge shadow
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.4)';
+        ctx.beginPath();
+        ctx.moveTo(platform.x + platform.width - 1, platform.y);
+        ctx.lineTo(platform.x + platform.width - 1, platform.y + platform.height);
+        ctx.stroke();
     } else if (platform.type === 'TRAMPOLINE') {
         // Teken trampoline
         const frameHeight = 10;
