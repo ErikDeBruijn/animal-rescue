@@ -45,12 +45,19 @@ class Player {
         this.clawTimer = 0;
         this.clawActive = false;
         
-        // Mole digging system
-        this.canDig = true; // Start with the ability to dig
-        this.isDigging = false; 
-        this.digTimer = 0;
-        this.digCooldown = 0;
-        this.diggedThroughWall = false;
+        // Mole digging system - Enhanced version
+        this.canDig = true;             // Ability to start digging
+        this.isDigging = false;         // Currently in digging state
+        this.diggingProgress = 0;       // Progress percentage (0-100%)
+        this.diggingEnergy = 100;       // Energy available for digging
+        this.maxDiggingEnergy = 100;    // Maximum digging energy
+        this.diggingTarget = null;      // The platform being dug through
+        this.digDirection = { x: 0, y: 0 }; // Vector direction of dig
+        this.originalPosition = { x: 0, y: 0 }; // Starting position of dig
+        this.targetPosition = { x: 0, y: 0 };  // End position of dig
+        this.showDigParticles = false;  // Whether to show particle effects
+        this.diggedThroughWall = false; // Successfully dug through something
+        this.digCooldown = 0;           // Cooldown timer after digging
         
         // Surface-specific properties
         this.onIce = false;  // For ice physics
@@ -85,9 +92,15 @@ class Player {
             console.log("Switching to MOLE - resetting digging ability");
             this.canDig = true;
             this.isDigging = false;
-            this.digTimer = 0;
-            this.digCooldown = 0;
+            this.diggingProgress = 0;
+            this.diggingEnergy = this.maxDiggingEnergy;
+            this.diggingTarget = null;
+            this.digDirection = { x: 0, y: 0 };
+            this.originalPosition = { x: 0, y: 0 };
+            this.targetPosition = { x: 0, y: 0 };
+            this.showDigParticles = false;
             this.diggedThroughWall = false;
+            this.digCooldown = 0;
         }
         
         // Update the UI with the current animal
@@ -781,18 +794,26 @@ class Player {
             }
         });
         
-        // Check if mole should activate digging with G (player 1) or Control (player 2)
-        if (this.animalType === "MOLE" && this.canDig && !this.isDigging) {
-            // For player 1, check G key
-            if (this.name === "Speler 1" && (gameControls.keys['g'] || gameControls.keys['G'])) {
-                this.activateDigging();
-                console.log("Player 1 Mole digging activated with G key");
+        // Check if mole should activate or update digging with G (player 1) or Control (player 2)
+        if (this.animalType === "MOLE") {
+            // Update digging progress if already digging
+            if (this.isDigging) {
+                this.updateDigging();
             }
-            // For player 2, check Control key
-            else if (this.name === "Speler 2" && (gameControls.keys['Control'] || gameControls.keys['ControlLeft'] || gameControls.keys['ControlRight'])) {
-                this.activateDigging();
-                console.log("Player 2 Mole digging activated with Control key");
+            // Start digging if not already digging
+            else if (this.canDig) {
+                // For player 1, check G key
+                if (this.name === "Speler 1" && (gameControls.keys["g"] || gameControls.keys["G"])) {
+                    this.activateDigging();
+                    console.log("Player 1 Mole digging activated with G key");
+                }
+                // For player 2, check Control key
+                else if (this.name === "Speler 2" && (gameControls.keys["Control"] || gameControls.keys["ControlLeft"] || gameControls.keys["ControlRight"])) {
+                    this.activateDigging();
+                    console.log("Player 2 Mole digging activated with Control key");
+                }
             }
+        }            }
         }
         
         // Update vuurspuwen status als de speler een pepertje heeft gegeten
@@ -1164,69 +1185,220 @@ class Player {
     
     /**
      * Activates the mole's digging ability
-     * Allows passing through walls and ground
+     * Starts the progressive digging process
      */
     activateDigging() {
-        // Debug logging - alleen als debug mode aan staat
+        // Debug logging when debug mode is active
         if (gameCore.gameState.debugLevel >= 1) {
             console.log("activateDigging called for", this.name, "canDig:", this.canDig, "isDigging:", this.isDigging, "animalType:", this.animalType);
         }
         
-        if (!this.canDig || this.isDigging || this.animalType !== "MOLE") {
+        // Can't dig if: not a mole, already digging, on cooldown, or insufficient energy
+        if (this.animalType !== "MOLE" || this.isDigging || !this.canDig || this.diggingEnergy < 10) {
             if (gameCore.gameState.debugLevel >= 1) {
-                console.log("Digging activation rejected:", !this.canDig ? "on cooldown" : (this.isDigging ? "already digging" : "not a mole"));
+                let reason = "unknown";
+                if (this.animalType !== "MOLE") reason = "not a mole";
+                else if (this.isDigging) reason = "already digging";
+                else if (!this.canDig) reason = "on cooldown";
+                else if (this.diggingEnergy < 10) reason = "not enough energy";
+                
+                console.log("Digging activation rejected:", reason);
             }
             return;
         }
         
-        // Altijd loggen als er gegraven wordt, ongeacht debug level
+        // Always log when digging starts, regardless of debug level
         console.log("DIGGING ACTIVATED! 🦔💪");
         
+        // Store the starting position for interpolation
+        this.originalPosition = { x: this.x, y: this.y };
+        
+        // Initialize digging state
         this.isDigging = true;
-        this.digTimer = 30; // Digging active for 30 frames (half second)
-        this.canDig = false; // Can't use again until cooldown
+        this.diggingProgress = 0;
+        this.showDigParticles = true;
+        
+        // Find target to dig through
+        this.findDiggingTarget();
+        
+        // If no valid target, cancel digging
+        if (!this.diggingTarget) {
+            if (gameCore.gameState.debugLevel >= 1) {
+                console.log("No valid digging target found");
+            }
+            this.isDigging = false;
+            this.showDigParticles = false;
+            return;
+        }
         
         // Feedback message
-        gameCore.gameState.message = "Mol graaft door muren!";
+        gameCore.gameState.message = "Mol graaft!";
         setTimeout(() => {
-            if (gameCore.gameState.message === "Mol graaft door muren!") {
+            if (gameCore.gameState.message === "Mol graaft!") {
+                gameCore.gameState.message = "";
+            }
+        }, 1000);
+    }
+    
+    /**
+     * This method should be called every frame to update the digging progress
+     */
+    updateDigging() {
+        if (!this.isDigging || !this.diggingTarget) return;
+        
+        // Check if digging button is still pressed
+        const isDigButtonPressed = this.isDigButtonPressed();
+        
+        // Only continue digging if button is held and has energy
+        if (isDigButtonPressed && this.diggingEnergy > 0) {
+            // Calculate progress rate based on material hardness
+            const hardness = this.calculateDiggingHardness();
+            const progressRate = 0.7 / hardness; // Base progress rate divided by hardness factor
+            
+            // Advance progress
+            this.diggingProgress += progressRate;
+            this.diggingEnergy -= 0.4; // Consume energy while digging
+            
+            // Update position based on progress
+            this.updateDiggingPosition();
+            
+            // Check if digging is complete
+            if (this.diggingProgress >= 100) {
+                this.completeDigging();
+            }
+        } else {
+            // Button released or out of energy - revert progress gradually
+            this.diggingProgress -= 0.5;
+            
+            if (this.diggingProgress <= 0) {
+                // Digging failed, reset
+                this.cancelDigging();
+            } else {
+                // Still in progress, update position
+                this.updateDiggingPosition();
+            }
+        }
+        
+        // Energy regeneration when not actively digging
+        if (!isDigButtonPressed && this.diggingEnergy < this.maxDiggingEnergy) {
+            this.diggingEnergy += 0.2;
+            if (this.diggingEnergy > this.maxDiggingEnergy) {
+                this.diggingEnergy = this.maxDiggingEnergy;
+            }
+        }
+    }
+    
+    /**
+     * Check if the digging button for this player is currently pressed
+     */
+    isDigButtonPressed() {
+        if (this.name === "Speler 1") {
+            return gameControls.keys['g'] || gameControls.keys['G'];
+        } else if (this.name === "Speler 2") {
+            return gameControls.keys['Control'] || gameControls.keys['ControlLeft'] || gameControls.keys['ControlRight'];
+        }
+        return false;
+    }
+    
+    /**
+     * Calculate hardness factor based on the type of object being dug through
+     */
+    calculateDiggingHardness() {
+        if (!this.diggingTarget) return 1;
+        
+        // Different materials have different hardness values
+        if (this.diggingTarget.type === "VERTICAL") {
+            return 2.0; // Vertical walls are harder to dig through
+        } else if (this.digDirection.y > 0) {
+            return 1.2; // Digging down is easier
+        } else {
+            return 1.5; // Standard platform hardness
+        }
+    }
+    
+    /**
+     * Update player position based on digging progress
+     */
+    updateDiggingPosition() {
+        if (!this.diggingTarget || this.diggingProgress <= 0) return;
+        
+        // Calculate progress as a percentage (0-1)
+        const progress = Math.min(this.diggingProgress / 100, 1);
+        
+        // Interpolate between original position and target position
+        this.x = this.originalPosition.x + (this.targetPosition.x - this.originalPosition.x) * progress;
+        this.y = this.originalPosition.y + (this.targetPosition.y - this.originalPosition.y) * progress;
+    }
+    
+    /**
+     * Successfully complete the digging process
+     */
+    completeDigging() {
+        // Set final position
+        this.x = this.targetPosition.x;
+        this.y = this.targetPosition.y;
+        
+        // Apply momentum in the digging direction
+        this.velX = this.digDirection.x * this.speed * 0.8;
+        this.velY = this.digDirection.y * Math.max(2, this.speed * 0.5);
+        
+        // Flag that digging was successful
+        this.diggedThroughWall = true;
+        
+        // Show success message
+        gameCore.gameState.message = "Doorheen gegraven!";
+        setTimeout(() => {
+            if (gameCore.gameState.message === "Doorheen gegraven!") {
                 gameCore.gameState.message = "";
             }
         }, 1000);
         
-        // Check collisions with walls and allow passing through them
-        this.digThroughWalls();
+        // Reset digging state
+        this.isDigging = false;
+        this.diggingTarget = null;
+        this.showDigParticles = false;
         
-        // Reset digging state after a short time
-        setTimeout(() => {
-            this.isDigging = false;
-            if (gameCore.gameState.debugLevel >= 1) {
-                console.log("Digging state reset to false");
-            }
-        }, 500);
-        
-        // Start cooldown timer
+        // Apply cooldown
+        this.canDig = false;
         setTimeout(() => {
             this.canDig = true;
             if (gameCore.gameState.debugLevel >= 1) {
                 console.log("Digging cooldown complete - can dig again");
             }
-        }, 2000); // 2 second cooldown
+        }, 1500); // 1.5 second cooldown after successful dig
     }
     
     /**
-     * Checks if the mole can dig through walls and handles the digging
+     * Cancel digging if interrupted or failed
      */
-    digThroughWalls() {
+    cancelDigging() {
+        // Return to original position
+        this.x = this.originalPosition.x;
+        this.y = this.originalPosition.y;
+        
+        // Reset digging state
+        this.isDigging = false;
+        this.diggingProgress = 0;
+        this.diggingTarget = null;
+        this.showDigParticles = false;
+        
+        // No cooldown for cancelled digs so player can try again immediately
         if (gameCore.gameState.debugLevel >= 1) {
-            console.log("digThroughWalls check for", this.name, "isDigging:", this.isDigging, "animalType:", this.animalType);
+            console.log("Digging cancelled");
+        }
+    }
+    
+    /**
+     * Finds a suitable target for the mole to dig through
+     * Sets diggingTarget, targetPosition and digDirection properties
+     */
+    findDiggingTarget() {
+        if (gameCore.gameState.debugLevel >= 1) {
+            console.log("Finding digging target for", this.name);
         }
         
-        if (!this.isDigging || this.animalType !== "MOLE") {
-            if (gameCore.gameState.debugLevel >= 1) {
-                console.log("Cannot dig through walls:", !this.isDigging ? "not in digging state" : "not a mole");
-            }
-            return;
+        if (this.animalType !== "MOLE") {
+            return null;
         }
         
         // Get all platforms in the level
@@ -1237,96 +1409,143 @@ class Player {
             console.log("Checking", platforms.length, "platforms for digging");
         }
         
-        // Flag to track if we've dug through something
-        let dugThrough = false;
-        
-        // Check for walls in front of the mole
-        platforms.forEach(platform => {
+        // First check for walls to dig through horizontally
+        for (const platform of platforms) {
             // Only dig through vertical walls and normal platforms
             if (platform.type === "VERTICAL" || platform.type === "NORMAL") {
                 const facingLeft = !this.facingRight;
                 const moleRight = this.x + this.width;
                 const moleLeft = this.x;
                 
+                // Debug log platform check
                 if (gameCore.gameState.debugLevel >= 1) {
-                    console.log("Checking", platform.type, "wall at (", platform.x, ",", platform.y, ") - Mole at (", this.x, ",", this.y, ") facing", facingLeft ? "left" : "right");
+                    console.log("Checking", platform.type, "wall at (", platform.x, ",", platform.y, ") - Mole at (", this.x, ",", this.y, ")");
                 }
                 
                 // Check if wall is directly in front of the mole
                 if ((facingLeft && moleLeft > platform.x && moleLeft < platform.x + platform.width + 5) ||
                     (!facingLeft && moleRight < platform.x + platform.width && moleRight > platform.x - 5)) {
                     
-                    if (gameCore.gameState.debugLevel >= 1) {
-                        console.log("Wall is in front of mole! Checking vertical alignment...");
-                    }
-                    
                     // Check if mole is vertically aligned with the wall 
                     if (this.y + this.height > platform.y && this.y < platform.y + platform.height) {
-                        // Altijd loggen als er door een muur gegraven wordt, ongeacht debug level
                         console.log("FOUND WALL TO DIG THROUGH! 🦔💪🧱");
                         
-                        // Set a flag that mole dug through a wall
-                        this.diggedThroughWall = true;
-                        dugThrough = true;
+                        // Set the target platform
+                        this.diggingTarget = platform;
                         
-                        // Give the mole a boost through the wall
+                        // Calculate target position after digging through
                         if (facingLeft) {
-                            this.x = platform.x - this.width - 5; // Position left of the wall
-                            this.velX = -this.speed; // Boost in facing direction
-                            if (gameCore.gameState.debugLevel >= 1) {
-                                console.log("Digging through to the left, new position:", this.x);
-                            }
+                            // Digging left
+                            this.targetPosition = {
+                                x: platform.x - this.width - 5,
+                                y: this.y
+                            };
+                            this.digDirection = { x: -1, y: 0 };
                         } else {
-                            this.x = platform.x + platform.width + 5; // Position right of the wall
-                            this.velX = this.speed; // Boost in facing direction
-                            if (gameCore.gameState.debugLevel >= 1) {
-                                console.log("Digging through to the right, new position:", this.x);
-                            }
+                            // Digging right
+                            this.targetPosition = {
+                                x: platform.x + platform.width + 5,
+                                y: this.y
+                            };
+                            this.digDirection = { x: 1, y: 0 };
                         }
                         
-                        // Display digging success message
-                        gameCore.gameState.message = "Doorheen gegraven!";
-                        setTimeout(() => {
-                            if (gameCore.gameState.message === "Doorheen gegraven!") {
-                                gameCore.gameState.message = "";
-                            }
-                        }, 1000);
-                    } else if (gameCore.gameState.debugLevel >= 1) {
-                        console.log("Mole not vertically aligned with wall - Cannot dig through");
+                        return this.diggingTarget;
                     }
                 }
             }
-        });
+        }
         
-        // Check if we need to dig through the ground
-        if (!dugThrough && this.onGround) {
+        // If no wall found, check if we can dig through the ground
+        if (this.onGround) {
             if (gameCore.gameState.debugLevel >= 1) {
-                console.log("No wall found, checking if we can dig through ground. onGround:", this.onGround);
+                console.log("No wall found, checking if can dig down through ground");
             }
             
-            // If on ground and facing down key is pressed, dig down through the ground
+            // Check if the down key is pressed while on ground
             if (gameControls.keys[this.controls.down] || gameControls.keys[this.controls.down.toLowerCase()]) {
-                // Altijd loggen als er door de grond gegraven wordt, ongeacht debug level
-                console.log("Down key pressed while on ground - DIGGING DOWN! 🦔⬇️");
+                console.log("DIGGING DOWN THROUGH GROUND! 🦔⬇️");
                 
-                this.y += this.height + 10; // Move down below current ground
-                this.velY = 5; // Give some downward momentum
-                this.onGround = false;
+                // Create a virtual target for the ground
+                this.diggingTarget = {
+                    type: "GROUND",
+                    x: this.x - this.width/2,
+                    y: this.y + this.height,
+                    width: this.width * 2,
+                    height: 20
+                };
                 
-                // Display digging success message
-                gameCore.gameState.message = "Doorheen gegraven!";
-                setTimeout(() => {
-                    if (gameCore.gameState.message === "Doorheen gegraven!") {
-                        gameCore.gameState.message = "";
-                    }
-                }, 1000);
+                // Set target position below the ground
+                this.targetPosition = {
+                    x: this.x,
+                    y: this.y + this.height + 15
+                };
+                this.digDirection = { x: 0, y: 1 };
+                
+                return this.diggingTarget;
             } else if (gameCore.gameState.debugLevel >= 1) {
                 console.log("Down key not pressed - can't dig down");
             }
         }
         
-        if (!dugThrough && gameCore.gameState.debugLevel >= 1) {
+        // No suitable target found
+        if (gameCore.gameState.debugLevel >= 1) {
             console.log("No suitable digging targets found");
+        }
+        return null;
+    }
+    
+    /**
+     * Draws the digging energy meter when mole is active
+     */
+    drawDiggingEnergyMeter() {
+        if (this.animalType !== "MOLE") return;
+        
+        // Draw energy meter above the mole, but only if it's not 100%
+        if (this.diggingEnergy < this.maxDiggingEnergy) {
+            const meterWidth = this.width * 1.2;
+            const meterHeight = 4;
+            const meterX = this.x - (meterWidth - this.width) / 2;
+            const meterY = this.y - 8;
+            
+            // Background of the meter
+            gameCore.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            gameCore.ctx.fillRect(meterX, meterY, meterWidth, meterHeight);
+            
+            // Energy level
+            const fillWidth = (this.diggingEnergy / this.maxDiggingEnergy) * meterWidth;
+            
+            // Color based on energy level
+            let meterColor;
+            if (this.diggingEnergy > 70) {
+                meterColor = 'rgb(139, 69, 19)'; // Brown for high energy
+            } else if (this.diggingEnergy > 30) {
+                meterColor = 'rgb(205, 133, 63)'; // Lighter brown for medium energy
+            } else {
+                meterColor = 'rgb(210, 180, 140)'; // Very light brown for low energy
+            }
+            
+            gameCore.ctx.fillStyle = meterColor;
+            gameCore.ctx.fillRect(meterX, meterY, fillWidth, meterHeight);
+        }
+        
+        // If currently digging, show progress meter
+        if (this.isDigging && this.diggingTarget) {
+            const meterWidth = this.width * 1.2;
+            const meterHeight = 4;
+            const meterX = this.x - (meterWidth - this.width) / 2;
+            const meterY = this.y - 12;
+            
+            // Background of the meter
+            gameCore.ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            gameCore.ctx.fillRect(meterX, meterY, meterWidth, meterHeight);
+            
+            // Progress level
+            const fillWidth = (this.diggingProgress / 100) * meterWidth;
+            
+            // Color for digging progress
+            gameCore.ctx.fillStyle = 'rgb(218, 165, 32)'; // Golden color for digging progress
+            gameCore.ctx.fillRect(meterX, meterY, fillWidth, meterHeight);
         }
     }
     

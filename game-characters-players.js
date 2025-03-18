@@ -943,11 +943,332 @@ function drawFireBreath(player) {
     }
 }
 
+// Draw the mole
+function drawMole(player) {
+    // Determine direction based on player's facingRight property
+    const facingLeft = !player.facingRight;
+    
+    // Body (dark brown)
+    gameCore.ctx.fillStyle = player.color;
+    gameCore.ctx.fillRect(player.x, player.y, player.width, player.height);
+    
+    // Snout (lighter brown)
+    gameCore.ctx.fillStyle = "#8B6C42";
+    gameCore.ctx.beginPath();
+    
+    if (facingLeft) {
+        // Snout left
+        gameCore.ctx.arc(
+            player.x + player.width * 0.2, 
+            player.y + player.height * 0.4, 
+            player.width * 0.18, 
+            0, Math.PI * 2
+        );
+    } else {
+        // Snout right
+        gameCore.ctx.arc(
+            player.x + player.width * 0.8, 
+            player.y + player.height * 0.4, 
+            player.width * 0.18, 
+            0, Math.PI * 2
+        );
+    }
+    
+    gameCore.ctx.fill();
+    
+    // Nose (pink)
+    gameCore.ctx.fillStyle = "#FF9E9E";
+    gameCore.ctx.beginPath();
+    
+    if (facingLeft) {
+        gameCore.ctx.arc(
+            player.x + player.width * 0.1, 
+            player.y + player.height * 0.4, 
+            player.width * 0.07, 
+            0, Math.PI * 2
+        );
+    } else {
+        gameCore.ctx.arc(
+            player.x + player.width * 0.9, 
+            player.y + player.height * 0.4, 
+            player.width * 0.07, 
+            0, Math.PI * 2
+        );
+    }
+    
+    gameCore.ctx.fill();
+    
+    // Eyes (small black dots)
+    gameCore.ctx.fillStyle = "black";
+    
+    if (facingLeft) {
+        // Left eye
+        gameCore.ctx.beginPath();
+        gameCore.ctx.arc(
+            player.x + player.width * 0.3, 
+            player.y + player.height * 0.25, 
+            player.width * 0.06, 
+            0, Math.PI * 2
+        );
+        gameCore.ctx.fill();
+    } else {
+        // Right eye
+        gameCore.ctx.beginPath();
+        gameCore.ctx.arc(
+            player.x + player.width * 0.7, 
+            player.y + player.height * 0.25, 
+            player.width * 0.06, 
+            0, Math.PI * 2
+        );
+        gameCore.ctx.fill();
+    }
+    
+    // Paws/feet - drawn before digging animation so claws appear on top
+    gameCore.ctx.fillStyle = "#614126"; // Darker brown for paws
+    
+    if (facingLeft) {
+        // Front paw left
+        gameCore.ctx.fillRect(
+            player.x + player.width * 0.1, 
+            player.y + player.height * 0.7, 
+            player.width * 0.2, 
+            player.height * 0.3
+        );
+        // Back paw right
+        gameCore.ctx.fillRect(
+            player.x + player.width * 0.7, 
+            player.y + player.height * 0.7, 
+            player.width * 0.2, 
+            player.height * 0.3
+        );
+    } else {
+        // Front paw right
+        gameCore.ctx.fillRect(
+            player.x + player.width * 0.7, 
+            player.y + player.height * 0.7, 
+            player.width * 0.2, 
+            player.height * 0.3
+        );
+        // Back paw left
+        gameCore.ctx.fillRect(
+            player.x + player.width * 0.1, 
+            player.y + player.height * 0.7, 
+            player.width * 0.2, 
+            player.height * 0.3
+        );
+    }
+    
+    // Draw digging energy meter
+    if (typeof player.drawDiggingEnergyMeter === 'function') {
+        player.drawDiggingEnergyMeter();
+    }
+    
+    // Enhanced digging animation
+    if (player.showDigParticles || player.isDigging) {
+        const time = Date.now() / 50; // Faster animation
+        
+        // Digging dirt particles - more dynamic and faster
+        gameCore.ctx.fillStyle = "#8B4513"; // Dirt color
+        
+        // More particles for a more impressive effect
+        const particleCount = 12;
+        const digDirectionX = facingLeft ? -1 : 1;
+        
+        // Calculate digging center point
+        let digCenterX = facingLeft ? player.x : player.x + player.width;
+        let digCenterY = player.y + player.height * 0.6;
+        
+        // If in the middle of digging through something, adjust the particle position
+        if (player.diggingProgress > 0 && player.diggingTarget) {
+            // Make particles come from the digging point
+            const progress = player.diggingProgress / 100;
+            
+            // Adjust center based on how far into the wall/ground the mole is
+            digCenterX = player.x + (facingLeft ? 0 : player.width);
+            
+            // Draw cracking effect in the target wall/ground
+            if (player.diggingTarget) {
+                if (player.diggingTarget.type === "GROUND") {
+                    // Ground cracks
+                    gameCore.ctx.strokeStyle = "#5D4037";
+                    gameCore.ctx.lineWidth = 1.5;
+                    
+                    for (let i = 0; i < 5; i++) {
+                        const crackLength = 8 + progress * 10;
+                        const startX = player.x + player.width/2 + (Math.random() - 0.5) * player.width * 0.3;
+                        const startY = player.y + player.height - 2;
+                        
+                        gameCore.ctx.beginPath();
+                        gameCore.ctx.moveTo(startX, startY);
+                        
+                        // Create a jagged crack going downward
+                        let currentX = startX;
+                        let currentY = startY;
+                        
+                        for (let j = 0; j < 3; j++) {
+                            currentX += (Math.random() - 0.5) * 4;
+                            currentY += crackLength/3;
+                            gameCore.ctx.lineTo(currentX, currentY);
+                        }
+                        
+                        gameCore.ctx.stroke();
+                    }
+                } else {
+                    // Wall cracks (horizontal)
+                    gameCore.ctx.strokeStyle = "#5D4037";
+                    gameCore.ctx.lineWidth = 1.5;
+                    
+                    const wallX = facingLeft ? 
+                        player.diggingTarget.x + player.diggingTarget.width - 2 : 
+                        player.diggingTarget.x + 2;
+                    
+                    for (let i = 0; i < 5; i++) {
+                        const crackLength = 8 + progress * 12;
+                        const startY = player.y + player.height/2 + (Math.random() - 0.5) * player.height * 0.3;
+                        
+                        gameCore.ctx.beginPath();
+                        gameCore.ctx.moveTo(wallX, startY);
+                        
+                        // Create a jagged crack in the direction of digging
+                        let currentX = wallX;
+                        let currentY = startY;
+                        
+                        for (let j = 0; j < 3; j++) {
+                            currentX += digDirectionX * crackLength/3;
+                            currentY += (Math.random() - 0.5) * 4;
+                            gameCore.ctx.lineTo(currentX, currentY);
+                        }
+                        
+                        gameCore.ctx.stroke();
+                    }
+                }
+            }
+        }
+        
+        // Dirt particles
+        for (let i = 0; i < particleCount; i++) {
+            // Calculate dynamic angle based on digging direction
+            let baseAngle;
+            if (facingLeft) {
+                baseAngle = Math.PI + Math.PI/4 - Math.PI/2 * Math.random(); // Left-oriented spread
+            } else {
+                baseAngle = Math.PI/4 - Math.PI/2 * Math.random(); // Right-oriented spread
+            }
+            
+            // Make particles shoot out from center point in a cone shape
+            const angle = baseAngle + Math.sin(time / 10 + i) * 0.2;
+            
+            // Particle distance varies based on animation frame
+            const maxDistance = 20 + Math.sin(time / 20 + i * 0.7) * 8;
+            const distance = Math.random() * maxDistance;
+            
+            // Calculate particle position
+            const x = digCenterX + Math.cos(angle) * distance;
+            const y = digCenterY + Math.sin(angle) * distance * 0.7; // Slightly flattened vertically
+            
+            // Vary particle size for more natural look
+            const size = 1 + Math.random() * 3 + Math.sin(time / 15 + i) * 0.5;
+            
+            // Draw the dirt particle
+            gameCore.ctx.beginPath();
+            gameCore.ctx.arc(x, y, size, 0, Math.PI * 2);
+            gameCore.ctx.fill();
+        }
+        
+        // Draw digging claws - improved animation
+        gameCore.ctx.fillStyle = "#555555"; // Dark grey for claws
+        
+        // Calculate claw angle based on digging motion
+        const clawTime = time / 3; // Faster claw movement
+        const clawCount = 3; // Number of claws
+        
+        for (let i = 0; i < clawCount; i++) {
+            // Base position for this claw
+            const baseY = player.y + player.height * (0.5 + i * 0.15);
+            
+            // Calculate oscillating movement for digging animation
+            const oscillation = Math.sin(clawTime + i * 1.2) * 5;
+            const extensionFactor = 0.8 + 0.2 * Math.abs(Math.sin(clawTime + i * 0.7));
+            
+            if (facingLeft) {
+                // Claws on left side with rotation and oscillation
+                gameCore.ctx.save();
+                
+                // Translate to base of claw for rotation
+                gameCore.ctx.translate(player.x, baseY);
+                
+                // Rotate claw based on oscillation
+                const rotationAngle = (Math.PI/6) * Math.sin(clawTime + i * 0.9);
+                gameCore.ctx.rotate(rotationAngle);
+                
+                // Draw the claw
+                gameCore.ctx.beginPath();
+                gameCore.ctx.moveTo(0, 0); // Base of claw at paw
+                gameCore.ctx.lineTo(-player.width * 0.25 * extensionFactor, -oscillation/2);
+                gameCore.ctx.lineTo(-player.width * 0.3 * extensionFactor, -oscillation/4);
+                gameCore.ctx.lineTo(-player.width * 0.22 * extensionFactor, 0);
+                gameCore.ctx.closePath();
+                gameCore.ctx.fill();
+                
+                gameCore.ctx.restore();
+            } else {
+                // Claws on right side with rotation and oscillation
+                gameCore.ctx.save();
+                
+                // Translate to base of claw for rotation
+                gameCore.ctx.translate(player.x + player.width, baseY);
+                
+                // Rotate claw based on oscillation
+                const rotationAngle = -(Math.PI/6) * Math.sin(clawTime + i * 0.9);
+                gameCore.ctx.rotate(rotationAngle);
+                
+                // Draw the claw
+                gameCore.ctx.beginPath();
+                gameCore.ctx.moveTo(0, 0); // Base of claw at paw
+                gameCore.ctx.lineTo(player.width * 0.25 * extensionFactor, -oscillation/2);
+                gameCore.ctx.lineTo(player.width * 0.3 * extensionFactor, -oscillation/4);
+                gameCore.ctx.lineTo(player.width * 0.22 * extensionFactor, 0);
+                gameCore.ctx.closePath();
+                gameCore.ctx.fill();
+                
+                gameCore.ctx.restore();
+            }
+        }
+        
+        // Show digging action text with animation
+        gameCore.ctx.fillStyle = '#8B4513';
+        gameCore.ctx.font = 'bold 16px Arial';
+        gameCore.ctx.textAlign = 'center';
+        gameCore.ctx.strokeStyle = 'white';
+        gameCore.ctx.lineWidth = 3;
+        
+        // Text position with slight bounce
+        const textY = player.y - 20 + Math.sin(time / 10) * 2;
+        
+        // Text content depends on digging progress
+        let digText = 'DIG!';
+        if (player.diggingProgress > 0) {
+            // Show progress in text
+            if (player.diggingProgress > 75) {
+                digText = 'ALMOST!';
+            } else if (player.diggingProgress > 40) {
+                digText = 'DIGGING!';
+            } else {
+                digText = 'DIG!';
+            }
+        }
+        
+        gameCore.ctx.strokeText(digText, player.x + player.width/2, textY);
+        gameCore.ctx.fillText(digText, player.x + player.width/2, textY);
+    }
+}
+
 // Export the player render functions
 window.gameCharactersPlayers = {
     drawSquirrel,
     drawTurtle,
     drawUnicorn,
     drawCat,
+    drawMole,
     drawFireBreath
 };
