@@ -619,7 +619,7 @@ function loadMusic(path) {
     });
 }
 
-// Toon een hint dat gebruikersinteractie nodig is voor muziek
+// Toon een hint over besturing (beweeg met WASD of pijltjes)
 function showMusicInteractionHint() {
     // Controleer of de hint al bestaat
     if (document.getElementById('music-interaction-hint')) return;
@@ -627,7 +627,7 @@ function showMusicInteractionHint() {
     // Maak een hint-element
     const hintElement = document.createElement('div');
     hintElement.id = 'music-interaction-hint';
-    hintElement.textContent = 'Klik ergens om muziek te starten';
+    hintElement.innerHTML = 'Beweeg met:<br>W,A,S,D (speler 1) of pijltjestoetsen (speler 2)';
     hintElement.style.position = 'fixed';
     hintElement.style.bottom = '50px';
     hintElement.style.left = '50%';
@@ -639,6 +639,7 @@ function showMusicInteractionHint() {
     hintElement.style.fontSize = '14px';
     hintElement.style.zIndex = '1000';
     hintElement.style.animation = 'fadeInOut 2s infinite';
+    hintElement.style.textAlign = 'center';
     
     // Voeg CSS-animatie toe
     const styleElement = document.createElement('style');
@@ -654,12 +655,12 @@ function showMusicInteractionHint() {
     // Voeg hint toe aan de pagina
     document.body.appendChild(hintElement);
     
-    // Verwijder de hint na 5 seconden of na een klik
+    // Verwijder de hint na 10 seconden
     setTimeout(() => {
         if (hintElement.parentNode) {
             hintElement.parentNode.removeChild(hintElement);
         }
-    }, 5000);
+    }, 10000);
 }
 
 // Toggle muziek aan/uit
@@ -846,14 +847,16 @@ function loadLevelMusic(levelIndex) {
                 // We hebben een lijst met beschikbare muziekbestanden
                 console.log('Beschikbare muziekbestanden:', data.music_files);
                 
-                // Als het level een muziekbestand heeft, controleer of het beschikbaar is
+                // Controleer of het level een muziekbestand heeft dat beschikbaar is
                 if (level.music && data.music_files.includes(level.music)) {
                     console.log(`Laden van muziek voor level ${levelIndex + 1}: ${level.music}`);
                     loadMusic(`music/${level.music}`).catch(err => {
+                        console.error(`Kon muziek voor level niet laden: ${err}`);
                         fallbackToDefaultMusic(data.music_files, err);
                     });
                 } else {
                     // Anders kies een standaard muziekbestand uit de beschikbare bestanden
+                    console.log('Geen specifieke muziek voor dit level, gebruik standaard muziek');
                     fallbackToDefaultMusic(data.music_files);
                 }
             } else {

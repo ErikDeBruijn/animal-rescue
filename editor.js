@@ -741,23 +741,44 @@ function setupEventListeners() {
                     window.musicPreview = null;
                 }
                 
-                // Play the selected music
+                // Play the selected music with improved error handling
                 window.musicPreview = new Audio(`music/${this.value}`);
                 window.musicPreview.volume = 0.3;
                 window.musicPreview.play().catch(err => {
                     console.error('Fout bij afspelen muziekvoorbeeld:', err);
                     
-                    // Als het bestand niet kon worden afgespeeld, toon een waarschuwing voor de gebruiker
-                    alert(`Dit muziekbestand kon niet worden afgespeeld. Mogelijk is het leeg of beschadigd: ${this.value}`);
+                    // Retry once with a small delay (helps with browser restrictions)
+                    setTimeout(() => {
+                        try {
+                            window.musicPreview.play().catch(e => {
+                                console.error('Tweede poging voor muziekvoorbeeld mislukt:', e);
+                                
+                                // Als het bestand niet kon worden afgespeeld, toon een waarschuwing voor de gebruiker
+                                alert(`Dit muziekbestand kon niet worden afgespeeld. Mogelijk is het leeg of beschadigd: ${this.value}`);
+                            });
+                        } catch (retryErr) {
+                            console.error('Fout bij tweede poging:', retryErr);
+                        }
+                    }, 300);
                 });
                 
-                // Stop the preview after 5 seconds
+                // Stop the preview after 10 seconds (was 5, extended for better preview)
                 setTimeout(() => {
                     if (window.musicPreview) {
-                        window.musicPreview.pause();
-                        window.musicPreview = null;
+                        // Fade out for smoother ending
+                        const fadeInterval = setInterval(() => {
+                            if (window.musicPreview && window.musicPreview.volume > 0.05) {
+                                window.musicPreview.volume -= 0.05;
+                            } else {
+                                clearInterval(fadeInterval);
+                                if (window.musicPreview) {
+                                    window.musicPreview.pause();
+                                    window.musicPreview = null;
+                                }
+                            }
+                        }, 100);
                     }
-                }, 5000);
+                }, 10000);
             }
         });
     }
