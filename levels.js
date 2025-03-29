@@ -40,7 +40,8 @@ function getLevels(GROUND_LEVEL) {    return [
 },
         {
     name: "Jippie!!! TRAMPOLINE!!!",
-    allowedAnimals: ["SQUIRREL","UNICORN","CAT"],
+    music: "default2.mp3",
+    allowedAnimals: ["SQUIRREL","TURTLE"],
     startPositions: [
         {x: 50, y: 350},
         {x: 100, y: 350}
@@ -51,10 +52,14 @@ function getLevels(GROUND_LEVEL) {    return [
         {x: 650, y: 376, width: 150, height: 20, type: "NORMAL"},
         {x: 613, y: 195, width: 30, height: 200, type: "TREE"},
         {x: 8, y: 357, width: 120, height: 40, type: "CLOUD"},
-        {x: 692, y: 351, width: 100, height: 20, type: "TRAMPOLINE"}
+        {x: 692, y: 351, width: 100, height: 20, type: "TRAMPOLINE"},
+        {x: 438, y: 197, width: 100, height: 20, type: "NORMAL"},
+        {x: 315, y: 143, width: 100, height: 20, type: "NORMAL"},
+        {x: 179, y: 107, width: 100, height: 20, type: "NORMAL"},
+        {x: 28, y: 75, width: 100, height: 20, type: "NORMAL"}
     ],
     traps: [
-        {x: 496, y: 202, width: 115, height: 21, type: "SPIKES"}
+        {x: 539, y: 204, width: 72, height: 20, type: "SPIKES"}
     ],
     enemies: [
         {x: 383, y: 220, width: 60, height: 50, type: "DRAGON", patrolDistance: 100, speed: 1}
@@ -73,6 +78,7 @@ function getLevels(GROUND_LEVEL) {    return [
 },
         {
     name: "Wat is dat?",
+    music: "level-vii-short-258782.mp3",
     allowedAnimals: ["TURTLE","UNICORN","CAT","MOLE"],
     startPositions: [
         {x: 50, y: 350},
@@ -107,7 +113,8 @@ function getLevels(GROUND_LEVEL) {    return [
 },
         {
     name: "Irritante spikes!!!",
-    allowedAnimals: ["SQUIRREL","UNICORN", "CAT"],
+    music: "level-vii-short-258782.mp3",
+    allowedAnimals: ["SQUIRREL","UNICORN","CAT"],
     startPositions: [
         {x: 0, y: 0},
         {x: 0, y: 0}
@@ -201,7 +208,8 @@ function getLevels(GROUND_LEVEL) {    return [
 },
         {
     name: "Springen maar!!!",
-    allowedAnimals: ["SQUIRREL","TURTLE","UNICORN","CAT"],
+    music: "level-vii-short-258782.mp3",
+    allowedAnimals: ["SQUIRREL","TURTLE","CAT"],
     startPositions: [
         {x: 50, y: 350},
         {x: 100, y: 350}
