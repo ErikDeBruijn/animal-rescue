@@ -89,7 +89,8 @@ const objectColors = {
     collectible: {
         STAR: '#ffff00',     // Geel voor ster
         PEPPER: '#d70000',   // Rood voor peper
-        DOGFOOD: '#D2B48C'   // Lichtbruin voor hondenvoer
+        DOGFOOD: '#D2B48C',  // Lichtbruin voor hondenvoer
+        HOURGLASS: '#87CEFA' // Lichtblauw voor zandloper
     },
     startPos: '#00ff00'     // Groen voor startposities
 };
@@ -1145,20 +1146,27 @@ function setupEventListeners() {
         setActiveObjectType('puppy');
     });
     
-    document.getElementById('collectible-star-btn').addEventListener('click', function() {
-        setActiveObjectType('collectible-star');
+    document.getElementById('collectible-btn').addEventListener('click', function() {
+        console.log("Setting active object type to 'collectible'");
+        setActiveObjectType('collectible');
     });
     
-    document.getElementById('collectible-pepper-btn').addEventListener('click', function() {
-        setActiveObjectType('collectible-pepper');
-    });
-    
-    document.getElementById('collectible-dogfood-btn').addEventListener('click', function() {
-        setActiveObjectType('collectible-dogfood');
-    });
-    
-    document.getElementById('collectible-hourglass-btn').addEventListener('click', function() {
-        setActiveObjectType('collectible-hourglass');
+    // Set up event listener for collectible type change
+    document.getElementById('collectible-type').addEventListener('change', function() {
+        console.log("Collectible type changed to:", this.value);
+        
+        // Update the preview if we're in placement mode
+        if (editorState.placementMode && editorState.selectedObjectType === 'collectible') {
+            createPlacementPreview('collectible');
+        }
+        
+        // If we have a selected collectible, update its type
+        if (editorState.selectedObject && editorState.selectedObjectType === 'collectible') {
+            console.log("Updating selected collectible type to:", this.value);
+            editorState.selectedObject.type = this.value;
+            renderEditor();
+            markUnsavedChanges();
+        }
     });
     
     document.getElementById('start-pos-btn').addEventListener('click', function() {
@@ -1168,6 +1176,7 @@ function setupEventListeners() {
     document.getElementById('trap-btn').addEventListener('click', function() {
         setActiveObjectType('trap');
     });
+    
     
     // Enter placement mode
     function enterPlacementMode() {
@@ -1188,10 +1197,7 @@ function setupEventListeners() {
         document.getElementById('platform-btn').classList.remove('selected');
         document.getElementById('enemy-btn').classList.remove('selected');
         document.getElementById('puppy-btn').classList.remove('selected');
-        document.getElementById('collectible-star-btn').classList.remove('selected');
-        document.getElementById('collectible-pepper-btn').classList.remove('selected');
-        document.getElementById('collectible-dogfood-btn').classList.remove('selected');
-        document.getElementById('collectible-hourglass-btn').classList.remove('selected');
+        document.getElementById('collectible-btn').classList.remove('selected');
         document.getElementById('start-pos-btn').classList.remove('selected');
         document.getElementById('trap-btn').classList.remove('selected');
         
@@ -1325,19 +1331,13 @@ function setActiveObjectType(type) {
     document.getElementById('platform-btn').classList.remove('selected');
     document.getElementById('enemy-btn').classList.remove('selected');
     document.getElementById('puppy-btn').classList.remove('selected');
-    document.getElementById('collectible-star-btn').classList.remove('selected');
-    document.getElementById('collectible-pepper-btn').classList.remove('selected');
+    document.getElementById('collectible-btn').classList.remove('selected');
     document.getElementById('start-pos-btn').classList.remove('selected');
     document.getElementById('trap-btn').classList.remove('selected');
     
     if (type) {
-        // Handle special cases for the new collectible types
-        let buttonId;
-        if (type === 'collectible-star' || type === 'collectible-pepper') {
-            buttonId = type + '-btn';
-        } else {
-            buttonId = type.replace('startPosition', 'start-pos') + '-btn';
-        }
+        // Handle special cases for collectibles and start positions
+        let buttonId = type.replace('startPosition', 'start-pos') + '-btn';
         document.getElementById(buttonId).classList.add('selected');
         
         // We zijn al in plaatsingsmodus (panel is geopend)
@@ -1444,39 +1444,13 @@ function createPlacementPreview(type) {
             };
             break;
             
-        case 'collectible-star':
+        case 'collectible':
+            const collectibleType = document.getElementById('collectible-type').value;
             editorState.placementPreview = {
                 type: 'collectible',
                 width: 30,
                 height: 30,
-                collectibleType: 'STAR'
-            };
-            break;
-            
-        case 'collectible-pepper':
-            editorState.placementPreview = {
-                type: 'collectible',
-                width: 30,
-                height: 30,
-                collectibleType: 'PEPPER'
-            };
-            break;
-            
-        case 'collectible-dogfood':
-            editorState.placementPreview = {
-                type: 'collectible',
-                width: 30,
-                height: 30,
-                collectibleType: 'DOGFOOD'
-            };
-            break;
-            
-        case 'collectible-hourglass':
-            editorState.placementPreview = {
-                type: 'collectible',
-                width: 30,
-                height: 30,
-                collectibleType: 'HOURGLASS'
+                collectibleType: collectibleType
             };
             break;
             
@@ -2074,56 +2048,18 @@ function createNewObject(x, y) {
             editorState.selectedObject = newPuppy;
             break;
             
-        case 'collectible-star':
-            const newStarCollectible = {
+        case 'collectible':
+            const collectibleType = document.getElementById('collectible-type').value;
+            const newCollectible = {
                 x: x - 15,
                 y: y - 15,
                 width: 30,
                 height: 30,
-                type: 'STAR'
+                type: collectibleType
             };
             
-            editorState.editingLevel.collectibles.push(newStarCollectible);
-            editorState.selectedObject = newStarCollectible;
-            break;
-            
-        case 'collectible-pepper':
-            const newPepperCollectible = {
-                x: x - 15,
-                y: y - 15,
-                width: 30,
-                height: 30,
-                type: 'PEPPER'
-            };
-            
-            editorState.editingLevel.collectibles.push(newPepperCollectible);
-            editorState.selectedObject = newPepperCollectible;
-            break;
-            
-        case 'collectible-dogfood':
-            const newDogfoodCollectible = {
-                x: x - 15,
-                y: y - 15,
-                width: 30,
-                height: 30,
-                type: 'DOGFOOD'
-            };
-            
-            editorState.editingLevel.collectibles.push(newDogfoodCollectible);
-            editorState.selectedObject = newDogfoodCollectible;
-            break;
-            
-        case 'collectible-hourglass':
-            const newHourglassCollectible = {
-                x: x - 15,
-                y: y - 15,
-                width: 30,
-                height: 30,
-                type: 'HOURGLASS'
-            };
-            
-            editorState.editingLevel.collectibles.push(newHourglassCollectible);
-            editorState.selectedObject = newHourglassCollectible;
+            editorState.editingLevel.collectibles.push(newCollectible);
+            editorState.selectedObject = newCollectible;
             break;
             
         case 'startPosition':
@@ -2183,10 +2119,7 @@ function deleteSelectedObject() {
                 saved: false
             };
             break;
-        case 'collectible-star':
-        case 'collectible-pepper':
-        case 'collectible-dogfood':
-        case 'collectible-hourglass':
+        case 'collectible':
             editorState.editingLevel.collectibles = editorState.editingLevel.collectibles.filter(c => c !== object);
             break;
         case 'startPosition':
@@ -2213,6 +2146,9 @@ function updatePropertiesPanel() {
     
     const type = editorState.selectedObjectType;
     const object = editorState.selectedObject;
+    
+    console.log("updatePropertiesPanel called with type:", type);
+    console.log("selected object:", object);
     
     // Zorg ervoor dat het object-panel zichtbaar is zodat de eigenschappen panels zichtbaar kunnen zijn
     document.getElementById('object-panel').style.display = 'block';
@@ -2241,6 +2177,16 @@ function updatePropertiesPanel() {
         document.getElementById('trap-type').value = object.type || 'SPIKES';
         document.getElementById('trap-width').value = object.width;
         document.getElementById('trap-height').value = object.height;
+    } else if (type === 'collectible') {
+        console.log("Setting collectible properties for object type:", object.type);
+        
+        // Set the value of the collectible type dropdown
+        const collectibleType = document.getElementById('collectible-type');
+        if (collectibleType) {
+            collectibleType.value = object.type || 'STAR';
+        } else {
+            console.error("collectible-type dropdown not found!");
+        }
     }
 }
 
@@ -2285,7 +2231,7 @@ function updateObjectList() {
     }
     
     // Collectibles
-    addObjectsToList('Sterren en pepers', editorState.editingLevel.collectibles, 'collectible');
+    addObjectsToList('Collectibles', editorState.editingLevel.collectibles, 'collectible');
     
     // Vallen
     addObjectsToList('Vallen', editorState.editingLevel.traps, 'trap');
@@ -2319,7 +2265,15 @@ function addObjectsToList(title, objects, type) {
             } else if (type === 'trap') {
                 objectName = `Val (${object.type})`;
             } else if (type === 'collectible') {
-                objectName = `Ster ${index + 1}`;
+                const collectibleTypeMap = {
+                    'STAR': 'Ster',
+                    'PEPPER': 'Peper',
+                    'DOGFOOD': 'Hondenvoer',
+                    'HOURGLASS': 'Zandloper'
+                };
+                
+                const typeName = collectibleTypeMap[object.type] || 'Ster';
+                objectName = `${typeName} ${index + 1}`;
             }
             
             objectItem.textContent = `${objectName} [${Math.round(object.x)}, ${Math.round(object.y)}]`;
@@ -2335,7 +2289,19 @@ function addObjectsToList(title, objects, type) {
                 // Selecteer het object
                 editorState.selectedObject = object;
                 editorState.selectedObjectType = type;
+                
+                // Always update the properties panel first
                 updatePropertiesPanel();
+                
+                // If it's a collectible, also make sure the dropdown is set correctly
+                if (type === 'collectible') {
+                    console.log("Setting collectible type for clicked object:", object);
+                    const collectibleType = document.getElementById('collectible-type');
+                    if (collectibleType) {
+                        collectibleType.value = object.type || 'STAR';
+                    }
+                }
+                
                 renderEditor();
                 updateObjectList();
             });
@@ -2868,13 +2834,13 @@ function drawPuppy(puppy) {
     ctx.strokeRect(puppy.x, puppy.y, puppy.width, puppy.height);
 }
 
-// Teken een collectible (ster of peper)
+// Teken een collectible (ster, peper, hondenvoer of zandloper)
 function drawCollectible(collectible) {
     const type = collectible.type || 'STAR'; // Default type is STAR if not specified
     
     if (type === 'DOGFOOD') {
         // Teken hondenvoer (bot vorm)
-        ctx.fillStyle = '#D2B48C'; // Tan/light brown color
+        ctx.fillStyle = objectColors.collectible.DOGFOOD; // Tan/light brown color
         
         const centerX = collectible.x + collectible.width / 2;
         const centerY = collectible.y + collectible.height / 2;
@@ -2962,6 +2928,100 @@ function drawCollectible(collectible) {
         ctx.stroke();
         
         // Herstel de canvas transformatie
+        ctx.restore();
+    } else if (type === 'HOURGLASS') {
+        // Teken een zandloper
+        const centerX = collectible.x + collectible.width/2;
+        const centerY = collectible.y + collectible.height/2;
+        
+        // Pulsing effect voor de zandloper
+        const pulseTime = Date.now() / 500;
+        const pulseScale = 1.0 + Math.sin(pulseTime) * 0.05;
+        
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.scale(pulseScale, pulseScale);
+        
+        // Teken zandloper frame (licht blauw met gouden rand)
+        ctx.fillStyle = objectColors.collectible.HOURGLASS; // Lichtblauw
+        
+        // Bovenste helft trapezium
+        const width = collectible.width * 0.7;
+        const height = collectible.height * 0.35;
+        
+        ctx.beginPath();
+        ctx.moveTo(-width/2, -height);
+        ctx.lineTo(width/2, -height);
+        ctx.lineTo(width/4, 0);
+        ctx.lineTo(-width/4, 0);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Onderste helft trapezium
+        ctx.beginPath();
+        ctx.moveTo(-width/4, 0);
+        ctx.lineTo(width/4, 0);
+        ctx.lineTo(width/2, height);
+        ctx.lineTo(-width/2, height);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Gouden rand
+        ctx.strokeStyle = '#DAA520'; // Gouden rand
+        ctx.lineWidth = 2;
+        
+        // Bovenrand
+        ctx.beginPath();
+        ctx.moveTo(-width/2, -height);
+        ctx.lineTo(width/2, -height);
+        ctx.lineTo(width/4, 0);
+        ctx.lineTo(-width/4, 0);
+        ctx.closePath();
+        ctx.stroke();
+        
+        // Onderrand
+        ctx.beginPath();
+        ctx.moveTo(-width/4, 0);
+        ctx.lineTo(width/4, 0);
+        ctx.lineTo(width/2, height);
+        ctx.lineTo(-width/2, height);
+        ctx.closePath();
+        ctx.stroke();
+        
+        // Teken zandkorrels met animatie
+        ctx.fillStyle = '#FFD700'; // Goudkleur voor zand
+        
+        // Animatie voor vallend zand effect
+        const sandLevel = Math.abs(Math.sin(pulseTime * 0.5)); // 0 tot 1 waarde voor zandniveau
+        
+        // Bovenste kamer (afnemend zand)
+        const upperSandHeight = height * (1 - sandLevel) * 0.8;
+        ctx.beginPath();
+        ctx.moveTo(-width/2.2, -height + 2);
+        ctx.lineTo(width/2.2, -height + 2);
+        ctx.lineTo(width/4.4, -height + 2 + upperSandHeight);
+        ctx.lineTo(-width/4.4, -height + 2 + upperSandHeight);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Onderste kamer (toenemend zand)
+        const lowerSandHeight = height * sandLevel * 0.8;
+        ctx.beginPath();
+        ctx.moveTo(-width/4.4, height - 2 - lowerSandHeight);
+        ctx.lineTo(width/4.4, height - 2 - lowerSandHeight);
+        ctx.lineTo(width/2.2, height - 2);
+        ctx.lineTo(-width/2.2, height - 2);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Teken vallende zandkorrels
+        const particleSize = 1.5;
+        ctx.beginPath();
+        ctx.rect(-particleSize/2, -particleSize/2 - 5 + sandLevel * 10, particleSize, particleSize);
+        ctx.rect(-particleSize - 1, particleSize/2 + sandLevel * 8, particleSize, particleSize);
+        ctx.rect(particleSize/2, 2 + sandLevel * 6, particleSize, particleSize);
+        ctx.fill();
+        
         ctx.restore();
     } else {
         // Teken een ster (default type)
