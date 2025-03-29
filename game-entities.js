@@ -1284,6 +1284,22 @@ class Player {
             this.clawTimer = 0;
             this.spaceKeyWasDown = false;
         }
+        
+        // Reset turtle underwater state
+        if (this.animalType === "TURTLE") {
+            this.isUnderwater = false;
+            this.oxygenLevel = this.maxOxygenLevel; // Reset zuurstofniveau
+            
+            // Stop onderwater geluid als dat nog speelt
+            if (typeof gameAudio !== 'undefined') {
+                if (typeof gameAudio.stopLoopingSound === 'function') {
+                    gameAudio.stopLoopingSound('underwater');
+                } else if (typeof gameAudio.stopUnderwaterSound === 'function') {
+                    // Legacy fallback
+                    gameAudio.stopUnderwaterSound();
+                }
+            }
+        }
     }
     
     /**
@@ -1777,6 +1793,21 @@ class Player {
             this.isRespawning = false;
             this.isInvulnerable = true;
             this.invulnerableTimer = 120; // 2 seconden onkwetsbaar na respawn
+            
+            // Fix voor schildpad: reset onderwater status
+            if (this.animalType === "TURTLE") {
+                this.isUnderwater = false;
+                this.oxygenLevel = this.maxOxygenLevel; // Reset zuurstofniveau
+                
+                // Stop onderwater geluid als dat nog speelt
+                if (typeof gameAudio !== 'undefined') {
+                    if (typeof gameAudio.stopLoopingSound === 'function') {
+                        gameAudio.stopLoopingSound('underwater');
+                    } else if (typeof gameAudio.stopUnderwaterSound === 'function') {
+                        gameAudio.stopUnderwaterSound();
+                    }
+                }
+            }
             
             // Toon bericht dat de speler weer terug is
             gameCore.gameState.message = `${this.name} is terug in het spel!`;
