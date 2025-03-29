@@ -560,7 +560,7 @@ function getLevels(GROUND_LEVEL) {    return [
     ],
     platforms: [
         {x: 309, y: 369, width: 100, height: 20, type: "TRAMPOLINE"},
-        {x: 309, y: 37, width: 100, height: 20, type: "LASER"}
+        {x: 309, y: 157, width: 100, height: 20, type: "LASER"}
     ],
     traps: [
 
@@ -570,13 +570,13 @@ function getLevels(GROUND_LEVEL) {    return [
     ],
     puppy: {
         x: 347, 
-        y: 194, 
+        y: 232, 
         width: 30, 
         height: 25, 
         saved: false
     },
     collectibles: [
-        {x: 342, y: 136, width: 30, height: 30}
+        {x: 343, y: 184, width: 30, height: 30}
     ]
 },
         {
