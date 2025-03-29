@@ -207,7 +207,7 @@ function getLevels(GROUND_LEVEL) {    return [
     ]
 },
         {
-    name: "Springen maar!!!",
+    name: "Spring samen!!!",
     music: "level-vii-short-258782.mp3",
     allowedAnimals: ["SQUIRREL","TURTLE","CAT"],
     startPositions: [
@@ -224,14 +224,14 @@ function getLevels(GROUND_LEVEL) {    return [
 
     ],
     puppy: {
-        x: 36, 
-        y: 269, 
+        x: 35, 
+        y: 255, 
         width: 30, 
-        height: 25, 
+        height: 27, 
         saved: false
     },
     collectibles: [
-        {x: 85, y: 266, width: 30, height: 30}
+        {x: 85, y: 264, width: 30, height: 30}
     ]
 },
         {

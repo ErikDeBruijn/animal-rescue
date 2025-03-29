@@ -341,7 +341,7 @@ function loadGameSounds(soundsPath = 'sounds/') {
     const soundsToLoad = [
         { name: 'jump', file: 'jump.mp3', volume: 0.7 },
         { name: 'splash', file: 'splash.mp3', volume: 0.6 },
-        { name: 'collect', file: 'collect.mp3', volume: 0.8 },
+        { name: 'collect', file: 'level-up-8-bit.mp3', volume: 0.8 },
         { name: 'puppy', file: 'puppy.mp3', volume: 0.9 },
         // Speciale prioriteit voor puppyCrying geluid met meerdere alternatieven
         { name: 'puppyCrying', file: 'puppy-crying.mp3', volume: 0.9, alternatives: ['dog-whine.mp3', 'puppy-whine.mp3'] },
@@ -349,10 +349,12 @@ function loadGameSounds(soundsPath = 'sounds/') {
         { name: 'dig', file: 'dig.mp3', volume: 0.6 },
         { name: 'bounce', file: 'bounce.mp3', volume: 0.7 },
         { name: 'fire', file: 'fire.mp3', volume: 0.5 },
-        { name: 'gameOver', file: 'game-over.mp3', volume: 0.8 },
         { name: 'laserZap', file: 'laser-zap.mp3', volume: 1.0 }, // Maximaal volume voor laser zap
         { name: 'underwater', file: 'under-water.mp3', volume: 0.4, loop: true },
-        { name: 'wind', file: 'wind.mp3', volume: 0.5, loop: true }
+        { name: 'wind', file: 'wind.mp3', volume: 0.5, loop: true },
+        { name: 'collectPuppy', file: 'collect-puppy.mp3', volume: 0.9 },
+        { name: 'lose-life', file: 'lose-life.mp3', volume: 0.8 },
+        { name: 'gameOver', file: 'game-over.mp3', volume: 0.9 }
     ];
     
     // Maak een visuele indicator tijdens het laden

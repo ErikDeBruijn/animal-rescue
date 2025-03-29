@@ -1308,6 +1308,9 @@ class Player {
                 if (damageType === "LASER") {
                     // Speel laser zap geluid op maximaal volume als de speler een laser raakt
                     gameAudio.playSound('laserZap', 1.0);
+                } else {
+                    // Speel lose-life geluid voor andere types schade
+                    gameAudio.playSound('lose-life', 0.9);
                 }
             }
             
@@ -1323,7 +1326,8 @@ class Player {
                 
                 // Speel game over geluid
                 if (typeof gameAudio !== 'undefined' && typeof gameAudio.playSound === 'function') {
-                    gameAudio.playSound('gameOver', 0.8);
+                    // Voor doodgaan (alle 3 levens kwijt) gebruik gameOver geluid
+                    gameAudio.playSound('gameOver', 0.9);
                 }
                 
                 // Reset lives 
@@ -1778,9 +1782,9 @@ function updatePuppy() {
             gameCore.gameState.score += 1000;
             updateScoreDisplay();
             
-            // Speel puppy gered geluid
+            // Speel powerup geluid bij redden van puppy
             if (typeof gameAudio !== 'undefined' && typeof gameAudio.playSound === 'function') {
-                gameAudio.playSound('puppy', 0.9);
+                gameAudio.playSound('collectPuppy', 0.9);
             }
             
             // Toon puntenpopup
