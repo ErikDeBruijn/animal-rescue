@@ -48,7 +48,7 @@ function debugKeyState() {
 
 // Vertaal toetsen naar acties
 function getControlAction(key) {
-    // Toetsen mappen naar acties (links, rechts, omhoog, omlaag)
+    // Toetsen mappen naar acties (links, rechts, omhoog, omlaag, switch, dig)
     if (key === 'ArrowLeft' || key === 'a' || key === 'A') {
         return 'left';
     } else if (key === 'ArrowRight' || key === 'd' || key === 'D') {
@@ -57,8 +57,14 @@ function getControlAction(key) {
         return 'up';
     } else if (key === 'ArrowDown' || key === 's' || key === 'S') {
         return 'down';
-    } else if (key === 'Shift' || key === 'ShiftLeft' || key === 'ShiftRight' || key === 'f' || key === 'F') {
-        return 'switch';
+    } else if (key === 'ShiftLeft') {
+        return 'switchPlayer1'; // Specifiek voor speler 1
+    } else if (key === 'ShiftRight') {
+        return 'switchPlayer2'; // Specifiek voor speler 2
+    } else if (key === 'AltLeft') {
+        return 'digPlayer1'; // Specifiek voor speler 1
+    } else if (key === 'AltRight') {
+        return 'digPlayer2'; // Specifiek voor speler 2
     }
     return null;
 }
@@ -69,6 +75,11 @@ function setupInputListeners() {
         // Registreer de toets
         keys[e.key] = true;
         
+        // Voorkom dat Option/Alt toetsen browser gedrag triggeren (bijv. menu's)
+        if (e.key === 'Alt' || e.key === 'AltLeft' || e.key === 'AltRight') {
+            e.preventDefault();
+        }
+        
         // Space key handling is done in the game loop
         
         // Voor WASD/pijltjes consistentie
@@ -76,7 +87,6 @@ function setupInputListeners() {
         if (action) {
             // Registreer de actie
             keys[action] = true;
-            
         }
         
         // Spatie om naar volgend level te gaan als level voltooid is
@@ -102,6 +112,8 @@ function setupInputListeners() {
         // Voor WASD/pijltjes consistentie
         const action = getControlAction(e.key);
         if (action) {
+            // Zet de actie-toets op false
+            keys[action] = false;
 
             // Controleer of er geen andere toetsen voor dezelfde actie ingedrukt zijn
             // (bijv. bij zowel 'ArrowLeft' als 'a' indrukken en dan één loslaten)
@@ -121,10 +133,6 @@ function setupInputListeners() {
                 if (!keys['ArrowDown'] && !keys['s'] && !keys['S']) {
                     keys['down'] = false;
                 }
-            } else if (e.key === 'Shift' || e.key === 'ShiftLeft' || e.key === 'ShiftRight' || e.key === 'f' || e.key === 'F') {
-                if (!keys['Shift'] && !keys['ShiftLeft'] && !keys['ShiftRight'] && !keys['f'] && !keys['F']) {
-                    keys['switch'] = false;
-                }
             }
         }
     });
@@ -133,8 +141,8 @@ function setupInputListeners() {
 
 // Definieer de controle mappings voor elke speler
 const controls = {
-    player1: { up: "w", down: "s", left: "a", right: "d", dig: "g" },
-    player2: { up: "ArrowUp", down: "ArrowDown", left: "ArrowLeft", right: "ArrowRight", dig: "Control" }
+    player1: { up: "w", down: "s", left: "a", right: "d", dig: "AltLeft", switch: "ShiftLeft" },
+    player2: { up: "ArrowUp", down: "ArrowDown", left: "ArrowLeft", right: "ArrowRight", dig: "AltRight", switch: "ShiftRight" }
 };
 
 // Exporteer de besturing

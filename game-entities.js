@@ -376,9 +376,12 @@ class Player {
             }
         }
         
-        // Wisselen van dier
-        let switchKeyPressed = this.isSwitchKeyPressed();
-        
+        // Wisselen van dier met specifieke Shift toetsen
+        const switchKeyPressed = (this.name === "Speler 1" && 
+                               (gameControls.keys['switchPlayer1'] || gameControls.keys['ShiftLeft'])) || 
+                              (this.name === "Speler 2" && 
+                               (gameControls.keys['switchPlayer2'] || gameControls.keys['ShiftRight']));
+                               
         if (switchKeyPressed && this.canSwitch) {
             this.switchAnimal(otherPlayer);
             this.canSwitch = false; // Voorkom snel wisselen
@@ -1502,16 +1505,16 @@ class Player {
      * Check if the digging button for this player is currently pressed
      */
     isDigButtonPressed() {
-        // Get the dig button from player controls configuration
-        const digButton = this.controls.dig;
-        
-        // Handle special cases for Control key which can be multiple keys
-        if (digButton === "Control") {
-            return gameControls.keys['Control'] || gameControls.keys['ControlLeft'] || gameControls.keys['ControlRight'];
+        // Speler 1 gebruikt digPlayer1, speler 2 gebruikt digPlayer2
+        if (this.name === "Speler 1") {
+            return gameControls.keys['digPlayer1'] || gameControls.keys['AltLeft'];
+        } else if (this.name === "Speler 2") {
+            return gameControls.keys['digPlayer2'] || gameControls.keys['AltRight']; 
         }
         
-        // For normal keys like 'g', check both upper and lower case
-        return gameControls.keys[digButton] || gameControls.keys[digButton.toUpperCase()];
+        // Fallback naar de configuratie in controls
+        const digButton = this.controls.dig;
+        return gameControls.keys[digButton];
     }
     
     /**
