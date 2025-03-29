@@ -4,6 +4,85 @@
 // Add to the global editor namespace
 window.editor = window.editor || {};
 
+// Laad beschikbare muziekbestanden bij opstarten
+document.addEventListener('DOMContentLoaded', function() {
+    loadMusicFiles();
+});
+
+// Functie om muziekbestanden te laden van de server
+function loadMusicFiles() {
+    // Get list of available music files from server
+    fetch('/api/music')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.music_files) {
+                // Get the music select element
+                const musicSelect = document.getElementById('level-music-select');
+                if (musicSelect) {
+                    // Clear existing options (except the first "no music" option)
+                    while (musicSelect.childNodes.length > 1) {
+                        musicSelect.removeChild(musicSelect.lastChild);
+                    }
+                    
+                    // Add each music file as an option
+                    data.music_files.forEach(file => {
+                        const option = document.createElement('option');
+                        option.value = file;
+                        option.textContent = file;
+                        musicSelect.appendChild(option);
+                    });
+                    
+                    // If a level is currently loaded, select the right music
+                    if (editor.state && editor.state.editingLevel && editor.state.editingLevel.music) {
+                        musicSelect.value = editor.state.editingLevel.music;
+                    }
+                    
+                    // Add change event to update the level
+                    musicSelect.addEventListener('change', function() {
+                        if (editor.state && editor.state.editingLevel) {
+                            const selectedMusic = this.value;
+                            
+                            // If empty option selected, remove music property
+                            if (!selectedMusic) {
+                                delete editor.state.editingLevel.music;
+                            } else {
+                                editor.state.editingLevel.music = selectedMusic;
+                            }
+                            
+                            // Mark changes as unsaved
+                            editor.markUnsavedChanges();
+                            
+                            // Play a preview of the selected music
+                            if (selectedMusic) {
+                                // Stop any currently playing preview
+                                if (window.musicPreview) {
+                                    window.musicPreview.pause();
+                                    window.musicPreview = null;
+                                }
+                                
+                                // Play the selected music
+                                window.musicPreview = new Audio(`/music/${selectedMusic}`);
+                                window.musicPreview.volume = 0.3;
+                                window.musicPreview.play().catch(err => console.error('Fout bij afspelen muziekvoorbeeld:', err));
+                                
+                                // Stop the preview after 5 seconds
+                                setTimeout(() => {
+                                    if (window.musicPreview) {
+                                        window.musicPreview.pause();
+                                        window.musicPreview = null;
+                                    }
+                                }, 5000);
+                            }
+                        }
+                    });
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Fout bij ophalen muziekbestanden:', error);
+        });
+}
+
 // Update the properties panel based on currently selected object
 editor.updatePropertiesPanel = function() {
     // First, hide all property panels

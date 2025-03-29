@@ -4,6 +4,8 @@
 // Audio systeem
 const sounds = {};
 let soundEnabled = true;
+let musicEnabled = true;
+let currentMusic = null;
 
 // Houdt bij welke loopende geluiden actief zijn
 const loopingSounds = {
@@ -121,6 +123,7 @@ function loadGameSounds(soundsPath = 'sounds/') {
         { name: 'splash', file: 'splash.mp3', volume: 0.6 },
         { name: 'collect', file: 'collect.mp3', volume: 0.8 },
         { name: 'puppy', file: 'puppy.mp3', volume: 0.9 },
+        { name: 'puppyCrying', file: 'puppy-crying.mp3', volume: 0.9 }, // Nieuw puppy janken geluid
         { name: 'claw', file: 'claw.mp3', volume: 0.5 },
         { name: 'dig', file: 'dig.mp3', volume: 0.6 },
         { name: 'bounce', file: 'bounce.mp3', volume: 0.7 },
@@ -253,6 +256,111 @@ function stopWindSound() {
     stopLoopingSound('wind');
 }
 
+// Functies voor muziek
+function loadMusic(path) {
+    return new Promise((resolve, reject) => {
+        // Als er al muziek speelt, stop deze
+        if (currentMusic) {
+            currentMusic.pause();
+            currentMusic = null;
+        }
+        
+        // Maak een nieuw audio object aan
+        const audio = new Audio(path);
+        audio.loop = true;
+        audio.volume = 0.3; // Standaard volume voor muziek
+        
+        audio.addEventListener('canplaythrough', () => {
+            currentMusic = audio;
+            if (musicEnabled) {
+                audio.play().catch(err => console.log('Muziek afspelen mislukt:', err));
+            }
+            resolve();
+        }, { once: true });
+        
+        audio.addEventListener('error', (e) => {
+            console.error('Fout bij laden van muziek:', e);
+            reject(e);
+        });
+        
+        // Begin met laden
+        audio.load();
+    });
+}
+
+// Toggle muziek aan/uit
+function toggleMusic() {
+    musicEnabled = !musicEnabled;
+    
+    if (currentMusic) {
+        if (musicEnabled) {
+            currentMusic.play().catch(err => console.log('Muziek hervatten mislukt:', err));
+        } else {
+            currentMusic.pause();
+        }
+    }
+    
+    return musicEnabled;
+}
+
+// Voeg een muziek aan/uit knop toe aan de UI
+function addMusicControl() {
+    const musicButton = document.createElement('button');
+    musicButton.id = 'music-toggle';
+    musicButton.textContent = '🎵';
+    musicButton.style.position = 'absolute';
+    musicButton.style.top = '10px';
+    musicButton.style.left = '60px'; // Naast de geluidknop
+    musicButton.style.width = '40px';
+    musicButton.style.height = '40px';
+    musicButton.style.fontSize = '20px';
+    musicButton.style.background = 'rgba(0,0,0,0.5)';
+    musicButton.style.color = 'white';
+    musicButton.style.border = 'none';
+    musicButton.style.borderRadius = '5px';
+    musicButton.style.cursor = 'pointer';
+    musicButton.style.zIndex = '1000'; // Boven andere elementen
+    
+    musicButton.addEventListener('click', () => {
+        const musicEnabled = toggleMusic();
+        musicButton.textContent = musicEnabled ? '🎵' : '🔇';
+    });
+    
+    document.body.appendChild(musicButton);
+}
+
+// Laad muziek voor een specifiek level
+function loadLevelMusic(levelIndex) {
+    // Stop huidige muziek als die speelt
+    if (currentMusic) {
+        currentMusic.pause();
+        currentMusic = null;
+    }
+    
+    // Check of het level muziek specificeert
+    const levels = window.levels;
+    if (!levels || !levels[levelIndex]) {
+        console.warn('Level niet gevonden voor muziek laden');
+        return;
+    }
+    
+    const level = levels[levelIndex];
+    
+    // Als het level een muziekbestand heeft, laad dat
+    if (level.music) {
+        console.log(`Laden van muziek voor level ${levelIndex + 1}: ${level.music}`);
+        loadMusic(`music/${level.music}`).catch(err => {
+            console.warn(`Kon muziek '${level.music}' niet laden, fallback naar standaard muziek`);
+            // Fallback naar standaard muziek
+            loadMusic('music/default.mp3').catch(e => console.error('Kon standaard muziek niet laden:', e));
+        });
+    } else {
+        // Anders de standaard muziek
+        console.log('Geen specifieke muziek voor dit level, laden van standaard muziek');
+        loadMusic('music/default.mp3').catch(err => console.error('Kon standaard muziek niet laden:', err));
+    }
+}
+
 // Exporteer geluidsfuncties
 window.gameAudio = {
     // Game sound management
@@ -274,5 +382,11 @@ window.gameAudio = {
     
     // Sound initialization
     loadGameSounds,
-    addSoundControl
+    addSoundControl,
+    
+    // Music functions
+    loadMusic,
+    toggleMusic,
+    addMusicControl,
+    loadLevelMusic
 };

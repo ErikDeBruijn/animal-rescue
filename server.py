@@ -10,6 +10,7 @@ import threading
 import hashlib
 import argparse
 import sys
+import glob
 from pathlib import Path
 from flask_socketio import SocketIO, emit, join_room, leave_room
 
@@ -114,6 +115,28 @@ def editor():
         # Als niet in development mode, geef 404 error
         abort(404)
     return send_from_directory(GAME_DIR, 'editor.html')
+
+@app.route('/api/music')
+def get_music_files():
+    """Geef een lijst van beschikbare muziekbestanden terug"""
+    # Pad naar de muziek directory
+    music_dir = os.path.join(GAME_DIR, 'music')
+    
+    # Zorg ervoor dat de directory bestaat
+    if not os.path.exists(music_dir):
+        os.makedirs(music_dir)
+    
+    # Zoek alle mp3 bestanden
+    mp3_files = glob.glob(os.path.join(music_dir, '*.mp3'))
+    
+    # Maak een lijst van bestandsnamen (zonder pad)
+    music_list = [os.path.basename(f) for f in mp3_files]
+    
+    # Verstuur als JSON
+    return jsonify({
+        'success': True,
+        'music_files': music_list
+    })
 
 @app.route('/<path:path>')
 def serve_static(path):

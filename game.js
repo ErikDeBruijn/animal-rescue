@@ -72,6 +72,10 @@ function init() {
     // Laad geluidseffecten en voeg geluidsbediening toe
     gameAudio.loadGameSounds();
     gameAudio.addSoundControl();
+    gameAudio.addMusicControl();
+    
+    // Laad muziek voor het huidige level
+    gameAudio.loadLevelMusic(window.currentLevel);
     
     // Start de game loop
     gameLoop();
@@ -331,6 +335,11 @@ function nextLevel() {
     
     // Laad het volgende level
     loadLevel(gameCore.currentLevel);
+    
+    // Laad muziek voor het nieuwe level
+    if (typeof gameAudio !== 'undefined' && typeof gameAudio.loadLevelMusic === 'function') {
+        gameAudio.loadLevelMusic(gameCore.currentLevel);
+    }
 }
 
 // Reset het huidige level (na game over door puppy verlies)

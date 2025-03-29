@@ -93,6 +93,15 @@ editor.loadLevel = function(levelIndex) {
     // Update level name in the UI
     document.getElementById('level-name').value = level.name || `Level ${levelIndex + 1}`;
     
+    // Update the music selection if available
+    const musicSelect = document.getElementById('level-music-select');
+    if (musicSelect && level.music) {
+        // We'll fill options via AJAX in properties.js, here we just set the value
+        musicSelect.value = level.music;
+    } else if (musicSelect) {
+        musicSelect.value = '';
+    }
+    
     // Update UI buttons
     editor.updatePlayButton();
     editor.updateDeleteButton();
