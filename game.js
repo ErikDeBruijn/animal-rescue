@@ -317,6 +317,16 @@ function updateAvailableAnimalsUI() {
 
 // Naar volgend level gaan
 function nextLevel() {
+    // Stop alle lopende geluidseffecten (wind, onderwater geluid, etc.)
+    if (typeof gameAudio !== 'undefined') {
+        if (typeof gameAudio.stopWindSound === 'function') {
+            gameAudio.stopWindSound();
+        }
+        if (typeof gameAudio.stopUnderwaterSound === 'function') {
+            gameAudio.stopUnderwaterSound();
+        }
+    }
+    
     gameCore.currentLevel++;
     if (gameCore.currentLevel >= window.levels.length) {
         gameCore.currentLevel = 0; // Terug naar eerste level of eindscherm tonen
@@ -328,6 +338,16 @@ function nextLevel() {
 
 // Reset het huidige level (na game over door puppy verlies)
 function resetCurrentLevel() {
+    // Stop alle lopende geluidseffecten (wind, onderwater geluid, etc.)
+    if (typeof gameAudio !== 'undefined') {
+        if (typeof gameAudio.stopWindSound === 'function') {
+            gameAudio.stopWindSound();
+        }
+        if (typeof gameAudio.stopUnderwaterSound === 'function') {
+            gameAudio.stopUnderwaterSound();
+        }
+    }
+    
     // Reset spelers
     window.player1.resetToStart();
     window.player2.resetToStart();

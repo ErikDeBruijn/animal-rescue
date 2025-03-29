@@ -5,8 +5,9 @@
 const sounds = {};
 let soundEnabled = true;
 
-// Onderwater geluid afspelen, stoppen of pauzeren
+// Onderwater en wind geluid afspelen, stoppen of pauzeren
 let underwaterSoundPlaying = false;
+let windSoundPlaying = false;
 
 // Laad een geluidsbestand
 function loadSound(name, path) {
@@ -78,6 +79,7 @@ function toggleSound() {
             }
         });
         underwaterSoundPlaying = false;
+        windSoundPlaying = false;
     }
     
     return soundEnabled;
@@ -96,7 +98,8 @@ function loadGameSounds(soundsPath = 'sounds/') {
         { name: 'bounce', file: 'bounce.mp3', volume: 0.7 },
         { name: 'fire', file: 'fire.mp3', volume: 0.5 },
         { name: 'gameOver', file: 'game-over.mp3', volume: 0.8 },
-        { name: 'underwater', file: 'under-water.mp3', volume: 0.4, loop: true }
+        { name: 'underwater', file: 'under-water.mp3', volume: 0.4, loop: true },
+        { name: 'wind', file: 'wind.mp3', volume: 0.5, loop: true }
     ];
     
     // Maak een visuele indicator tijdens het laden
@@ -198,6 +201,26 @@ function addSoundControl() {
     document.body.appendChild(soundButton);
 }
 
+// Speel wind geluid af
+function playWindSound() {
+    if (!soundEnabled || !sounds['wind'] || windSoundPlaying) return;
+    
+    if (sounds['wind'].paused) {
+        sounds['wind'].currentTime = 0;
+        sounds['wind'].play().catch(err => console.log('Wind geluid afspelen mislukt:', err));
+    }
+    windSoundPlaying = true;
+}
+
+// Stop wind geluid
+function stopWindSound() {
+    if (!sounds['wind'] || !windSoundPlaying) return;
+    
+    sounds['wind'].pause();
+    sounds['wind'].currentTime = 0;
+    windSoundPlaying = false;
+}
+
 // Exporteer geluidsfuncties
 window.gameAudio = {
     // Game sound management
@@ -207,6 +230,8 @@ window.gameAudio = {
     toggleSound,
     playUnderwaterSound,
     stopUnderwaterSound,
+    playWindSound,
+    stopWindSound,
     
     // Sound initialization
     loadGameSounds,

@@ -174,6 +174,14 @@ class Player {
         const currentLevelData = window.levels[gameCore.currentLevel];
         const allowedAnimals = currentLevelData.allowedAnimals || ["SQUIRREL", "TURTLE", "UNICORN"];
         
+        // Stop wind geluid als eenhoorn wisselt naar een ander dier
+        if (this.animalType === "UNICORN" && this.flying) {
+            this.flying = false;
+            if (typeof gameAudio !== 'undefined' && typeof gameAudio.stopWindSound === 'function') {
+                gameAudio.stopWindSound();
+            }
+        }
+        
         // Bepaal gedrag op basis van het aantal beschikbare dieren
         if (allowedAnimals.length <= 1) {
             // Als er maar 1 diersoort is, kan er niet gewisseld worden
@@ -190,6 +198,14 @@ class Player {
             
             // Zorg ervoor dat de andere speler ook wisselt
             if (otherPlayer) {
+                // Stop wind geluid als andere speler een eenhoorn was
+                if (otherPlayer.animalType === "UNICORN" && otherPlayer.flying) {
+                    otherPlayer.flying = false;
+                    if (typeof gameAudio !== 'undefined' && typeof gameAudio.stopWindSound === 'function') {
+                        gameAudio.stopWindSound();
+                    }
+                }
+                
                 const otherPlayersOtherAnimal = allowedAnimals.find(animal => animal !== otherPlayer.animalType);
                 console.log(`${otherPlayer.name} wisselt automatisch van ${otherPlayer.animalType} naar ${otherPlayersOtherAnimal}`);
                 otherPlayer.animalType = otherPlayersOtherAnimal;
@@ -392,10 +408,21 @@ class Player {
             this.velY = -3;
             // Glitter-effect voor vliegen (wordt getekend in draw)
             this.flying = true;
+            
+            // Speel wind geluid af als de eenhoorn vliegt
+            if (typeof gameAudio !== 'undefined' && typeof gameAudio.playWindSound === 'function') {
+                gameAudio.playWindSound();
+            }
         } else {
             // Normale zwaartekracht, maar minder sterk voor eenhoorn (langzamer vallen)
             const gravityFactor = this.animalType === "UNICORN" ? 0.3 : 1.0;
             this.velY += gameCore.GRAVITY * gravityFactor;
+            
+            // Als de eenhoorn stopt met vliegen, stop het wind geluid
+            if (this.flying && typeof gameAudio !== 'undefined' && typeof gameAudio.stopWindSound === 'function') {
+                gameAudio.stopWindSound();
+            }
+            
             this.flying = false;
         }
         
@@ -423,6 +450,11 @@ class Player {
                     this.flyingPower = 0;
                     this.flyingExhausted = true;
                     this.flying = false; // Stop met vliegen als de vliegkracht op is
+                    
+                    // Stop het wind geluid als de vliegkracht op is
+                    if (typeof gameAudio !== 'undefined' && typeof gameAudio.stopWindSound === 'function') {
+                        gameAudio.stopWindSound();
+                    }
                 }
             } else {
                 // Herstel vliegkracht langzaam als de eenhoorn niet vliegt
@@ -1172,6 +1204,14 @@ class Player {
         this.y = startPos.y;
         this.velX = 0;
         this.velY = 0;
+        
+        // Reset flying state and stop wind sound
+        if (this.animalType === "UNICORN") {
+            this.flying = false;
+            if (typeof gameAudio !== 'undefined' && typeof gameAudio.stopWindSound === 'function') {
+                gameAudio.stopWindSound();
+            }
+        }
     }
     
     /**
@@ -1196,6 +1236,16 @@ class Player {
             // Invulnerability period
             this.isInvulnerable = true;
             this.invulnerableTimer = 120; // 2 seconds at 60 fps
+            
+            // Stop alle geluidseffecten zoals wind of onderwater
+            if (typeof gameAudio !== 'undefined') {
+                if (typeof gameAudio.stopWindSound === 'function') {
+                    gameAudio.stopWindSound();
+                }
+                if (typeof gameAudio.stopUnderwaterSound === 'function') {
+                    gameAudio.stopUnderwaterSound();
+                }
+            }
             
             // Check for game over condition
             if (this.lives <= 0) {
