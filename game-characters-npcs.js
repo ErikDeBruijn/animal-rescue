@@ -483,8 +483,35 @@ function drawPuppy(puppy) {
     );
     gameCore.ctx.fill();
     
+    // Initialize the help counter on the puppy if not already set
+    if (puppy.helpCounter === undefined) {
+        puppy.helpCounter = 0;
+        puppy.showingHelp = false;
+        puppy.helpSoundPlayed = false;
+    }
+    
+    // Increase the help counter each frame
+    puppy.helpCounter++;
+    
+    // Show the help bubble after 3 seconds (180 frames at 60fps)
+    if (puppy.helpCounter >= 180 && puppy.helpCounter < 550) { // Ongeveer 9.2 seconden (550 frames bij 60fps)
+        puppy.showingHelp = true;
+        
+        // Speel het puppyCrying geluid af wanneer de help-bubbel verschijnt (bij eerste frame)
+        if (!puppy.helpSoundPlayed) {
+            // Gebruik het gameAudio systeem om het geluid af te spelen
+            if (gameAudio.sounds['puppyCrying']) {
+                gameAudio.playSound('puppyCrying');
+            }
+            puppy.helpSoundPlayed = true;
+        }
+    } else if (puppy.helpCounter >= 550) {
+        // Verberg de help-bubbel na 9.2 seconden
+        puppy.showingHelp = false;
+    }
+    
     // Draw a small SOS text bubble above the puppy to indicate it needs help
-    if (!gameCore.gameState.gameOver) {
+    if (!gameCore.gameState.gameOver && puppy.showingHelp) {
         const bubbleWidth = puppy.width * 1.2;
         const bubbleHeight = puppy.height * 0.6;
         const bubbleX = puppyX - (bubbleWidth - puppy.width) / 2;
