@@ -214,10 +214,32 @@ function showPlayerInfo() {
     // Zorg ervoor dat we de speler UI functies alleen aanroepen als de spelers bestaan
     if (window.player1) {
         window.player1.updatePlayerInfoUI();
+        
+        // Voeg speciale instructie toe als speler 1 een mol is
+        if (window.player1.animalType === "MOLE") {
+            const player1Info = document.getElementById('player1-animal');
+            if (player1Info && !player1Info.querySelector('.dig-instruction')) {
+                const digInstruction = document.createElement('span');
+                digInstruction.textContent = " (G = graven)";
+                digInstruction.classList.add('dig-instruction');
+                player1Info.appendChild(digInstruction);
+            }
+        }
     }
     
     if (window.player2) {
         window.player2.updatePlayerInfoUI();
+        
+        // Voeg speciale instructie toe als speler 2 een mol is
+        if (window.player2.animalType === "MOLE") {
+            const player2Info = document.getElementById('player2-animal');
+            if (player2Info && !player2Info.querySelector('.dig-instruction')) {
+                const digInstruction = document.createElement('span');
+                digInstruction.textContent = " (Control = graven)";
+                digInstruction.classList.add('dig-instruction');
+                player2Info.appendChild(digInstruction);
+            }
+        }
     }
 
     // Maak de infovakjes zichtbaar als ze nog verborgen zijn
@@ -315,12 +337,12 @@ function updateAvailableAnimalsUI() {
     const modeText = document.createElement('div');
     modeText.classList.add('game-mode-info');
     
-    if (allowedAnimals.length > 1) {
-        modeText.textContent = "Modus: 2 spelers (verschillende dieren)";
-    } else {
-        modeText.textContent = "Modus: 1 speler (1 dier beschikbaar)";
-    }
+    // Alleen basis modus tekst (1 of 2 spelers)
+    let modeString = allowedAnimals.length > 1 ? 
+        "Modus: 2 spelers" : 
+        "Modus: 1 speler";
     
+    modeText.textContent = modeString;
     animalsContainer.appendChild(modeText);
 }
 
