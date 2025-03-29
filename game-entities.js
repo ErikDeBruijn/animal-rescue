@@ -1469,7 +1469,7 @@ class Player {
         if (isDigButtonPressed && this.diggingEnergy > 0) {
             // Calculate progress rate based on material hardness
             const hardness = this.calculateDiggingHardness();
-            const progressRate = 0.7 / hardness; // Base progress rate divided by hardness factor
+            const progressRate = 1.4 / hardness; // Doubled progress rate for faster digging
             
             // Advance progress
             this.diggingProgress += progressRate;
@@ -1494,10 +1494,12 @@ class Player {
                 this.updateDiggingPosition();
             }
         }
+
+        // Energy regeneration always happens (even during digging, but slower)
+        const regenRate = isDigButtonPressed ? 0.05 : 0.3; // Much faster regen when not digging
         
-        // Energy regeneration when not actively digging
-        if (!isDigButtonPressed && this.diggingEnergy < this.maxDiggingEnergy) {
-            this.diggingEnergy += 0.2;
+        if (this.diggingEnergy < this.maxDiggingEnergy) {
+            this.diggingEnergy += regenRate;
             if (this.diggingEnergy > this.maxDiggingEnergy) {
                 this.diggingEnergy = this.maxDiggingEnergy;
             }
@@ -1550,13 +1552,19 @@ class Player {
      * Successfully complete the digging process
      */
     completeDigging() {
-        // Set final position
-        this.x = this.targetPosition.x;
+        // Set final position with EXTRA OFFSET to prevent stuck in walls
+        if (this.digDirection.x !== 0) {
+            // For horizontal digging, add extra distance in x direction
+            this.x = this.targetPosition.x + (this.digDirection.x * 10); // Add 10 more pixels in dig direction
+        } else {
+            // For vertical digging, just use the target position
+            this.x = this.targetPosition.x;
+        }
         this.y = this.targetPosition.y;
         
-        // Apply momentum in the digging direction
-        this.velX = this.digDirection.x * this.speed * 0.8;
-        this.velY = this.digDirection.y * Math.max(2, this.speed * 0.5);
+        // Apply strong momentum in the digging direction for a burst effect
+        this.velX = this.digDirection.x * this.speed * 1.5; // Increased for better momentum
+        this.velY = this.digDirection.y * Math.max(3, this.speed * 0.8); // Increased for better vertical momentum
         
         // Flag that digging was successful
         this.diggedThroughWall = true;
@@ -1581,7 +1589,7 @@ class Player {
             if (gameCore.gameState.debugLevel >= 1) {
                 console.log("Digging cooldown complete - can dig again");
             }
-        }, 1500); // 1.5 second cooldown after successful dig
+        }, 1000); // Reduced cooldown to 1 second for better gameplay
     }
     
     /**
@@ -1653,14 +1661,14 @@ class Player {
                         if (facingLeft) {
                             // Digging left
                             this.targetPosition = {
-                                x: platform.x - this.width - 5,
+                                x: platform.x - this.width - 25, // Further increased distance to prevent getting stuck
                                 y: this.y
                             };
                             this.digDirection = { x: -1, y: 0 };
                         } else {
                             // Digging right
                             this.targetPosition = {
-                                x: platform.x + platform.width + 5,
+                                x: platform.x + platform.width + 25, // Further increased distance to prevent getting stuck
                                 y: this.y
                             };
                             this.digDirection = { x: 1, y: 0 };
@@ -1694,7 +1702,7 @@ class Player {
                 // Set target position below the ground
                 this.targetPosition = {
                     x: this.x,
-                    y: this.y + this.height + 15
+                    y: this.y + this.height + 25 // Increased depth to prevent getting stuck
                 };
                 this.digDirection = { x: 0, y: 1 };
                 
