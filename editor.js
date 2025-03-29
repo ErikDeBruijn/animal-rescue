@@ -2,6 +2,36 @@
 // Een editor voor het maken van nieuwe levels
 // Zie LEVELS.md voor documentatie over de level structuur
 
+// Functie om bij te houden of er niet-opgeslagen wijzigingen zijn
+function markUnsavedChanges() {
+    editorState.hasUnsavedChanges = true;
+    
+    // Update de opslaan-knop status
+    const saveBtn = document.getElementById('save-level-btn');
+    if (saveBtn) {
+        saveBtn.disabled = false;
+    }
+}
+
+// Functie om aan te geven dat alle wijzigingen zijn opgeslagen
+function markSaved() {
+    editorState.hasUnsavedChanges = false;
+    
+    // Update de opslaan-knop status
+    const saveBtn = document.getElementById('save-level-btn');
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        
+        // Verwijder eventuele * die toegevoegd was
+        if (saveBtn.textContent.includes('*')) {
+            saveBtn.textContent = 'Opslaan';
+        }
+    }
+    
+    // Sla de huidige staat op voor vergelijking bij toekomstige wijzigingen
+    editorState.originalLevelState = JSON.parse(JSON.stringify(editorState.editingLevel));
+}
+
 // Canvas en context opzetten
 const canvas = document.getElementById('editorCanvas');
 const ctx = canvas.getContext('2d');
@@ -264,10 +294,7 @@ function loadLevel(levelIndex) {
     editorState.selectedObjectType = null;
     
     // Reset de unsaved changes status
-    editorState.hasUnsavedChanges = false;
-    
-    // Sla de originele staat op voor vergelijking
-    editorState.originalLevelState = JSON.parse(JSON.stringify(editorState.editingLevel));
+    markSaved();
     
     // Update de "Speel Dit Level" knop
     updatePlayButton();
@@ -392,7 +419,7 @@ function setupEventListeners() {
         editorState.editingLevel.allowedAnimals = allowedAnimals;
         
         // Mark as unsaved changes
-        editorState.hasUnsavedChanges = true;
+        markUnsavedChanges();
     }
     
     // Globaal keyboard event listener voor delete key
@@ -438,8 +465,7 @@ function setupEventListeners() {
     document.getElementById('save-level-btn').addEventListener('click', function() {
         saveLevelToServer();
         // Na opslaan, reset de unsaved changes status
-        editorState.hasUnsavedChanges = false;
-        editorState.originalLevelState = JSON.parse(JSON.stringify(editorState.editingLevel));
+        markSaved();
     });
     
     // Verwijder level knop
@@ -655,13 +681,16 @@ function setupEventListeners() {
                 updateDeleteButton();
                 
                 alert('Level succesvol opgeslagen!');
+                
+                // Markeer dat het level is opgeslagen
+                markSaved();
             } else {
                 alert('Fout bij het opslaan van het level: ' + data.error);
+                
+                // Reset button
+                saveBtn.textContent = originalText;
+                saveBtn.disabled = false;
             }
-            
-            // Reset button
-            saveBtn.textContent = originalText;
-            saveBtn.disabled = false;
         })
         .catch((error) => {
             // Mooier foutbericht
@@ -717,13 +746,16 @@ function setupEventListeners() {
     // Level naam input
     document.getElementById('level-name').addEventListener('input', function(e) {
         editorState.editingLevel.name = e.target.value;
-        editorState.hasUnsavedChanges = true;
+        markUnsavedChanges();
     });
     
     // Music selector (if it exists in the DOM)
     const musicSelect = document.getElementById('level-music-select');
     if (musicSelect) {
         musicSelect.addEventListener('change', function() {
+            // Bewaar de oude muziekkeuze om te vergelijken
+            const oldMusic = editorState.editingLevel.music;
+            
             if (this.value) {
                 editorState.editingLevel.music = this.value;
             } else {
@@ -731,7 +763,12 @@ function setupEventListeners() {
                 delete editorState.editingLevel.music;
             }
             
-            editorState.hasUnsavedChanges = true;
+            // Markeer als niet-opgeslagen als de muziekkeuze is veranderd
+            const newMusic = editorState.editingLevel.music || '';
+            if (oldMusic !== newMusic) {
+                markUnsavedChanges();
+                console.log('Muziek gewijzigd van', oldMusic, 'naar', newMusic, '- Niet-opgeslagen wijzigingen:', editorState.hasUnsavedChanges);
+            }
             
             // Play a preview of the selected music
             if (this.value) {
@@ -1198,8 +1235,8 @@ function updateAllowedAnimals() {
 
 // Functie om wijzigingen bij te houden
 function markAsUnsaved() {
-    // Marker dat er niet-opgeslagen wijzigingen zijn
-    editorState.hasUnsavedChanges = true;
+    // Gebruik de centrale functie voor consistentie
+    markUnsavedChanges();
     
     // Log dat wijzigingen zijn gemarkeerd als onopgeslagen
     console.log('Wijzigingen gemarkeerd als onopgeslagen');

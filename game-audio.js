@@ -7,6 +7,31 @@ let soundEnabled = true;
 let musicEnabled = true;
 let currentMusic = null;
 
+// Default muziekvolume (wordt overschreven door localStorage indien beschikbaar)
+let musicVolume = 0.3;
+
+// Probeer opgeslagen volume te laden uit localStorage
+try {
+    const savedVolume = localStorage.getItem('musicVolume');
+    if (savedVolume !== null) {
+        musicVolume = parseFloat(savedVolume);
+        console.log('Muziekvolume geladen uit localStorage:', musicVolume);
+    }
+} catch (e) {
+    console.warn('Kon muziekvolume niet laden uit localStorage:', e);
+}
+
+// Probeer opgeslagen muziek aan/uit status te laden
+try {
+    const savedMusicEnabled = localStorage.getItem('musicEnabled');
+    if (savedMusicEnabled !== null) {
+        musicEnabled = savedMusicEnabled === 'true';
+        console.log('Muziek aan/uit status geladen uit localStorage:', musicEnabled);
+    }
+} catch (e) {
+    console.warn('Kon muziek aan/uit status niet laden uit localStorage:', e);
+}
+
 // Houdt bij welke loopende geluiden actief zijn
 const loopingSounds = {
     // Format: soundName: isPlaying
@@ -558,7 +583,7 @@ function loadMusic(path) {
         // Maak een nieuw audio object aan
         const audio = new Audio(path);
         audio.loop = true;
-        audio.volume = 0.3; // Standaard volume voor muziek
+        audio.volume = musicVolume; // Gebruik opgeslagen volume
         
         // Update volume slider als die bestaat
         const volumeSlider = document.getElementById('music-volume');
@@ -570,7 +595,7 @@ function loadMusic(path) {
         // Controleer of de knop goed staat
         const musicButton = document.getElementById('music-toggle');
         if (musicButton) {
-            musicButton.textContent = musicEnabled ? '🎶' : '🔇';
+            musicButton.textContent = musicEnabled ? '🎶' : '🎵';
         }
         
         audio.addEventListener('canplaythrough', () => {
@@ -667,6 +692,13 @@ function showMusicInteractionHint() {
 function toggleMusic() {
     musicEnabled = !musicEnabled;
     
+    // Opslaan in localStorage
+    try {
+        localStorage.setItem('musicEnabled', musicEnabled.toString());
+    } catch (e) {
+        console.warn('Kon muziek status niet opslaan in localStorage:', e);
+    }
+    
     if (currentMusic) {
         if (musicEnabled) {
             // Alleen afspelen als er gebruikersinteractie is geweest
@@ -705,7 +737,7 @@ function addMusicControl() {
     // Muziek aan/uit knop
     const musicButton = document.createElement('button');
     musicButton.id = 'music-toggle';
-    musicButton.textContent = '🎶'; // Muziek nootje emoji
+    musicButton.textContent = musicEnabled ? '🎶' : '🎵'; // Gebruik juiste icoon op basis van opgeslagen status
     musicButton.style.width = '40px';
     musicButton.style.height = '40px';
     musicButton.style.fontSize = '20px';
@@ -721,11 +753,11 @@ function addMusicControl() {
     volumeSlider.id = 'music-volume';
     volumeSlider.min = '0';
     volumeSlider.max = '100';
-    volumeSlider.value = '30'; // Default 30%
+    volumeSlider.value = Math.round(musicVolume * 100).toString(); // Gebruik opgeslagen volume uit localStorage
     volumeSlider.style.width = '40px';
     volumeSlider.style.marginTop = '5px';
     volumeSlider.style.accentColor = '#45882f'; // Groene kleur die bij de UI past
-    volumeSlider.style.display = 'none'; // Begin verborgen, toon wanneer muziek speelt
+    volumeSlider.style.display = musicEnabled ? 'block' : 'none'; // Toon alleen als muziek aan staat
     
     // Voeg elementen toe aan container
     musicControlContainer.appendChild(musicButton);
@@ -744,7 +776,7 @@ function addMusicControl() {
         
         // Muziek aan/uit zetten
         const musicEnabled = toggleMusic();
-        musicButton.textContent = musicEnabled ? '🎶' : '🔇';
+        musicButton.textContent = musicEnabled ? '🎶' : '🎵'; // Gebruik 🎵 voor muziek uit
         volumeSlider.style.display = musicEnabled ? 'block' : 'none';
         
         // Als we muziek willen afspelen maar het nog niet hebben kunnen starten
@@ -759,8 +791,20 @@ function addMusicControl() {
     
     // Volume slider event listener
     volumeSlider.addEventListener('input', () => {
+        // Update the volume variable
+        musicVolume = volumeSlider.value / 100;
+        
+        // Update current music if playing
         if (currentMusic) {
-            currentMusic.volume = volumeSlider.value / 100;
+            currentMusic.volume = musicVolume;
+        }
+        
+        // Save to localStorage
+        try {
+            localStorage.setItem('musicVolume', musicVolume.toString());
+            console.log('Muziekvolume opgeslagen in localStorage:', musicVolume);
+        } catch (e) {
+            console.warn('Kon muziekvolume niet opslaan in localStorage:', e);
         }
     });
     
