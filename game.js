@@ -292,9 +292,8 @@ function updateAvailableAnimalsUI() {
         animalsContainer.appendChild(title);
     }
     
-    // Voeg elk toegestaan dier toe met emoji en naam
+    // Voeg elk toegestaan dier toe met alleen emoji
     allowedAnimals.forEach(animalType => {
-        const animal = gameCore.animalTypes[animalType];
         const animalElement = document.createElement('div');
         animalElement.classList.add('animal-icon');
         
@@ -305,9 +304,10 @@ function updateAvailableAnimalsUI() {
             case "TURTLE": animalEmoji = "🐢"; break;
             case "UNICORN": animalEmoji = "🦄"; break;
             case "CAT": animalEmoji = "🐱"; break;
+            case "MOLE": animalEmoji = "🦔"; break;
         }
         
-        animalElement.textContent = `${animalEmoji} ${animal.name}`;
+        animalElement.textContent = animalEmoji;
         animalsContainer.appendChild(animalElement);
     });
     
