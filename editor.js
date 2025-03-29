@@ -220,6 +220,43 @@ function loadLevel(levelIndex) {
     }
     
     document.getElementById('level-name').value = editorState.editingLevel.name;
+    
+    // Update de muziek selector indien aanwezig
+    const musicSelect = document.getElementById('level-music-select');
+    if (musicSelect) {
+        // Stel de waarde in op basis van het level
+        musicSelect.value = editorState.editingLevel.music || '';
+        
+        // Als de muziek selector nog geen opties heeft (behalve de default), haal ze op
+        if (musicSelect.options.length <= 1) {
+            // Haal beschikbare muziekbestanden op via de API
+            fetch('/api/music')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.music_files && data.music_files.length > 0) {
+                        // Behoud de eerste "geen muziek" optie
+                        while (musicSelect.childNodes.length > 1) {
+                            musicSelect.removeChild(musicSelect.lastChild);
+                        }
+                        
+                        // Voeg elke muziekbestand toe als optie
+                        data.music_files.forEach(file => {
+                            const option = document.createElement('option');
+                            option.value = file;
+                            option.textContent = file;
+                            musicSelect.appendChild(option);
+                        });
+                        
+                        // Selecteer het juiste muziekbestand als het bestaat
+                        if (editorState.editingLevel.music) {
+                            musicSelect.value = editorState.editingLevel.music;
+                        }
+                    }
+                })
+                .catch(error => console.error('Fout bij ophalen muziekbestanden:', error));
+        }
+    }
+    
     editorState.currentLevel = levelIndex;
     
     // Reset selection
@@ -680,7 +717,45 @@ function setupEventListeners() {
     // Level naam input
     document.getElementById('level-name').addEventListener('input', function(e) {
         editorState.editingLevel.name = e.target.value;
+        editorState.hasUnsavedChanges = true;
     });
+    
+    // Music selector (if it exists in the DOM)
+    const musicSelect = document.getElementById('level-music-select');
+    if (musicSelect) {
+        musicSelect.addEventListener('change', function() {
+            if (this.value) {
+                editorState.editingLevel.music = this.value;
+            } else {
+                // Remove music property if no music selected
+                delete editorState.editingLevel.music;
+            }
+            
+            editorState.hasUnsavedChanges = true;
+            
+            // Play a preview of the selected music
+            if (this.value) {
+                // Stop any currently playing preview
+                if (window.musicPreview) {
+                    window.musicPreview.pause();
+                    window.musicPreview = null;
+                }
+                
+                // Play the selected music
+                window.musicPreview = new Audio(`/music/${this.value}`);
+                window.musicPreview.volume = 0.3;
+                window.musicPreview.play().catch(err => console.error('Fout bij afspelen muziekvoorbeeld:', err));
+                
+                // Stop the preview after 5 seconds
+                setTimeout(() => {
+                    if (window.musicPreview) {
+                        window.musicPreview.pause();
+                        window.musicPreview = null;
+                    }
+                }, 5000);
+            }
+        });
+    }
     
     // Tool buttons
     document.getElementById('select-tool').addEventListener('click', function() {

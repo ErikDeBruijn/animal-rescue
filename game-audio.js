@@ -303,14 +303,23 @@ function toggleMusic() {
     return musicEnabled;
 }
 
-// Voeg een muziek aan/uit knop toe aan de UI
+// Voeg een muziek aan/uit knop en volumeregelaar toe aan de UI
 function addMusicControl() {
+    // Container voor muziek controls (knop en volume)
+    const musicControlContainer = document.createElement('div');
+    musicControlContainer.id = 'music-control-container';
+    musicControlContainer.style.position = 'absolute';
+    musicControlContainer.style.top = '10px';
+    musicControlContainer.style.left = '60px'; // Naast de geluidknop
+    musicControlContainer.style.zIndex = '1000'; // Boven andere elementen
+    musicControlContainer.style.display = 'flex';
+    musicControlContainer.style.flexDirection = 'column';
+    musicControlContainer.style.alignItems = 'center';
+    
+    // Muziek aan/uit knop
     const musicButton = document.createElement('button');
     musicButton.id = 'music-toggle';
     musicButton.textContent = '🎵';
-    musicButton.style.position = 'absolute';
-    musicButton.style.top = '10px';
-    musicButton.style.left = '60px'; // Naast de geluidknop
     musicButton.style.width = '40px';
     musicButton.style.height = '40px';
     musicButton.style.fontSize = '20px';
@@ -319,14 +328,45 @@ function addMusicControl() {
     musicButton.style.border = 'none';
     musicButton.style.borderRadius = '5px';
     musicButton.style.cursor = 'pointer';
-    musicButton.style.zIndex = '1000'; // Boven andere elementen
     
+    // Volume slider
+    const volumeSlider = document.createElement('input');
+    volumeSlider.type = 'range';
+    volumeSlider.id = 'music-volume';
+    volumeSlider.min = '0';
+    volumeSlider.max = '100';
+    volumeSlider.value = '30'; // Default 30%
+    volumeSlider.style.width = '40px';
+    volumeSlider.style.marginTop = '5px';
+    volumeSlider.style.accentColor = '#45882f'; // Groene kleur die bij de UI past
+    volumeSlider.style.display = 'none'; // Begin verborgen, toon wanneer muziek speelt
+    
+    // Voeg elementen toe aan container
+    musicControlContainer.appendChild(musicButton);
+    musicControlContainer.appendChild(volumeSlider);
+    
+    // Music button event listener
     musicButton.addEventListener('click', () => {
         const musicEnabled = toggleMusic();
         musicButton.textContent = musicEnabled ? '🎵' : '🔇';
+        volumeSlider.style.display = musicEnabled ? 'block' : 'none';
     });
     
-    document.body.appendChild(musicButton);
+    // Volume slider event listener
+    volumeSlider.addEventListener('input', () => {
+        if (currentMusic) {
+            currentMusic.volume = volumeSlider.value / 100;
+        }
+    });
+    
+    // Voeg container toe aan de body
+    document.body.appendChild(musicControlContainer);
+    
+    // Pas positie van fullscreen knop aan (indien die bestaat)
+    const fullscreenButton = document.getElementById('fullscreen-button');
+    if (fullscreenButton) {
+        fullscreenButton.style.left = '110px'; // Naast de muziek controls
+    }
 }
 
 // Laad muziek voor een specifiek level
