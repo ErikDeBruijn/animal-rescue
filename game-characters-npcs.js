@@ -414,46 +414,96 @@ function drawPuppy(puppy) {
     gameCore.ctx.fill();
     
     // Puppy eyes (big and cute)
+    // Bij het bedelen worden de ogen één voor één groter met "pop" effect
+    
+    // Basis parameters voor beide ogen
+    const baseEyeSize = puppy.width * 0.12;
+    const baseWhiteSize = puppy.width * 0.04;
+    
+    // Initialiseer de ooganimatie parameters als ze nog niet bestaan
+    if (puppy.leftEyeBulge === undefined) puppy.leftEyeBulge = 0;
+    if (puppy.rightEyeBulge === undefined) puppy.rightEyeBulge = 0;
+    
+    // Bereken de grootte van het linkeroog (wordt als eerste groter)
+    let leftEyeMultiplier = 1.0;
+    if (puppy.showingHelp && puppy.helpSoundPlayed) {
+        // Basisvergrotingsfactor als het puppy om hulp vraagt
+        leftEyeMultiplier = 1.2;
+        
+        // Extra vergroting wanneer het "pop"-effect actief is
+        if (puppy.leftEyeBulge > 0) {
+            // Voeg een pulserend effect toe dat geleidelijk afneemt
+            const pulsate = Math.sin(Date.now() / 80) * 0.15 + 0.35;
+            leftEyeMultiplier += puppy.leftEyeBulge * pulsate;
+            
+            // Verminder het effect geleidelijk
+            puppy.leftEyeBulge -= 0.008;
+            if (puppy.leftEyeBulge < 0) puppy.leftEyeBulge = 0;
+        }
+    }
+    const leftEyeSize = baseEyeSize * leftEyeMultiplier;
+    const leftWhiteSize = baseWhiteSize * leftEyeMultiplier;
+    
+    // Bereken de grootte van het rechteroog (wordt als tweede groter)
+    let rightEyeMultiplier = 1.0;
+    if (puppy.showingHelp && puppy.helpSoundPlayed) {
+        // Basisvergrotingsfactor als het puppy om hulp vraagt
+        rightEyeMultiplier = 1.2;
+        
+        // Extra vergroting wanneer het "pop"-effect actief is
+        if (puppy.rightEyeBulge > 0) {
+            // Voeg een pulserend effect toe dat geleidelijk afneemt
+            const pulsate = Math.sin(Date.now() / 85) * 0.15 + 0.35; // Iets andere frequentie voor variatie
+            rightEyeMultiplier += puppy.rightEyeBulge * pulsate;
+            
+            // Verminder het effect geleidelijk
+            puppy.rightEyeBulge -= 0.008;
+            if (puppy.rightEyeBulge < 0) puppy.rightEyeBulge = 0;
+        }
+    }
+    const rightEyeSize = baseEyeSize * rightEyeMultiplier;
+    const rightWhiteSize = baseWhiteSize * rightEyeMultiplier;
+    
+    // Teken het linker oog
     gameCore.ctx.fillStyle = 'black';
-    // Left eye
     gameCore.ctx.beginPath();
     gameCore.ctx.arc(
         puppyX + puppy.width * 0.3, 
         puppy.y + puppy.height * 0.3, 
-        puppy.width * 0.12, 
+        leftEyeSize, 
         0, Math.PI * 2
     );
     gameCore.ctx.fill();
     
-    // White of the eye
+    // Wit van het linker oog
     gameCore.ctx.fillStyle = 'white';
     gameCore.ctx.beginPath();
     gameCore.ctx.arc(
         puppyX + puppy.width * 0.28, 
         puppy.y + puppy.height * 0.28, 
-        puppy.width * 0.04, 
+        leftWhiteSize, 
         0, Math.PI * 2
     );
     gameCore.ctx.fill();
     
-    // Right eye
+    // Teken het rechter oog
     gameCore.ctx.fillStyle = 'black';
     gameCore.ctx.beginPath();
     gameCore.ctx.arc(
         puppyX + puppy.width * 0.7, 
         puppy.y + puppy.height * 0.3, 
-        puppy.width * 0.12, 
+        rightEyeSize, 
         0, Math.PI * 2
     );
     gameCore.ctx.fill();
     
-    // White of the eye
+    // Wit van het rechter oog
     gameCore.ctx.fillStyle = 'white';
     gameCore.ctx.beginPath();
     gameCore.ctx.arc(
         puppyX + puppy.width * 0.68, 
         puppy.y + puppy.height * 0.28, 
-        puppy.width * 0.04, 
+        rightWhiteSize, 
         0, Math.PI * 2
     );
     gameCore.ctx.fill();
@@ -501,6 +551,26 @@ function drawPuppy(puppy) {
         if (!puppy.helpSoundPlayed) {
             // Reset flag zodat we maximaal elke 9 seconden het geluid proberen af te spelen (als het mislukt)
             puppy.helpSoundPlayed = true;
+            
+            // Start de ooguitpuileffect animatie voor de ogen één voor één
+            puppy.leftEyeBulge = 0; // Nog niet gestart
+            puppy.rightEyeBulge = 0; // Nog niet gestart
+            
+            // Start de animatiesequentie voor het eerste (linker) oog
+            setTimeout(() => {
+                puppy.leftEyeBulge = 1.0; // Start met maximale grootte voor linkeroog
+                if (gameAudio && typeof gameAudio.playSound === 'function') {
+                    gameAudio.playSound('bubblePop', 1.0); // Gebruik bounce geluid met lager volume
+                }
+                
+                // Start de animatie voor het tweede (rechter) oog iets later
+                setTimeout(() => {
+                    puppy.rightEyeBulge = 1.0; // Start met maximale grootte voor rechteroog
+                    if (gameAudio && typeof gameAudio.playSound === 'function') {
+                        gameAudio.playSound('bubblePop', 1.0); // Bounce geluid voor tweede oog
+                    }
+                }, 200); // 200ms vertraging voor tweede oog
+            }, 100); // 100ms vertraging voordat animatie start
             
             // Gebruik het gameAudio systeem om het geluid af te spelen
             // We voegen extra foutafhandeling toe specifiek voor het puppy geluid
@@ -550,6 +620,10 @@ function drawPuppy(puppy) {
         const time = Date.now() / 150;
         const trembleX = Math.sin(time) * 1.5;
         const trembleY = Math.cos(time * 1.5) * 1;
+        
+        // Initialiseer de puppy ooganimatie parameters als ze nog niet bestaan
+        if (puppy.leftEyeBulge === undefined) puppy.leftEyeBulge = 0;
+        if (puppy.rightEyeBulge === undefined) puppy.rightEyeBulge = 0;
         
         // Draw the text bubble
         gameCore.ctx.fillStyle = 'white';

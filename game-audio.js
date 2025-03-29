@@ -339,7 +339,7 @@ function toggleSound() {
 function loadGameSounds(soundsPath = 'sounds/') {
     // Speel geluiden met standaard volumes
     const soundsToLoad = [
-        { name: 'jump', file: 'jump.mp3', volume: 0.7 },
+        { name: 'jump', file: 'jump.mp3', volume: 0.3 },
         { name: 'splash', file: 'splash.mp3', volume: 0.6 },
         { name: 'collect', file: 'level-up-8-bit.mp3', volume: 0.8 },
         { name: 'puppy', file: 'puppy.mp3', volume: 0.9 },
@@ -353,6 +353,7 @@ function loadGameSounds(soundsPath = 'sounds/') {
         { name: 'underwater', file: 'under-water.mp3', volume: 0.4, loop: true },
         { name: 'wind', file: 'wind.mp3', volume: 0.5, loop: true },
         { name: 'collectPuppy', file: 'collect-puppy.mp3', volume: 0.9 },
+        { name: 'bubblePop', file: 'bubble-pop.mp3', volume: 1.0 },
         { name: 'lose-life', file: 'lose-life.mp3', volume: 0.8 },
         { name: 'gameOver', file: 'game-over.mp3', volume: 0.9 }
     ];
