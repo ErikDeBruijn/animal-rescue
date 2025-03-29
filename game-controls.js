@@ -83,6 +83,8 @@ function setupInputListeners() {
         // Deze check mag niet de normale spatiebalk functionaliteit blokkeren
         if (e.key === ' ') {
             if (gameCore.levelCompleted) {
+                // De melding "Druk op spatie" blijft staan
+                // We gaan naar het volgende level zonder de melding te verwijderen
                 window.gameCore.nextLevel();
             } else if (gameCore.gameState.gameOver) {
                 // Reset het huidige level

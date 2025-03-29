@@ -101,7 +101,12 @@ function loadLevel(levelIndex) {
     // Reset level voltooide status
     gameCore.levelCompleted = false;
     gameCore.gameState.puppySaved = false;
-    gameCore.gameState.message = "";
+    
+    // Behoud het niveau voltooide bericht als we van een voltooid niveau komen
+    if (gameCore.gameState.message !== "Level voltooid! Druk op Spatie voor het volgende level") {
+        gameCore.gameState.message = "";
+    }
+    
     gameCore.gameState.gameOver = false;
     
     // We behouden de score tussen levels, dus reset niet tenzij de URL expliciet veranderd is
