@@ -81,7 +81,8 @@ const objectColors = {
         PIRANHA: '#0077be'  // Blauw voor piranha's
     },
     trap: {
-        SPIKES: '#8c8c8c'   // Grijs voor spikes
+        SPIKES: '#8c8c8c',   // Grijs voor spikes
+        FIRE: '#ff4500'      // Oranje-rood voor vuur
     },
     puppy: '#BE9B7B',       // Lichtbruin voor puppy
     collectible: {
@@ -920,13 +921,13 @@ function setupEventListeners() {
         hideAllPropertyPanels();
     }
     
-    // Export button
-    document.getElementById('export-btn').addEventListener('click', exportLevelCode);
-    
     // Canvas event listeners
     canvas.addEventListener('mousedown', handleCanvasMouseDown);
     canvas.addEventListener('mousemove', handleCanvasMouseMove);
     canvas.addEventListener('mouseup', handleCanvasMouseUp);
+    
+    // Keyboard event listeners for arrow key navigation
+    document.addEventListener('keydown', handleKeyDown);
     
     // Property change listeners
     setupPropertyChangeListeners();
@@ -1247,6 +1248,60 @@ function markAsUnsaved() {
     
     // Log dat wijzigingen zijn gemarkeerd als onopgeslagen
     console.log('Wijzigingen gemarkeerd als onopgeslagen');
+}
+
+// Handle keyboard input for object movement
+function handleKeyDown(e) {
+    // Only process arrow keys if we have a selected object
+    if (!editorState.selectedObject) return;
+    
+    const MOVE_AMOUNT = 1; // Regular movement amount (1px)
+    const FAST_MOVE_AMOUNT = 10; // Fast movement amount with shift (10px)
+    let moveAmount = e.shiftKey ? FAST_MOVE_AMOUNT : MOVE_AMOUNT;
+    let oldX = editorState.selectedObject.x;
+    let oldY = editorState.selectedObject.y;
+    let needsUpdate = false;
+    
+    switch (e.key) {
+        case 'ArrowLeft':
+            e.preventDefault(); // Prevent scrolling
+            editorState.selectedObject.x = Math.max(0, editorState.selectedObject.x - moveAmount);
+            needsUpdate = true;
+            break;
+            
+        case 'ArrowRight':
+            e.preventDefault();
+            // Don't allow moving past canvas edge
+            const maxX = editorState.selectedObject.width ? 
+                          canvas.width - editorState.selectedObject.width : 
+                          canvas.width;
+            editorState.selectedObject.x = Math.min(maxX, editorState.selectedObject.x + moveAmount);
+            needsUpdate = true;
+            break;
+            
+        case 'ArrowUp':
+            e.preventDefault();
+            editorState.selectedObject.y = Math.max(0, editorState.selectedObject.y - moveAmount);
+            needsUpdate = true;
+            break;
+            
+        case 'ArrowDown':
+            e.preventDefault();
+            // Don't allow moving past canvas edge
+            const maxY = editorState.selectedObject.height ? 
+                          canvas.height - editorState.selectedObject.height : 
+                          canvas.height;
+            editorState.selectedObject.y = Math.min(maxY, editorState.selectedObject.y + moveAmount);
+            needsUpdate = true;
+            break;
+    }
+    
+    // If position changed, mark as unsaved and re-render
+    if (needsUpdate && (oldX !== editorState.selectedObject.x || oldY !== editorState.selectedObject.y)) {
+        markAsUnsaved();
+        renderEditor();
+        updatePropertiesPanel();
+    }
     
     // Voeg een * toe aan de save-knop om aan te geven dat er niet-opgeslagen wijzigingen zijn
     const saveBtn = document.getElementById('save-level-btn');
@@ -1318,6 +1373,12 @@ function handleCanvasMouseDown(e) {
             // We bewaren de mousedown positie om later te bepalen of de gebruiker sleept of klikt
             editorState.mouseDownPos = { x: mouseX, y: mouseY };
             
+            // If selecting a starting position, always set to move mode
+            const isStartPosition = selectedObj.type === 'startPosition';
+            if (isStartPosition && editorState.selectedTool === 'resize') {
+                setActiveTool('move');
+            }
+            
             if (editorState.selectedObject === selectedObj.object) {
                 // Het is hetzelfde object dat al was geselecteerd
                 
@@ -1351,6 +1412,11 @@ function handleCanvasMouseDown(e) {
                 // Nieuw object geselecteerd
                 editorState.selectedObject = selectedObj.object;
                 editorState.selectedObjectType = selectedObj.type;
+                
+                // If selecting a starting position, force move mode
+                if (isStartPosition) {
+                    setActiveTool('move');
+                }
                 
                 if (editorState.selectedTool === 'delete') {
                     deleteSelectedObject();
@@ -1489,11 +1555,18 @@ function handleCanvasMouseUp(e) {
         const isClick = dx < 5 && dy < 5; // Minder dan 5 pixels verplaatsing = klik
         
         // Als het een klik was (geen sleep), wissel dan tussen tools
+        // Maar alleen voor objecten die resize ondersteunen (niet voor startposities)
         if (isClick) {
-            if (editorState.selectedTool === 'move') {
-                setActiveTool('resize');
-            } else if (editorState.selectedTool === 'resize') {
-                setActiveTool('move');
+            // Only toggle between move/resize for objects that support resizing
+            // Starting positions don't support resizing, so we'll keep them in move mode
+            const isStartPosition = editorState.selectedObjectType === 'startPosition';
+            
+            if (!isStartPosition) {
+                if (editorState.selectedTool === 'move') {
+                    setActiveTool('resize');
+                } else if (editorState.selectedTool === 'resize') {
+                    setActiveTool('move');
+                }
             }
         }
     }

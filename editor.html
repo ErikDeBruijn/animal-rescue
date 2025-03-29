@@ -142,6 +142,7 @@
                         <label for="trap-type">Type:</label>
                         <select id="trap-type">
                             <option value="SPIKES">Spikes</option>
+                            <option value="FIRE">Vuur</option>
                         </select>
                     </div>
                     <div class="prop-row">
@@ -156,23 +157,13 @@
             </div>
             
             <div class="panel">
-                <h3>Toegestane Dieren</h3>
+                <h3>Dieren</h3>
                 <div class="animal-selection">
-                    <div class="prop-row">
-                        <label><input type="checkbox" id="animal-squirrel" value="SQUIRREL" checked> Eekhoorn 🐿️</label>
-                    </div>
-                    <div class="prop-row">
-                        <label><input type="checkbox" id="animal-turtle" value="TURTLE" checked> Schildpad 🐢</label>
-                    </div>
-                    <div class="prop-row">
-                        <label><input type="checkbox" id="animal-unicorn" value="UNICORN" checked> Eenhoorn 🦄</label>
-                    </div>
-                    <div class="prop-row">
-                        <label><input type="checkbox" id="animal-cat" value="CAT" checked> Kat 🐱</label>
-                    </div>
-                    <div class="prop-row">
-                        <label><input type="checkbox" id="animal-mole" value="MOLE" checked> Mol 🦔</label>
-                    </div>
+                    <label><input type="checkbox" id="animal-squirrel" value="SQUIRREL" checked> 🐿️</label>
+                    <label><input type="checkbox" id="animal-turtle" value="TURTLE" checked> 🐢</label>
+                    <label><input type="checkbox" id="animal-unicorn" value="UNICORN" checked> 🦄</label>
+                    <label><input type="checkbox" id="animal-cat" value="CAT" checked> 🐱</label>
+                    <label><input type="checkbox" id="animal-mole" value="MOLE" checked> 🦔</label>
                 </div>
             </div>
             
@@ -183,11 +174,6 @@
                 </div>
             </div>
             
-            <div class="panel export-section">
-                <h3>Exporteren</h3>
-                <button id="export-btn">Export Level Code</button>
-                <div class="code-panel" id="export-code"></div>
-            </div>
         </div>
         
         <div class="preview-area">
