@@ -21,7 +21,8 @@ let gameState = {
     puppySaved: false, // Om bij te houden of de puppy gered is
     gameOver: false,   // Game over als de puppy wordt gevangen door een vijand
     score: 0,          // Score voor sterren (50 punten) en geredde puppy's (1000 punten)
-    debugLevel: 0      // Debug niveau: 0=uit, 1=basis, 2=uitgebreid
+    debugLevel: 0,     // Debug niveau: 0=uit, 1=basis, 2=uitgebreid
+    treeHintShown: false // Bijhouden of hint voor boom klimmen al getoond is
 };
 
 // Dieren definities met speciale krachten
@@ -133,7 +134,7 @@ function getStartLevel() {
 function updateEditorLink() {
     const editorLink = document.getElementById('editor-link');
     if (editorLink) {
-        editorLink.href = `editor.html#level=${gameCore.currentLevel}`;
+        editorLink.href = `editor.html#level=${gameCore.currentLevelIndex}`;
     }
 }
 
@@ -147,6 +148,7 @@ window.gameCore = {
     
     // State
     currentLevel,
+    currentLevelIndex: 0,
     levelCompleted,
     gameState,
     animalTypes,

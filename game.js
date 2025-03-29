@@ -19,8 +19,6 @@ function initializeGameWhenReady() {
     }
     
     // Nu alle componenten geladen zijn, initialiseer het spel
-    console.log("Alle game componenten zijn geladen, initialiseren...");
-    
     // Canvas referenties koppelen aan gameCore
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
@@ -95,12 +93,17 @@ function resizeGameArea() {
 
 // Laad een level
 function loadLevel(levelIndex) {
-    // Stel het huidige level in
-    gameCore.currentLevel = levelIndex;
+    // Haal level data op
+    const level = window.levels[levelIndex];
+    
+    // Stel het huidige level in gameCore in (zowel index als leveldata)
+    gameCore.currentLevel = level;
+    gameCore.currentLevelIndex = levelIndex;
     
     // Reset level voltooide status
     gameCore.levelCompleted = false;
     gameCore.gameState.puppySaved = false;
+    gameCore.gameState.treeHintShown = false; // Reset de hint voor boomklimmen
     
     // Behoud het niveau voltooide bericht als we van een voltooid niveau komen
     if (gameCore.gameState.message !== "Level voltooid! Druk op Spatie voor het volgende level") {
@@ -117,9 +120,6 @@ function loadLevel(levelIndex) {
     
     // Update de editor link
     gameCore.updateEditorLink();
-
-    // Haal level data op
-    const level = window.levels[levelIndex];
     const startPositions = level.startPositions;
     const allowedAnimals = level.allowedAnimals || ["SQUIRREL", "TURTLE", "UNICORN"];
 
@@ -277,7 +277,7 @@ window.updateScoreDisplay = updateScoreDisplay;
 
 // Update UI om de beschikbare dieren voor het huidige level te tonen
 function updateAvailableAnimalsUI() {
-    const currentLevelData = window.levels[gameCore.currentLevel];
+    const currentLevelData = window.levels[gameCore.currentLevelIndex];
     const allowedAnimals = currentLevelData.allowedAnimals || ["SQUIRREL", "TURTLE", "UNICORN"];
     
     // Update player info first
@@ -365,17 +365,17 @@ function nextLevel() {
         }
     }
     
-    gameCore.currentLevel++;
-    if (gameCore.currentLevel >= window.levels.length) {
-        gameCore.currentLevel = 0; // Terug naar eerste level of eindscherm tonen
+    gameCore.currentLevelIndex++;
+    if (gameCore.currentLevelIndex >= window.levels.length) {
+        gameCore.currentLevelIndex = 0; // Terug naar eerste level of eindscherm tonen
     }
     
     // Laad het volgende level
-    loadLevel(gameCore.currentLevel);
+    loadLevel(gameCore.currentLevelIndex);
     
     // Laad muziek voor het nieuwe level
     if (typeof gameAudio !== 'undefined' && typeof gameAudio.loadLevelMusic === 'function') {
-        gameAudio.loadLevelMusic(gameCore.currentLevel);
+        gameAudio.loadLevelMusic(gameCore.currentLevelIndex);
     }
 }
 
@@ -393,7 +393,7 @@ function resetCurrentLevel() {
     window.player2.resetToStart();
     
     // Reset puppy
-    const currentLevelData = levels[gameCore.currentLevel];
+    const currentLevelData = gameCore.currentLevel;
     if (currentLevelData.puppy) {
         currentLevelData.puppy.saved = false;
     }
@@ -427,7 +427,7 @@ function gameLoop() {
         gameRendering.drawBackground();
         
         // Level objecten tekenen
-        const currentLevelData = levels[gameCore.currentLevel];
+        const currentLevelData = gameCore.currentLevel;
         
         // Update de puppy en vijanden
         gameEntities.updatePuppy();
@@ -490,15 +490,24 @@ function gameLoop() {
         // Game berichten
         if (gameCore.gameState.message) {
             gameCore.ctx.font = '20px Comic Sans MS';
-            gameCore.ctx.fillStyle = 'black';
+            // Kies tekst kleur op basis van het thema
+            if (currentLevelData.theme === 'night') {
+                gameCore.ctx.fillStyle = 'white'; // Witte tekst voor nachtthema
+            } else {
+                gameCore.ctx.fillStyle = 'black'; // Zwarte tekst voor dagthema
+            }
             gameCore.ctx.textAlign = 'center';
             gameCore.ctx.fillText(gameCore.gameState.message, gameCore.canvas.width/2, 100);
         }
         
         // Toon altijd "Druk op spatie" als level is voltooid
         if (gameCore.levelCompleted) {
+            const currentLevelData = gameCore.currentLevel;
+            const isNightTheme = currentLevelData.theme === 'night';
+
             gameCore.ctx.font = 'bold 20px Comic Sans MS';
-            gameCore.ctx.fillStyle = 'green';
+            // Kies tekst kleur op basis van het thema
+            gameCore.ctx.fillStyle = isNightTheme ? '#80ff80' : 'green'; // Lichtere groene kleur in de nachtmodus
             gameCore.ctx.textAlign = 'center';
             
             // Teken de tekst met keySpan styling
@@ -518,7 +527,7 @@ function gameLoop() {
             // Teken de spatiebalk key styling
             const keyX = startX + messageWidth + spaceWidth;
             gameCore.ctx.fillStyle = '#f5f5f5';
-            gameCore.ctx.strokeStyle = '#ddd';
+            gameCore.ctx.strokeStyle = isNightTheme ? '#aaa' : '#ddd'; // Donkerdere rand in nachtmodus
             gameCore.ctx.lineWidth = 1;
             gameCore.ctx.beginPath();
             gameCore.ctx.roundRect(keyX, 125, 60, 22, 4);
@@ -531,7 +540,7 @@ function gameLoop() {
             gameCore.ctx.fillText("Spatie", keyX + 30, 140);
             
             // Teken het vervolg van de tekst
-            gameCore.ctx.fillStyle = 'green';
+            gameCore.ctx.fillStyle = isNightTheme ? '#80ff80' : 'green'; // Lichtere groene kleur in de nachtmodus
             gameCore.ctx.font = 'bold 20px Comic Sans MS';
             gameCore.ctx.fillText(nextMessage, keyX + 60 + spaceWidth + nextWidth/2, 140);
         }
@@ -543,9 +552,14 @@ function gameLoop() {
         
         // Level naam (gebruiksvriendelijke 1-based nummering)
         gameCore.ctx.font = '16px Comic Sans MS';
-        gameCore.ctx.fillStyle = 'black';
+        // Kies tekst kleur op basis van het thema
+        if (currentLevelData.theme === 'night') {
+            gameCore.ctx.fillStyle = 'white'; // Witte tekst voor nachtthema
+        } else {
+            gameCore.ctx.fillStyle = 'black'; // Zwarte tekst voor dagthema
+        }
         gameCore.ctx.textAlign = 'left';
-        gameCore.ctx.fillText("Level " + (gameCore.currentLevel + 1) + ": " + currentLevelData.name, 10, 20);
+        gameCore.ctx.fillText("Level " + (gameCore.currentLevelIndex + 1) + ": " + currentLevelData.name, 10, 20);
     }
     
     // Incrementeer frame telling voor debug doeleinden
@@ -558,8 +572,8 @@ function gameLoop() {
         gameCore.ctx.textAlign = 'right';
         gameCore.ctx.fillText("DEBUG MODE " + gameCore.gameState.debugLevel, gameCore.canvas.width - 10, 20);
         
-        // Voeg melding toe over hoe keys worden gelezen
-        if (frameCount % 300 === 0) { // Elke 5 seconden (bij 60fps)
+        // Toon melding over debugging alleen de eerste keer, niet steeds opnieuw
+        if (frameCount === 60) { // Ongeveer 1 seconde na start (bij 60fps)
             console.log("Debug mode actief (niveau " + gameCore.gameState.debugLevel + "). Activeer graven met G (speler 1) of Control (speler 2)");
         }
     }

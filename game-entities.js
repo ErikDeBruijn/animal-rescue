@@ -175,7 +175,7 @@ class Player {
     
     switchAnimal(otherPlayer) {
         // Haal toegestane dieren op voor het huidige level
-        const currentLevelData = window.levels[gameCore.currentLevel];
+        const currentLevelData = window.levels[gameCore.currentLevelIndex];
         const allowedAnimals = currentLevelData.allowedAnimals || ["SQUIRREL", "TURTLE", "UNICORN"];
         
         // Stop wind geluid als eenhoorn wisselt naar een ander dier
@@ -899,6 +899,18 @@ class Player {
                     // Horizontale collisie met de boom
                     if (this.x + this.width > platform.x && 
                         this.x < platform.x + platform.width) {
+                        // Toon hint voor eerste contact met een boom
+                        if (!gameCore.gameState.treeHintShown && platform.type === "TREE") {
+                            gameCore.gameState.message = "Klim in de boom met pijltje omhoog";
+                            gameCore.gameState.treeHintShown = true;
+                            // Laat het bericht 3 seconden zien
+                            setTimeout(() => {
+                                if (gameCore.gameState.message === "Klim in de boom met pijltje omhoog") {
+                                    gameCore.gameState.message = "";
+                                }
+                            }, 3000);
+                        }
+                        
                         // Blijf plakken aan de boom bij klimmen
                         if (gameControls.keys[this.controls.left] || gameControls.keys[this.controls.left.toLowerCase()] || 
                             gameControls.keys[this.controls.right] || gameControls.keys[this.controls.right.toLowerCase()]) {
@@ -986,7 +998,7 @@ class Player {
         collectibles.forEach((collectible, index) => {
             if (this.collidesWithObject(collectible)) {
                 // Alleen verzamelen als de puppy is gered in het level
-                const currentLevelData = window.levels[gameCore.currentLevel];
+                const currentLevelData = gameCore.currentLevel;
                 
                 // Check of dit een pepertje is
                 if (collectible.type === "PEPPER") {
@@ -1007,22 +1019,60 @@ class Player {
                     }, 2000);
                     
                     // Multiplayer code removed - this was previously used for synchronizing collectibles
-                } else if (!currentLevelData.puppy || currentLevelData.puppy.saved || gameCore.gameState.puppySaved) {
-                    // Normale collectible (ster)
+                } else if (collectible.type === "DOGFOOD" || !currentLevelData.puppy || currentLevelData.puppy.saved || gameCore.gameState.puppySaved) {
+                    // Hondenvoer mag ALTIJD gepakt worden, zelfs als de puppy nog niet gered is
+                    // Normale collectible (ster) mag alleen gepakt worden als de puppy gered is of er geen puppy is
                     collectibles.splice(index, 1);
                     
-                    // Voeg 50 punten toe aan de score voor het verzamelen van een ster
-                    gameCore.gameState.score += 50;
-                    updateScoreDisplay();
-                    
-                    // Speel verzamelgeluid
-                    if (typeof gameAudio !== 'undefined' && typeof gameAudio.playSound === 'function') {
-                        gameAudio.playSound('collect', 0.8);
-                    }
-                    
-                    // Toon puntenpopup
-                    if (typeof gameRendering !== 'undefined' && typeof gameRendering.showPointsEarned === 'function') {
-                        gameRendering.showPointsEarned(collectible.x + collectible.width/2, collectible.y, 50);
+                    // Als het hondenvoer is, toon "Yummy" bij de puppy en speel bark geluid
+                    if (collectible.type === "DOGFOOD") {
+                        // Eerst het normale collectible geluid afspelen
+                        if (typeof gameAudio !== 'undefined' && typeof gameAudio.playSound === 'function') {
+                            gameAudio.playSound('collect', 0.8);
+                            
+                            // Dan na een korte pauze het bark geluid afspelen
+                            setTimeout(() => {
+                                gameAudio.playSound('puppyBark', 0.9);
+                            }, 300);
+                        }
+                        
+                        // Voeg 75 punten toe voor hondenvoer (iets meer dan een normale ster)
+                        gameCore.gameState.score += 75;
+                        updateScoreDisplay();
+                        
+                        // Toon puntenpopup
+                        if (typeof gameRendering !== 'undefined' && typeof gameRendering.showPointsEarned === 'function') {
+                            gameRendering.showPointsEarned(collectible.x + collectible.width/2, collectible.y, 75);
+                        }
+                        
+                        // Toon "Yummy" in de tekstballon bij de puppy
+                        const puppy = currentLevelData.puppy;
+                        if (puppy && !puppy.saved) {
+                            puppy.showingYummy = true;
+                            puppy.yummyTimer = 120; // 2 seconden bij 60fps
+                            
+                            // Reset de timer automatisch na 2 seconden
+                            setTimeout(() => {
+                                if (puppy && puppy.showingYummy) {
+                                    puppy.showingYummy = false;
+                                }
+                            }, 2000);
+                        }
+                    } else {
+                        // Normale ster collectible
+                        // Voeg 50 punten toe aan de score voor het verzamelen van een ster
+                        gameCore.gameState.score += 50;
+                        updateScoreDisplay();
+                        
+                        // Speel verzamelgeluid
+                        if (typeof gameAudio !== 'undefined' && typeof gameAudio.playSound === 'function') {
+                            gameAudio.playSound('collect', 0.8);
+                        }
+                        
+                        // Toon puntenpopup
+                        if (typeof gameRendering !== 'undefined' && typeof gameRendering.showPointsEarned === 'function') {
+                            gameRendering.showPointsEarned(collectible.x + collectible.width/2, collectible.y, 50);
+                        }
                     }
                     
                     // Controleer of alle collectibles verzameld zijn
@@ -1051,7 +1101,7 @@ class Player {
         });
         
         // Vijanden controleren
-        const currentLevelData = window.levels[gameCore.currentLevel];
+        const currentLevelData = gameCore.currentLevel;
         const enemies = currentLevelData.enemies || [];
         
         enemies.forEach((enemy, enemyIndex) => {
@@ -1258,7 +1308,7 @@ class Player {
     }
     
     resetToStart() {
-        const startPos = window.levels[gameCore.currentLevel].startPositions[this.name === "Speler 1" ? 0 : 1];
+        const startPos = gameCore.currentLevel.startPositions[this.name === "Speler 1" ? 0 : 1];
         this.x = startPos.x;
         this.y = startPos.y;
         this.velX = 0;
@@ -1626,7 +1676,7 @@ class Player {
         }
         
         // Get all platforms in the level
-        const currentLevelData = window.levels[gameCore.currentLevel];
+        const currentLevelData = gameCore.currentLevel;
         const platforms = currentLevelData.platforms || [];
         
         if (gameCore.gameState.debugLevel >= 1) {
@@ -1860,8 +1910,8 @@ class Player {
  */
 function updatePuppy() {
     // Safety checks
-    if (!window.levels) return;
-    const currentLevelData = window.levels[gameCore.currentLevel];
+    if (!gameCore.currentLevel) return;
+    const currentLevelData = gameCore.currentLevel;
     if (!currentLevelData.puppy) return;
     
     const puppy = currentLevelData.puppy;
@@ -1941,8 +1991,8 @@ function updatePuppy() {
  */
 function updateEnemies(players) {
     // Safety checks
-    if (!window.levels) return;
-    const currentLevelData = window.levels[gameCore.currentLevel];
+    if (!gameCore.currentLevel) return;
+    const currentLevelData = gameCore.currentLevel;
     const enemies = currentLevelData.enemies || [];
     const platforms = currentLevelData.platforms || [];
     
