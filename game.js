@@ -59,6 +59,54 @@ function initializeGameWhenReady() {
 
 // Initialiseer het spel
 function init() {
+    // Laad geluidseffecten en voeg geluidsbediening toe 
+    // (doen we eerst zodat de geluiden beschikbaar zijn voordat het intro scherm getoond wordt)
+    gameAudio.loadGameSounds();
+    gameAudio.addSoundControl();
+    gameAudio.addMusicControl();
+    
+    // Als het de eerste keer is dat we het spel starten (level 0 of 1), 
+    // toon dan eerst het intro scherm
+    if (gameCore.getStartLevel() <= 1 && !sessionStorage.getItem('introShown')) {
+        showIntroScreen();
+    } else {
+        startGame();
+    }
+}
+
+// Toon het intro scherm met feature image
+function showIntroScreen() {
+    const introScreen = document.getElementById('intro-screen');
+    introScreen.style.display = 'flex';
+    
+    // Voeg event listeners toe voor knoppen
+    document.querySelector('.close-intro').addEventListener('click', function() {
+        introScreen.style.display = 'none';
+        // Sla op dat we het intro scherm hebben getoond
+        sessionStorage.setItem('introShown', 'true');
+        startGame();
+    });
+    
+    document.getElementById('start-game-button').addEventListener('click', function() {
+        introScreen.style.display = 'none';
+        // Sla op dat we het intro scherm hebben getoond
+        sessionStorage.setItem('introShown', 'true');
+        startGame();
+    });
+    
+    // Sluit het intro scherm ook wanneer er op een willekeurige plek wordt geklikt
+    introScreen.addEventListener('click', function(event) {
+        if (event.target === this) {
+            introScreen.style.display = 'none';
+            // Sla op dat we het intro scherm hebben getoond
+            sessionStorage.setItem('introShown', 'true');
+            startGame();
+        }
+    });
+}
+
+// Start het spel na het intro scherm
+function startGame() {
     // Bepaal het startlevel
     window.currentLevel = gameCore.getStartLevel();
     loadLevel(window.currentLevel);
@@ -66,11 +114,6 @@ function init() {
     // Zorg dat de canvasgrootte goed is
     // Dit wordt hier gedaan omdat we nu de level info hebben
     resizeGameArea();
-    
-    // Laad geluidseffecten en voeg geluidsbediening toe
-    gameAudio.loadGameSounds();
-    gameAudio.addSoundControl();
-    gameAudio.addMusicControl();
     
     // Laad muziek voor het huidige level
     gameAudio.loadLevelMusic(window.currentLevel);
