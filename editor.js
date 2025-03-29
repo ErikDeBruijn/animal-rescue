@@ -2625,6 +2625,11 @@ function exportLevelCode() {
     let code = `{\n`;
     code += `    name: "${level.name}",\n`;
     
+    // Voeg muziek toe als deze is geselecteerd
+    if (level.music) {
+        code += `    music: "${level.music}",\n`;
+    }
+    
     // Voeg toegestane dieren toe als deze beschikbaar zijn
     if (level.allowedAnimals && level.allowedAnimals.length > 0) {
         code += `    allowedAnimals: ${JSON.stringify(level.allowedAnimals)},\n`;
