@@ -463,6 +463,14 @@ function gameLoop() {
             gameCore.ctx.fillText(gameCore.gameState.message, gameCore.canvas.width/2, 100);
         }
         
+        // Toon altijd "Druk op spatie" als level is voltooid
+        if (gameCore.levelCompleted) {
+            gameCore.ctx.font = 'bold 20px Comic Sans MS';
+            gameCore.ctx.fillStyle = 'green';
+            gameCore.ctx.textAlign = 'center';
+            gameCore.ctx.fillText("Druk op spatie voor het volgende level", gameCore.canvas.width/2, 140);
+        }
+        
         // Teken puntenpopups als die er zijn
         if (typeof gameRendering !== 'undefined' && typeof gameRendering.drawPointsPopups === 'function') {
             gameRendering.drawPointsPopups();

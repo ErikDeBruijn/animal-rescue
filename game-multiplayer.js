@@ -387,7 +387,8 @@ const gameMultiplayer = {
                         
                         // Toon level completed bericht
                         gameCore.levelCompleted = true;
-                        gameCore.gameState.message = "Level voltooid! Druk op Spatie voor het volgende level";
+                        gameCore.gameState.message = "Level voltooid!";
+                        // De "Druk op spatie" prompt wordt nu apart getekend in de game loop
                     }
                 } 
                 // Als er collectibles informatie wordt meegestuurd, update de lokale collectibles array
