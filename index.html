@@ -11,21 +11,27 @@
 </head>
 <body>
     <h1>Dieren Redders</h1>
-    <div class="instructions-container">
-        <div class="instructions-toggle">Instructies ▼</div>
-        <div class="controls">
-            <p><strong>Missie:</strong> 🐶 Red de puppy van de vijanden voordat je de ster verzamelt!</p>
-            <p>Speler 1: <span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span> om te bewegen, <span class="key">Shift</span> om van dier te wisselen</p>
-            <p>Speler 2: <span class="key">↑</span><span class="key">←</span><span class="key">↓</span><span class="key">→</span> om te bewegen, <span class="key">Shift</span> om van dier te wisselen</p>
-            <p><strong>Dieren speciale eigenschappen:</strong></p>
-            <p>🐿️ Eekhoorn: Kan hoog springen en in bomen klimmen</p>
-            <p>🐢 Schildpad: Kan zwemmen door water</p>
-            <p>🦄 Eenhoorn: Kan vliegen (met <span class="key">↑</span> of <span class="key">W</span>) en kan op wolkenplatforms staan</p>
-            <p>🐱 Kat: Kan klauwen gebruiken (met <span class="key">Spatie</span>) om vijanden aan te vallen</p>
-            <p>🦔 Mol: Kan tunnels graven (met <span class="key">Alt</span>/<span class="key">Option</span>) om door muren/grond te komen</p>
-            <p>🔴 Trampolines: Druk <span class="key">↓</span> in om op te laden en hoger te springen!</p>
-            <p><strong>Pas op voor:</strong> 🦁 Leeuwen en 🐉 Draken - bij aanraking ga je dood! Draken spuwen vuur aan het einde van hun patrol.</p>
-            <p><strong>Verzamel items:</strong> ⭐ Sterren om het level te voltooien, 🌶️ Pepertjes om tijdelijk vuur te kunnen spuwen</p>
+    <!-- Instructies als popup dialog -->
+    <div id="instructions-popup" class="popup-dialog">
+        <div class="popup-content">
+            <div class="popup-header">
+                <h3>Instructies</h3>
+                <span class="close-popup">&times;</span>
+            </div>
+            <div class="popup-body">
+                <p><strong>Missie:</strong> 🐶 Red de puppy van de vijanden voordat je de ster verzamelt!</p>
+                <p>Speler 1: <span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span> om te bewegen, <span class="key">Shift</span> om van dier te wisselen</p>
+                <p>Speler 2: <span class="key">↑</span><span class="key">←</span><span class="key">↓</span><span class="key">→</span> om te bewegen, <span class="key">Shift</span> om van dier te wisselen</p>
+                <p><strong>Dieren speciale eigenschappen:</strong></p>
+                <p>🐿️ Eekhoorn: Kan hoog springen en in bomen klimmen</p>
+                <p>🐢 Schildpad: Kan zwemmen door water</p>
+                <p>🦄 Eenhoorn: Kan vliegen (met <span class="key">↑</span> of <span class="key">W</span>) en kan op wolkenplatforms staan</p>
+                <p>🐱 Kat: Kan klauwen gebruiken (met <span class="key">Spatie</span>) om vijanden aan te vallen</p>
+                <p>🦔 Mol: Kan tunnels graven (met <span class="key">G</span> of <span class="key">Ctrl</span>) om door muren/grond te komen</p>
+                <p>🔴 Trampolines: Druk <span class="key">↓</span> in om op te laden en hoger te springen!</p>
+                <p><strong>Pas op voor:</strong> 🦁 Leeuwen en 🐉 Draken - bij aanraking ga je dood! Draken spuwen vuur aan het einde van hun patrol.</p>
+                <p><strong>Verzamel items:</strong> ⭐ Sterren om het level te voltooien, 🌶️ Pepertjes om tijdelijk vuur te kunnen spuwen</p>
+            </div>
         </div>
     </div>
     
@@ -45,7 +51,10 @@
         <!-- Container voor beschikbare dieren wordt hier dynamisch ingevoegd -->
     </div>
     
-    <button id="fullscreen-button" title="Volledig scherm"><span>⛶</span></button>
+    <div class="control-buttons">
+        <button id="help-button" title="Help / Instructies"><span>❓</span></button>
+        <button id="fullscreen-button" title="Volledig scherm"><span>⛶</span></button>
+    </div>
     <div id="game-container">
         <canvas id="gameCanvas" width="800" height="450"></canvas>
     </div>
@@ -159,17 +168,27 @@
             }
         });
         
-        // Instructies accordeon functionaliteit
-        document.querySelector('.instructions-toggle').addEventListener('click', function() {
-            const controls = document.querySelector('.controls');
-            const toggle = document.querySelector('.instructions-toggle');
+        // Instructies popup functionaliteit
+        function toggleInstructionsPopup() {
+            const popup = document.getElementById('instructions-popup');
             
-            if (controls.style.display === 'block') {
-                controls.style.display = 'none';
-                toggle.textContent = 'Instructies ▼';
+            if (popup.style.display === 'flex') {
+                popup.style.display = 'none';
             } else {
-                controls.style.display = 'block';
-                toggle.textContent = 'Instructies ▲';
+                popup.style.display = 'flex';
+            }
+        }
+        
+        // Open de instructies wanneer op de help-knop wordt geklikt
+        document.getElementById('help-button').addEventListener('click', toggleInstructionsPopup);
+        
+        // Sluit de popup wanneer op het kruisje wordt geklikt
+        document.querySelector('.close-popup').addEventListener('click', toggleInstructionsPopup);
+        
+        // Sluit de popup ook wanneer er buiten de popup wordt geklikt
+        document.getElementById('instructions-popup').addEventListener('click', function(event) {
+            if (event.target === this) {
+                toggleInstructionsPopup();
             }
         });
         
