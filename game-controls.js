@@ -15,12 +15,30 @@ function debugKeyState() {
             right: keys['right'],
             up: keys['up'],
             down: keys['down'],
-            switch: keys['switch'],
+            
+            // Speciale actie keys
+            switchPlayer1: keys['switchPlayer1'],
+            switchPlayer2: keys['switchPlayer2'],
+            digPlayer1: keys['digPlayer1'],
+            digPlayer2: keys['digPlayer2'],
             
             // Belangrijke speciale toetsen
             space: keys[' '],
             g: keys['g'] || keys['G'],
-            Control: keys['Control'] || keys['ControlLeft'] || keys['ControlRight'],
+            
+            // Shift en Alt (voor dieren wisselen en graven)
+            Shift: keys['Shift'],
+            ShiftLeft: keys['ShiftLeft'],
+            ShiftRight: keys['ShiftRight'],
+            Alt: keys['Alt'],
+            AltLeft: keys['AltLeft'],
+            AltRight: keys['AltRight'],
+            
+            // Codes om te controleren of deze correct worden geregistreerd
+            ShiftLeft_code: keys['ShiftLeft'],
+            ShiftRight_code: keys['ShiftRight'],
+            AltLeft_code: keys['AltLeft'],
+            AltRight_code: keys['AltRight'],
             
             // Bewegingstoetsen
             ArrowLeft: keys['ArrowLeft'],
@@ -30,18 +48,24 @@ function debugKeyState() {
             w: keys['w'],
             a: keys['a'],
             s: keys['s'],
-            d: keys['d'],
-            f: keys['f'],
-            Shift: keys['Shift']
+            d: keys['d']
         });
         
         // Extra debug info voor speciale toetsen
-        if ((keys['g'] || keys['G']) && window.gameCore.gameState.debugLevel >= 1) {
-            console.log("🦔 G-toets ingedrukt! Dit zou graven moeten activeren voor speler 1 als die een mol is.");
+        if ((keys['AltLeft'] || keys['digPlayer1']) && window.gameCore.gameState.debugLevel >= 1) {
+            console.log("🦔 Linker Alt-toets ingedrukt! Dit zou graven moeten activeren voor speler 1 als die een mol is.");
         }
         
-        if ((keys['Control'] || keys['ControlLeft'] || keys['ControlRight']) && window.gameCore.gameState.debugLevel >= 1) {
-            console.log("🦔 Control-toets ingedrukt! Dit zou graven moeten activeren voor speler 2 als die een mol is.");
+        if ((keys['AltRight'] || keys['digPlayer2']) && window.gameCore.gameState.debugLevel >= 1) {
+            console.log("🦔 Rechter Alt-toets ingedrukt! Dit zou graven moeten activeren voor speler 2 als die een mol is.");
+        }
+        
+        if ((keys['ShiftLeft'] || keys['switchPlayer1']) && window.gameCore.gameState.debugLevel >= 1) {
+            console.log("🔄 Linker Shift-toets ingedrukt! Dit zou dieren wisselen moeten activeren voor speler 1.");
+        }
+        
+        if ((keys['ShiftRight'] || keys['switchPlayer2']) && window.gameCore.gameState.debugLevel >= 1) {
+            console.log("🔄 Rechter Shift-toets ingedrukt! Dit zou dieren wisselen moeten activeren voor speler 2.");
         }
     }
 }
@@ -49,6 +73,8 @@ function debugKeyState() {
 // Vertaal toetsen naar acties
 function getControlAction(key) {
     // Toetsen mappen naar acties (links, rechts, omhoog, omlaag, switch, dig)
+    
+    // Algemene besturing (WASD/pijltjestoetsen)
     if (key === 'ArrowLeft' || key === 'a' || key === 'A') {
         return 'left';
     } else if (key === 'ArrowRight' || key === 'd' || key === 'D') {
@@ -57,14 +83,18 @@ function getControlAction(key) {
         return 'up';
     } else if (key === 'ArrowDown' || key === 's' || key === 'S') {
         return 'down';
-    } else if (key === 'ShiftLeft') {
-        return 'switchPlayer1'; // Specifiek voor speler 1
+    } 
+    
+    // Specifieke besturing per speler
+    // Gebruik de code eigenschap (niet key) omdat deze altijd onderscheid maakt tussen links/rechts
+    else if (key === 'ShiftLeft') {
+        return 'switchPlayer1'; // ALLEEN voor speler 1
     } else if (key === 'ShiftRight') {
-        return 'switchPlayer2'; // Specifiek voor speler 2
+        return 'switchPlayer2'; // ALLEEN voor speler 2
     } else if (key === 'AltLeft') {
-        return 'digPlayer1'; // Specifiek voor speler 1
+        return 'digPlayer1'; // ALLEEN voor speler 1
     } else if (key === 'AltRight') {
-        return 'digPlayer2'; // Specifiek voor speler 2
+        return 'digPlayer2'; // ALLEEN voor speler 2
     }
     return null;
 }
@@ -75,15 +105,24 @@ function setupInputListeners() {
         // Registreer de toets
         keys[e.key] = true;
         
+        // Registreer ook de code (voor specifieke links/rechts onderscheid)
+        keys[e.code] = true;
+        
         // Voorkom dat Option/Alt toetsen browser gedrag triggeren (bijv. menu's)
-        if (e.key === 'Alt' || e.key === 'AltLeft' || e.key === 'AltRight') {
+        if (e.key === 'Alt' || e.key === 'AltLeft' || e.key === 'AltRight' || 
+            e.code === 'AltLeft' || e.code === 'AltRight') {
+            e.preventDefault();
+        }
+        
+        // Voorkom dat Shift toetsen browser gedrag triggeren
+        if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
             e.preventDefault();
         }
         
         // Space key handling is done in the game loop
         
         // Voor WASD/pijltjes consistentie
-        const action = getControlAction(e.key);
+        const action = getControlAction(e.key) || getControlAction(e.code);
         if (action) {
             // Registreer de actie
             keys[action] = true;
@@ -109,8 +148,11 @@ function setupInputListeners() {
         // Deactiveer de toets
         keys[e.key] = false;
         
+        // Deactiveer ook de code
+        keys[e.code] = false;
+        
         // Voor WASD/pijltjes consistentie
-        const action = getControlAction(e.key);
+        const action = getControlAction(e.key) || getControlAction(e.code);
         if (action) {
             // Zet de actie-toets op false
             keys[action] = false;

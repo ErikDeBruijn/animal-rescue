@@ -220,7 +220,12 @@ function showPlayerInfo() {
             const player1Info = document.getElementById('player1-animal');
             if (player1Info && !player1Info.querySelector('.dig-instruction')) {
                 const digInstruction = document.createElement('span');
-                digInstruction.textContent = " (G = graven)";
+                const keySpan = document.createElement('span');
+                keySpan.textContent = "G";
+                keySpan.classList.add('key');
+                digInstruction.textContent = " (";
+                digInstruction.appendChild(keySpan);
+                digInstruction.appendChild(document.createTextNode(" = graven)"));
                 digInstruction.classList.add('dig-instruction');
                 player1Info.appendChild(digInstruction);
             }
@@ -235,7 +240,12 @@ function showPlayerInfo() {
             const player2Info = document.getElementById('player2-animal');
             if (player2Info && !player2Info.querySelector('.dig-instruction')) {
                 const digInstruction = document.createElement('span');
-                digInstruction.textContent = " (Control = graven)";
+                const keySpan = document.createElement('span');
+                keySpan.textContent = "Ctrl";
+                keySpan.classList.add('key');
+                digInstruction.textContent = " (";
+                digInstruction.appendChild(keySpan);
+                digInstruction.appendChild(document.createTextNode(" = graven)"));
                 digInstruction.classList.add('dig-instruction');
                 player2Info.appendChild(digInstruction);
             }
@@ -490,7 +500,40 @@ function gameLoop() {
             gameCore.ctx.font = 'bold 20px Comic Sans MS';
             gameCore.ctx.fillStyle = 'green';
             gameCore.ctx.textAlign = 'center';
-            gameCore.ctx.fillText("Druk op spatie voor het volgende level", gameCore.canvas.width/2, 140);
+            
+            // Teken de tekst met keySpan styling
+            const message = "Druk op";
+            const messageWidth = gameCore.ctx.measureText(message).width;
+            const spaceWidth = gameCore.ctx.measureText(" ").width;
+            const nextMessage = "voor het volgende level";
+            const nextWidth = gameCore.ctx.measureText(nextMessage).width;
+            
+            // Bereken de startposities voor de verschillende delen
+            const totalWidth = messageWidth + spaceWidth + 60 + spaceWidth + nextWidth; // 60px voor de key breedte
+            const startX = gameCore.canvas.width/2 - totalWidth/2;
+            
+            // Teken de tekst "Druk op"
+            gameCore.ctx.fillText(message, startX + messageWidth/2, 140);
+            
+            // Teken de spatiebalk key styling
+            const keyX = startX + messageWidth + spaceWidth;
+            gameCore.ctx.fillStyle = '#f5f5f5';
+            gameCore.ctx.strokeStyle = '#ddd';
+            gameCore.ctx.lineWidth = 1;
+            gameCore.ctx.beginPath();
+            gameCore.ctx.roundRect(keyX, 125, 60, 22, 4);
+            gameCore.ctx.fill();
+            gameCore.ctx.stroke();
+            
+            // Teken de "Spatie" tekst in de key
+            gameCore.ctx.fillStyle = '#333';
+            gameCore.ctx.font = 'bold 16px monospace';
+            gameCore.ctx.fillText("Spatie", keyX + 30, 140);
+            
+            // Teken het vervolg van de tekst
+            gameCore.ctx.fillStyle = 'green';
+            gameCore.ctx.font = 'bold 20px Comic Sans MS';
+            gameCore.ctx.fillText(nextMessage, keyX + 60 + spaceWidth + nextWidth/2, 140);
         }
         
         // Teken puntenpopups als die er zijn

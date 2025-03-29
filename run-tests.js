@@ -184,7 +184,7 @@ global.TestSuite = {
         
         assert(
             player1.animalType !== startDier,
-            "Speler 1 kan van dier wisselen met F toets"
+            "Speler 1 kan van dier wisselen met linker-shift toets"
         );
         
         // Test 2: Speler 1 terug wisselen

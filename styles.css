@@ -88,6 +88,21 @@ button:hover {
     margin: 5px 0;
 }
 
+/* Stijl voor toetsaanduidingen */
+.key {
+    display: inline-block;
+    background-color: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-family: monospace;
+    font-size: 0.9em;
+    font-weight: bold;
+    color: #333;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    margin: 0 2px;
+}
+
 /* Player info styles */
 .player-info {
     display: flex;

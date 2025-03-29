@@ -161,14 +161,16 @@ class Player {
     
     // Detectie voor wissel-toetsen
     isSwitchKeyPressed() {
-        // Voor speler 2, check alle shift-toetsen (links en rechts)
-        if (this.name === "Speler 2") {
-            return gameControls.keys['Shift'] || gameControls.keys['ShiftLeft'] || gameControls.keys['ShiftRight'];
+        // Voor speler 1, ALLEEN linker shift toets of switchPlayer1 action
+        if (this.name === "Speler 1") {
+            return gameControls.keys['switchPlayer1'];
         }
-        // Voor speler 1, check F-toets
-        else {
-            return gameControls.keys['f'] || gameControls.keys['F'];
+        // Voor speler 2, ALLEEN rechter shift toets of switchPlayer2 action
+        else if (this.name === "Speler 2") {
+            return gameControls.keys['switchPlayer2'];
         }
+        // Fallback voor oude code
+        return gameControls.keys[this.controls.switch];
     }
     
     switchAnimal(otherPlayer) {
@@ -361,7 +363,7 @@ class Player {
             
             // Speel springgeluid
             if (typeof gameAudio !== 'undefined' && typeof gameAudio.playSound === 'function') {
-                gameAudio.playSound('jump', 0.7);
+                gameAudio.playSound('jump', 0.3);
             }
         }
         
@@ -376,11 +378,8 @@ class Player {
             }
         }
         
-        // Wisselen van dier met specifieke Shift toetsen
-        const switchKeyPressed = (this.name === "Speler 1" && 
-                               (gameControls.keys['switchPlayer1'] || gameControls.keys['ShiftLeft'])) || 
-                              (this.name === "Speler 2" && 
-                               (gameControls.keys['switchPlayer2'] || gameControls.keys['ShiftRight']));
+        // Wisselen van dier met de isSwitchKeyPressed methode
+        const switchKeyPressed = this.isSwitchKeyPressed();
                                
         if (switchKeyPressed && this.canSwitch) {
             this.switchAnimal(otherPlayer);
@@ -1505,11 +1504,13 @@ class Player {
      * Check if the digging button for this player is currently pressed
      */
     isDigButtonPressed() {
-        // Speler 1 gebruikt digPlayer1, speler 2 gebruikt digPlayer2
+        // Speler 1 gebruikt ALLEEN digPlayer1 actie
         if (this.name === "Speler 1") {
-            return gameControls.keys['digPlayer1'] || gameControls.keys['AltLeft'];
-        } else if (this.name === "Speler 2") {
-            return gameControls.keys['digPlayer2'] || gameControls.keys['AltRight']; 
+            return gameControls.keys['digPlayer1'];
+        }
+        // Speler 2 gebruikt ALLEEN digPlayer2 actie
+        else if (this.name === "Speler 2") {
+            return gameControls.keys['digPlayer2']; 
         }
         
         // Fallback naar de configuratie in controls
