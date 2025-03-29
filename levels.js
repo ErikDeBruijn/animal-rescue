@@ -41,6 +41,7 @@ function getLevels(GROUND_LEVEL) {    return [
         {
     name: "Jippie!!! TRAMPOLINE!!!",
     music: "default2.mp3",
+    theme: "night",
     allowedAnimals: ["SQUIRREL","TURTLE"],
     startPositions: [
         {x: 50, y: 350},
@@ -79,6 +80,7 @@ function getLevels(GROUND_LEVEL) {    return [
         {
     name: "Wat is dat?",
     music: "level-vii-short-258782.mp3",
+    theme: "night",
     allowedAnimals: ["TURTLE","UNICORN","CAT","MOLE"],
     startPositions: [
         {x: 50, y: 350},
@@ -114,6 +116,7 @@ function getLevels(GROUND_LEVEL) {    return [
         {
     name: "Irritante spikes!!!",
     music: "level-vii-short-258782.mp3",
+    theme: "night",
     allowedAnimals: ["SQUIRREL","UNICORN","CAT"],
     startPositions: [
         {x: 0, y: 0},
@@ -276,6 +279,7 @@ function getLevels(GROUND_LEVEL) {    return [
 },
         {
     name: "Wordt niet gepakt!!!",
+    theme: "night",
     allowedAnimals: ["UNICORN","CAT"],
     startPositions: [
         {x: 50, y: 350},
@@ -647,6 +651,8 @@ function getLevels(GROUND_LEVEL) {    return [
     name: "Binky's park",
     music: "best-game-console-301284.mp3",
     allowedAnimals: ["TURTLE","CAT","MOLE"],
+    theme: "day",
+    allowedAnimals: ["TURTLE","UNICORN","CAT","MOLE"],
     startPositions: [
         {x: 50, y: 350},
         {x: 100, y: 350}

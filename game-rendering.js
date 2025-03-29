@@ -736,9 +736,13 @@ function drawPointsPopups() {
         // Bepaal opacity op basis van leeftijd
         const opacity = 1 - (popup.age / popup.maxAge);
         
+        // Bepaal kleur op basis van thema
+        const currentTheme = gameCore.currentLevel && gameCore.currentLevel.theme ? gameCore.currentLevel.theme : 'day';
+        const pointsColor = currentTheme === 'night' ? `rgba(255, 230, 150, ${opacity})` : `rgba(255, 215, 0, ${opacity})`;
+        
         // Teken de popup
         gameCore.ctx.font = 'bold 16px Comic Sans MS';
-        gameCore.ctx.fillStyle = `rgba(255, 215, 0, ${opacity})`;
+        gameCore.ctx.fillStyle = pointsColor;
         gameCore.ctx.textAlign = 'center';
         gameCore.ctx.fillText(`+${popup.points}`, popup.x, popup.y);
         
@@ -754,9 +758,24 @@ function drawPointsPopups() {
 
 // Background drawing
 function drawBackground() {
+    // Huidige level theme bepalen
+    const currentTheme = gameCore.currentLevel && gameCore.currentLevel.theme ? gameCore.currentLevel.theme : 'day';
+    
+    if (currentTheme === 'night') {
+        drawNightBackground();
+    } else {
+        drawDayBackground();
+    }
+}
+
+// Dag achtergrond tekenen
+function drawDayBackground() {
     // Sky
     gameCore.ctx.fillStyle = '#87CEEB';
     gameCore.ctx.fillRect(0, 0, gameCore.canvas.width, gameCore.canvas.height);
+    
+    // Teken de zon
+    drawSun();
     
     // Background clouds (white and semi-transparent) with drifting animation
     gameCore.ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
@@ -779,21 +798,237 @@ function drawBackground() {
     gameCore.ctx.arc(650 + drift2, 90, 30, 0, Math.PI * 2);
     gameCore.ctx.arc(690 + drift2, 100, 25, 0, Math.PI * 2);
     gameCore.ctx.fill();
+    
+    // Extra wolk in het midden
+    const drift3 = 10 * Math.sin(cloudDriftTime * Math.PI * 1.3);
+    gameCore.ctx.beginPath();
+    gameCore.ctx.arc(350 + drift3, 120, 25, 0, Math.PI * 2);
+    gameCore.ctx.arc(380 + drift3, 110, 25, 0, Math.PI * 2);
+    gameCore.ctx.arc(410 + drift3, 125, 20, 0, Math.PI * 2);
+    gameCore.ctx.fill();
+}
+
+// Nacht achtergrond tekenen
+function drawNightBackground() {
+    // Donkere nachthemel
+    gameCore.ctx.fillStyle = '#0c1445';
+    gameCore.ctx.fillRect(0, 0, gameCore.canvas.width, gameCore.canvas.height);
+    
+    // Teken sterren
+    drawStars();
+    
+    // Teken de maan
+    drawMoon();
+    
+    // Donkere wolken
+    drawNightClouds();
+}
+
+// Zon tekenen
+function drawSun() {
+    const time = Date.now() / 15000; // Langzame animatie voor de zon
+    
+    // Bepaal positie (links boven)
+    const centerX = 80 + Math.sin(time) * 20;
+    const centerY = 80 + Math.cos(time) * 10;
+    const radius = 30;
+    
+    // Teken gloeiend effect
+    const gradient = gameCore.ctx.createRadialGradient(centerX, centerY, radius * 0.5, centerX, centerY, radius * 1.5);
+    gradient.addColorStop(0, 'rgba(255, 255, 0, 0.8)');
+    gradient.addColorStop(0.5, 'rgba(255, 200, 0, 0.3)');
+    gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    
+    gameCore.ctx.fillStyle = gradient;
+    gameCore.ctx.beginPath();
+    gameCore.ctx.arc(centerX, centerY, radius * 1.5, 0, Math.PI * 2);
+    gameCore.ctx.fill();
+    
+    // Teken de zon
+    gameCore.ctx.fillStyle = '#FFCC00';
+    gameCore.ctx.beginPath();
+    gameCore.ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    gameCore.ctx.fill();
+    
+    // Teken stralen
+    gameCore.ctx.strokeStyle = '#FFCC00';
+    gameCore.ctx.lineWidth = 3;
+    const rays = 8;
+    const innerRadius = radius * 1.2;
+    const outerRadius = radius * 1.8;
+    
+    for (let i = 0; i < rays; i++) {
+        const angle = (i * Math.PI * 2 / rays) + time;
+        const startX = centerX + Math.cos(angle) * innerRadius;
+        const startY = centerY + Math.sin(angle) * innerRadius;
+        const endX = centerX + Math.cos(angle) * outerRadius;
+        const endY = centerY + Math.sin(angle) * outerRadius;
+        
+        gameCore.ctx.beginPath();
+        gameCore.ctx.moveTo(startX, startY);
+        gameCore.ctx.lineTo(endX, endY);
+        gameCore.ctx.stroke();
+    }
+}
+
+// Maan tekenen
+function drawMoon() {
+    const time = Date.now() / 20000; // Zeer langzame animatie voor de maan
+    
+    // Bepaal positie (rechts boven)
+    const centerX = gameCore.canvas.width - 100 + Math.sin(time) * 10;
+    const centerY = 100 + Math.cos(time) * 10;
+    const radius = 25;
+    
+    // Teken gloeiend effect
+    const gradient = gameCore.ctx.createRadialGradient(centerX, centerY, radius * 0.5, centerX, centerY, radius * 1.8);
+    gradient.addColorStop(0, 'rgba(200, 200, 255, 0.4)');
+    gradient.addColorStop(0.5, 'rgba(200, 200, 255, 0.2)');
+    gradient.addColorStop(1, 'rgba(200, 200, 255, 0)');
+    
+    gameCore.ctx.fillStyle = gradient;
+    gameCore.ctx.beginPath();
+    gameCore.ctx.arc(centerX, centerY, radius * 1.8, 0, Math.PI * 2);
+    gameCore.ctx.fill();
+    
+    // Teken de maan
+    gameCore.ctx.fillStyle = '#E6E6FA';
+    gameCore.ctx.beginPath();
+    gameCore.ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    gameCore.ctx.fill();
+    
+    // Teken maankraters
+    gameCore.ctx.fillStyle = 'rgba(180, 180, 200, 0.6)';
+    // Krater 1
+    gameCore.ctx.beginPath();
+    gameCore.ctx.arc(centerX - radius * 0.3, centerY - radius * 0.4, radius * 0.15, 0, Math.PI * 2);
+    gameCore.ctx.fill();
+    // Krater 2
+    gameCore.ctx.beginPath();
+    gameCore.ctx.arc(centerX + radius * 0.4, centerY + radius * 0.2, radius * 0.2, 0, Math.PI * 2);
+    gameCore.ctx.fill();
+    // Krater 3
+    gameCore.ctx.beginPath();
+    gameCore.ctx.arc(centerX - radius * 0.1, centerY + radius * 0.5, radius * 0.1, 0, Math.PI * 2);
+    gameCore.ctx.fill();
+}
+
+// Sterren tekenen
+function drawStars() {
+    const time = Date.now() / 8000; // Langzame twinkeling voor sterren
+    gameCore.ctx.fillStyle = 'white';
+    
+    // Teken meerdere sterren verspreid over de hemel
+    const numStars = 50;
+    for (let i = 0; i < numStars; i++) {
+        // Gebruik vaste posities voor sterren, maar met kleine animatie
+        const x = (i * 329) % gameCore.canvas.width;
+        const y = (i * 237) % (gameCore.GROUND_LEVEL - 50);
+        
+        // Laat sommige sterren twinkelen
+        const twinkle = 0.5 + Math.sin(time + i * 0.3) * 0.5;
+        const size = 1 + Math.sin(time + i) * 0.5;
+        
+        gameCore.ctx.globalAlpha = twinkle;
+        gameCore.ctx.beginPath();
+        gameCore.ctx.arc(x, y, size, 0, Math.PI * 2);
+        gameCore.ctx.fill();
+    }
+    
+    // Teken enkele grotere sterren die echt twinkelen
+    for (let i = 0; i < 10; i++) {
+        const x = (i * 919) % gameCore.canvas.width;
+        const y = (i * 537) % (gameCore.GROUND_LEVEL - 50);
+        const twinkle = 0.7 + Math.sin(time * 2 + i * 0.7) * 0.3;
+        
+        // Teken een vijfpuntige ster voor de grote sterren
+        const outerRadius = 2 + Math.sin(time + i) * 0.5;
+        const innerRadius = outerRadius * 0.5;
+        
+        gameCore.ctx.globalAlpha = twinkle;
+        gameCore.ctx.beginPath();
+        for (let j = 0; j < 10; j++) {
+            const radius = j % 2 === 0 ? outerRadius : innerRadius;
+            const angle = j * Math.PI / 5 + time * (i % 3);
+            const starX = x + Math.cos(angle) * radius;
+            const starY = y + Math.sin(angle) * radius;
+            
+            if (j === 0) gameCore.ctx.moveTo(starX, starY);
+            else gameCore.ctx.lineTo(starX, starY);
+        }
+        gameCore.ctx.closePath();
+        gameCore.ctx.fill();
+    }
+    
+    gameCore.ctx.globalAlpha = 1.0; // Reset alpha
+}
+
+// Nachtwolken tekenen
+function drawNightClouds() {
+    const time = Date.now() / 25000;
+    
+    // Teken donkere, blauwe wolken voor 's nachts
+    gameCore.ctx.fillStyle = 'rgba(70, 90, 120, 0.7)';
+    
+    // Eerste wolkengroep
+    const drift1 = 20 * Math.sin(time * Math.PI);
+    gameCore.ctx.beginPath();
+    gameCore.ctx.arc(100 + drift1, 80, 30, 0, Math.PI * 2);
+    gameCore.ctx.arc(130 + drift1, 70, 30, 0, Math.PI * 2);
+    gameCore.ctx.arc(160 + drift1, 80, 25, 0, Math.PI * 2);
+    gameCore.ctx.fill();
+    
+    // Tweede wolkengroep
+    const drift2 = 15 * Math.cos(time * Math.PI * 0.7);
+    gameCore.ctx.beginPath();
+    gameCore.ctx.arc(600 + drift2, 100, 35, 0, Math.PI * 2);
+    gameCore.ctx.arc(650 + drift2, 90, 30, 0, Math.PI * 2);
+    gameCore.ctx.arc(690 + drift2, 100, 25, 0, Math.PI * 2);
+    gameCore.ctx.fill();
+    
+    // Extra wolk in het midden - iets donkerder
+    const drift3 = 10 * Math.sin(time * Math.PI * 1.3);
+    gameCore.ctx.fillStyle = 'rgba(50, 70, 100, 0.7)';
+    gameCore.ctx.beginPath();
+    gameCore.ctx.arc(350 + drift3, 120, 25, 0, Math.PI * 2);
+    gameCore.ctx.arc(380 + drift3, 110, 25, 0, Math.PI * 2);
+    gameCore.ctx.arc(410 + drift3, 125, 20, 0, Math.PI * 2);
+    gameCore.ctx.fill();
 }
 
 // Ground drawing
 function drawGround() {
-    gameCore.ctx.fillStyle = '#8B4513';
-    gameCore.ctx.fillRect(0, gameCore.GROUND_LEVEL, gameCore.canvas.width, gameCore.canvas.height - gameCore.GROUND_LEVEL);
+    // Huidige level theme bepalen
+    const currentTheme = gameCore.currentLevel && gameCore.currentLevel.theme ? gameCore.currentLevel.theme : 'day';
     
-    // Grass on top
-    gameCore.ctx.fillStyle = '#2E8B57';
-    gameCore.ctx.fillRect(0, gameCore.GROUND_LEVEL, gameCore.canvas.width, 10);
+    if (currentTheme === 'night') {
+        // Donkerdere grond voor nachtthema
+        gameCore.ctx.fillStyle = '#41311d';
+        gameCore.ctx.fillRect(0, gameCore.GROUND_LEVEL, gameCore.canvas.width, gameCore.canvas.height - gameCore.GROUND_LEVEL);
+        
+        // Donkerder gras voor nachtthema
+        gameCore.ctx.fillStyle = '#1a543a';
+        gameCore.ctx.fillRect(0, gameCore.GROUND_LEVEL, gameCore.canvas.width, 10);
+    } else {
+        // Standaard grond voor dagthema
+        gameCore.ctx.fillStyle = '#8B4513';
+        gameCore.ctx.fillRect(0, gameCore.GROUND_LEVEL, gameCore.canvas.width, gameCore.canvas.height - gameCore.GROUND_LEVEL);
+        
+        // Standaard gras voor dagthema
+        gameCore.ctx.fillStyle = '#2E8B57';
+        gameCore.ctx.fillRect(0, gameCore.GROUND_LEVEL, gameCore.canvas.width, 10);
+    }
 }
 
 // Export the render functions
 window.gameRendering = {
     drawBackground,
+    drawDayBackground,
+    drawNightBackground,
+    drawSun,
+    drawMoon,
+    drawStars,
+    drawNightClouds,
     drawGround,
     drawPlatform,
     drawTrap,
