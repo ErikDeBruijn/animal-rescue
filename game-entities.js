@@ -2200,22 +2200,28 @@ function updateEnemies(players) {
                             
                             // Als er een speler in het water is, jaag erop
                             if (targetPlayer) {
-                                // Horizontale beweging - richting speler
+                                // Horizontale beweging - richting speler (langzamer)
                                 if (enemy.x < targetPlayer.x) {
                                     enemy.direction = 1; // Naar rechts (richting speler)
-                                    enemy.x += enemy.speed * 0.7; // Iets sneller dan normaal naar speler toe
+                                    enemy.x += enemy.speed * 0.4; // Langzamer bewegen
                                 } else {
                                     enemy.direction = -1; // Naar links (richting speler)
-                                    enemy.x -= enemy.speed * 0.7; // Iets sneller dan normaal naar speler toe
+                                    enemy.x -= enemy.speed * 0.4; // Langzamer bewegen
                                 }
                                 
-                                // Verticale beweging - richting speler
-                                if (enemy.y + enemy.height/2 < targetPlayer.y + targetPlayer.height/2) {
+                                // Verticale beweging - richting speler (langzamer)
+                                // Vergelijk het middelpunt van de piranha met het middelpunt van de speler
+                                const piranhaCenter = enemy.y + enemy.height/2;
+                                const playerCenter = targetPlayer.y + targetPlayer.height/2;
+                                
+                                if (piranhaCenter < playerCenter) {
                                     // Naar beneden zwemmen (richting speler)
-                                    enemy.y += enemy.speed * 0.5;
+                                    enemy.y += enemy.speed * 0.8; // Veel sneller verticaal bewegen
+                                    console.log("Piranha zwemt omlaag naar speler");
                                 } else {
                                     // Naar boven zwemmen (richting speler)
-                                    enemy.y -= enemy.speed * 0.5;
+                                    enemy.y -= enemy.speed * 0.8; // Veel sneller verticaal bewegen
+                                    console.log("Piranha zwemt omhoog naar speler");
                                 }
                                 
                                 // Maak dubbel zo veel bubbels als normaal tijdens het jagen
@@ -2227,32 +2233,61 @@ function updateEnemies(players) {
                                 // In water kan de piranha ook verticaal bewegen (langzaam)
                                 // Voeg vertical patrouille toe als die er nog niet is
                                 if (enemy.verticalDirection === undefined) {
-                                    enemy.verticalDirection = Math.random() > 0.5 ? 1 : -1; // Willekeurige start richting
+                                    // Willekeurige start richting (50% kans op omhoog beginnen)
+                                    enemy.verticalDirection = Math.random() > 0.5 ? -1 : 1;
                                     enemy.verticalMovement = 0;
-                                    enemy.maxVerticalMovement = 50 + Math.random() * 30; // Willekeurige max hoogte
+                                    enemy.maxVerticalMovement = 25 + Math.random() * 15; // Smaller bewegingsbereik
+                                    enemy.directionChangeTimer = 0;
+                                    enemy.randomDirectionChange = 40 + Math.floor(Math.random() * 30); // 40-70 frames
                                 }
                                 
-                                // Update verticale beweging
-                                enemy.verticalMovement += enemy.verticalDirection;
+                                // Update verticale beweging teller
+                                enemy.verticalMovement += Math.abs(enemy.verticalDirection);
+                                enemy.directionChangeTimer++;
                                 
-                                // Verander richting als de max bereikt is
-                                if (Math.abs(enemy.verticalMovement) >= enemy.maxVerticalMovement) {
+                                // Verander regelmatig van richting (om de 40-70 frames OF bij bereiken max hoogte)
+                                // Dit zorgt ervoor dat de piranha zowel omhoog als omlaag zwemt
+                                if (enemy.verticalMovement >= enemy.maxVerticalMovement || 
+                                    enemy.directionChangeTimer >= enemy.randomDirectionChange) {
+                                    // Verander richting
                                     enemy.verticalDirection *= -1;
+                                    console.log("Piranha verandert richting naar: " + 
+                                               (enemy.verticalDirection === 1 ? "omlaag" : "omhoog"));
+                                    
+                                    // Reset timers
+                                    enemy.directionChangeTimer = 0;
+                                    enemy.verticalMovement = 0;
+                                    enemy.randomDirectionChange = 40 + Math.floor(Math.random() * 30);
                                 }
                                 
-                                // Pas verticale beweging toe (langzamer dan horizontaal)
-                                enemy.y += enemy.verticalDirection * (enemy.speed * 0.3);
+                                // Pas verticale beweging toe met voldoende snelheid om beweging te zien
+                                enemy.y += enemy.verticalDirection * (enemy.speed * 0.4);
                             }
                             
                             // Zorg dat de piranha binnen het water blijft
+                            // Controleer bovenkant water
                             if (enemy.y < platform.y) {
+                                // Zet de piranha terug op de platformgrens
                                 enemy.y = platform.y;
-                                if (!enemy.huntingPlayer) {
+                                
+                                // Forceer de richting naar beneden, ongeacht of we een speler achtervolgen
+                                // Dit lost het probleem op dat de piranha niet omhoog lijkt te zwemmen
+                                if (enemy.huntingPlayer) {
+                                    // alleen richting forceren als de piranha probeert te jagen
+                                    console.log("Piranha zit aan bovenkant water - kan niet verder omhoog");
+                                } else {
                                     enemy.verticalDirection = 1; // Naar beneden
                                 }
-                            } else if (enemy.y + enemy.height > platform.y + platform.height) {
+                            } 
+                            // Controleer onderkant water
+                            else if (enemy.y + enemy.height > platform.y + platform.height) {
+                                // Zet de piranha terug op de platformgrens
                                 enemy.y = platform.y + platform.height - enemy.height;
-                                if (!enemy.huntingPlayer) {
+                                
+                                // Forceer de richting naar boven, ongeacht of we een speler achtervolgen
+                                if (enemy.huntingPlayer) {
+                                    console.log("Piranha zit aan onderkant water - kan niet verder omlaag");
+                                } else {
                                     enemy.verticalDirection = -1; // Naar boven
                                 }
                             }
