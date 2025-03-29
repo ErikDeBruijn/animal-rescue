@@ -742,9 +742,14 @@ function setupEventListeners() {
                 }
                 
                 // Play the selected music
-                window.musicPreview = new Audio(`/music/${this.value}`);
+                window.musicPreview = new Audio(`music/${this.value}`);
                 window.musicPreview.volume = 0.3;
-                window.musicPreview.play().catch(err => console.error('Fout bij afspelen muziekvoorbeeld:', err));
+                window.musicPreview.play().catch(err => {
+                    console.error('Fout bij afspelen muziekvoorbeeld:', err);
+                    
+                    // Als het bestand niet kon worden afgespeeld, toon een waarschuwing voor de gebruiker
+                    alert(`Dit muziekbestand kon niet worden afgespeeld. Mogelijk is het leeg of beschadigd: ${this.value}`);
+                });
                 
                 // Stop the preview after 5 seconds
                 setTimeout(() => {

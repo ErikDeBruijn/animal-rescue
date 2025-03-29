@@ -265,23 +265,54 @@ function loadMusic(path) {
             currentMusic = null;
         }
         
+        console.log('Muziek proberen te laden:', path);
+        
         // Maak een nieuw audio object aan
         const audio = new Audio(path);
         audio.loop = true;
         audio.volume = 0.3; // Standaard volume voor muziek
         
+        // Update volume slider als die bestaat
+        const volumeSlider = document.getElementById('music-volume');
+        if (volumeSlider) {
+            volumeSlider.value = audio.volume * 100;
+            volumeSlider.style.display = musicEnabled ? 'block' : 'none';
+        }
+        
+        // Controleer of de knop goed staat
+        const musicButton = document.getElementById('music-toggle');
+        if (musicButton) {
+            musicButton.textContent = musicEnabled ? '🎵' : '🔇';
+        }
+        
         audio.addEventListener('canplaythrough', () => {
+            console.log('Muziek succesvol geladen:', path);
             currentMusic = audio;
             if (musicEnabled) {
-                audio.play().catch(err => console.log('Muziek afspelen mislukt:', err));
+                audio.play()
+                    .then(() => console.log('Muziek afspelen gestart'))
+                    .catch(err => console.error('Muziek afspelen mislukt:', err));
+            } else {
+                console.log('Muziek geladen maar niet gestart (muziek staat uit)');
             }
             resolve();
         }, { once: true });
         
         audio.addEventListener('error', (e) => {
-            console.error('Fout bij laden van muziek:', e);
+            console.error('Fout bij laden van muziek:', path, e);
             reject(e);
         });
+        
+        // Stel een timeout in voor het geval dat het laden te lang duurt
+        const timeout = setTimeout(() => {
+            console.warn('Timeout bij laden van muziek:', path);
+            reject(new Error('Timeout bij laden van muziek'));
+        }, 10000); // 10 seconden timeout
+        
+        // Extra event listener om de timeout te annuleren als het laden lukt
+        audio.addEventListener('canplaythrough', () => {
+            clearTimeout(timeout);
+        }, { once: true });
         
         // Begin met laden
         audio.load();
@@ -386,18 +417,103 @@ function loadLevelMusic(levelIndex) {
     
     const level = levels[levelIndex];
     
-    // Als het level een muziekbestand heeft, laad dat
-    if (level.music) {
-        console.log(`Laden van muziek voor level ${levelIndex + 1}: ${level.music}`);
-        loadMusic(`music/${level.music}`).catch(err => {
-            console.warn(`Kon muziek '${level.music}' niet laden, fallback naar standaard muziek`);
-            // Fallback naar standaard muziek
-            loadMusic('music/default.mp3').catch(e => console.error('Kon standaard muziek niet laden:', e));
+    // Haal eerst beschikbare muziekbestanden op om te controleren wat er beschikbaar is
+    fetch('/api/music')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.music_files && data.music_files.length > 0) {
+                // We hebben een lijst met beschikbare muziekbestanden
+                console.log('Beschikbare muziekbestanden:', data.music_files);
+                
+                // Als het level een muziekbestand heeft, controleer of het beschikbaar is
+                if (level.music && data.music_files.includes(level.music)) {
+                    console.log(`Laden van muziek voor level ${levelIndex + 1}: ${level.music}`);
+                    loadMusic(`music/${level.music}`).catch(err => {
+                        fallbackToDefaultMusic(data.music_files, err);
+                    });
+                } else {
+                    // Anders kies een standaard muziekbestand uit de beschikbare bestanden
+                    fallbackToDefaultMusic(data.music_files);
+                }
+            } else {
+                console.warn('Geen muziekbestanden gevonden');
+            }
+        })
+        .catch(err => {
+            console.error('Fout bij ophalen muziekbestanden:', err);
+            // Probeer direct een standaard muziekbestand te laden als fallback
+            tryLoadDefaultMusic();
         });
-    } else {
-        // Anders de standaard muziek
-        console.log('Geen specifieke muziek voor dit level, laden van standaard muziek');
-        loadMusic('music/default.mp3').catch(err => console.error('Kon standaard muziek niet laden:', err));
+    
+    // Functie om een standaard muziekbestand te kiezen uit beschikbare bestanden
+    function fallbackToDefaultMusic(availableFiles, error) {
+        if (error) {
+            console.warn('Kon opgegeven muziek niet laden:', error);
+        }
+        
+        // Probeer eerst default.mp3 als die bestaat
+        if (availableFiles.includes('default.mp3') && 
+            // Check of het bestand meer dan 0 bytes is (ter voorkoming van lege bestanden)
+            availableFiles.some(file => file === 'default.mp3')) {
+            
+            console.log('Laden van standaard muziek: default.mp3');
+            loadMusic('music/default.mp3').catch(e => {
+                console.error('Kon standaard muziek niet laden, probeer een ander bestand');
+                tryAnotherMusicFile(availableFiles);
+            });
+        } else {
+            // Als default.mp3 niet bestaat, kies een willekeurig muziekbestand
+            tryAnotherMusicFile(availableFiles);
+        }
+    }
+    
+    // Functie om een willekeurig muziekbestand te proberen
+    function tryAnotherMusicFile(availableFiles) {
+        if (availableFiles && availableFiles.length > 0) {
+            // Filter out empty files (default.mp3 might be empty)
+            const nonEmptyFiles = availableFiles.filter(file => file !== 'default.mp3');
+            
+            if (nonEmptyFiles.length > 0) {
+                // Kies een willekeurig bestand
+                const randomFile = nonEmptyFiles[Math.floor(Math.random() * nonEmptyFiles.length)];
+                console.log('Probeer alternatieve muziek:', randomFile);
+                loadMusic(`music/${randomFile}`).catch(e => {
+                    console.error('Kon geen enkel muziekbestand laden:', e);
+                });
+            } else {
+                console.warn('Geen geschikte muziekbestanden gevonden');
+            }
+        }
+    }
+    
+    // Probeer direct een paar standaard muziekbestanden als laatste optie
+    function tryLoadDefaultMusic() {
+        // Lijst van mogelijke standaard bestanden om te proberen
+        const defaultOptions = [
+            'best-game-console-301284.mp3',
+            'pixel-fight-8-bit-arcade-music-background-music-for-video-208775.mp3',
+            'default2.mp3'
+        ];
+        
+        // Probeer elk bestand totdat er één werkt
+        let index = 0;
+        
+        function tryNextFile() {
+            if (index >= defaultOptions.length) {
+                console.error('Alle standaard muziekbestanden faalden');
+                return;
+            }
+            
+            const file = defaultOptions[index++];
+            console.log(`Directe poging met standaard muziek: ${file}`);
+            
+            loadMusic(`music/${file}`).catch(e => {
+                console.warn(`Kon ${file} niet laden:`, e);
+                tryNextFile(); // Probeer het volgende bestand
+            });
+        }
+        
+        tryNextFile();
     }
 }
 
