@@ -1019,6 +1019,49 @@ class Player {
                     }, 2000);
                     
                     // Multiplayer code removed - this was previously used for synchronizing collectibles
+                } else if (collectible.type === "HOURGLASS") {
+                    // Verzamel de zandloper en activeer slowmotion
+                    collectibles.splice(index, 1);
+                    
+                    // Activeer slowmotion voor alle objecten behalve deze speler
+                    if (!gameCore.gameState.slowMotion) {
+                        gameCore.gameState.slowMotion = true;
+                        gameCore.gameState.slowMotionPlayer = this;
+                        gameCore.gameState.slowMotionTime = 600; // 10 seconden bij 60fps
+                        gameCore.gameState.slowMotionFactor = 0.3; // 30% van normale snelheid
+                        
+                        // Toon bericht
+                        gameCore.gameState.message = "Tijd vertraagd! Andere wezens bewegen langzamer.";
+                        
+                        // Verwijder bericht na een tijdje
+                        setTimeout(() => {
+                            if (gameCore.gameState.message === "Tijd vertraagd! Andere wezens bewegen langzamer.") {
+                                gameCore.gameState.message = "";
+                            }
+                        }, 2000);
+                    } else {
+                        // Als al slowmotion actief is, verleng de tijd
+                        gameCore.gameState.slowMotionTime += 300; // Extra 5 seconden
+                        
+                        // Toon update bericht
+                        gameCore.gameState.message = "Tijd verder vertraagd!";
+                        
+                        // Verwijder bericht na een tijdje
+                        setTimeout(() => {
+                            if (gameCore.gameState.message === "Tijd verder vertraagd!") {
+                                gameCore.gameState.message = "";
+                            }
+                        }, 1500);
+                    }
+                    
+                    // Speel verzamelgeluid
+                    if (typeof gameAudio !== 'undefined' && typeof gameAudio.playSound === 'function') {
+                        gameAudio.playSound('collect', 0.8);
+                        // Speel ook een special powerup geluid
+                        setTimeout(() => {
+                            gameAudio.playSound('powerup-8-bit', 0.6);
+                        }, 300);
+                    }
                 } else if (collectible.type === "DOGFOOD" || !currentLevelData.puppy || currentLevelData.puppy.saved || gameCore.gameState.puppySaved) {
                     // Hondenvoer mag ALTIJD gepakt worden, zelfs als de puppy nog niet gered is
                     // Normale collectible (ster) mag alleen gepakt worden als de puppy gered is of er geen puppy is
@@ -1914,13 +1957,20 @@ function updatePuppy() {
     const currentLevelData = gameCore.currentLevel;
     if (!currentLevelData.puppy) return;
     
+    // Bepaal of slowmotion actief is en factor
+    const isSlowMotion = gameCore.gameState.slowMotion || false;
+    const slowMotionFactor = isSlowMotion ? (gameCore.gameState.slowMotionFactor || 0.3) : 1.0;
+    
     const puppy = currentLevelData.puppy;
     
     // Only process if the puppy hasn't been saved yet
     if (!puppy.saved && !gameCore.gameState.puppySaved) {
         // Animation: give the puppy a small movement (shaking) to make it noticeable
         // This is used by the renderer to position the puppy
-        puppy.offsetX = Math.sin(Date.now() / 300) * 2; // Slow shaking
+        // Pas slowmotion toe op het beven van de puppy als nodig
+        const shouldApplySlowMotion = isSlowMotion;
+        const shakeSpeed = shouldApplySlowMotion ? 300 / slowMotionFactor : 300;
+        puppy.offsetX = Math.sin(Date.now() / shakeSpeed) * 2; // Slow shaking
         
         // Check if a player touches (rescues) the puppy
         const hasMultiplePlayers = currentLevelData.allowedAnimals && currentLevelData.allowedAnimals.length > 1;
@@ -1998,6 +2048,10 @@ function updateEnemies(players) {
     
     // No updates if game is over
     if (gameCore.gameState.gameOver) return;
+    
+    // Bepaal of slowmotion actief is en factor
+    const isSlowMotion = gameCore.gameState.slowMotion || false;
+    const slowMotionFactor = isSlowMotion ? (gameCore.gameState.slowMotionFactor || 0.3) : 1.0;
     
     enemies.forEach(enemy => {
         // Initialize physics properties if they don't exist yet
@@ -2162,8 +2216,19 @@ function updateEnemies(players) {
                 }
             }
             
-            // Voer horizontale beweging uit
-            enemy.x += moveX;
+            // Voer horizontale beweging uit met slowmotion factor
+            // Als slowmotion actief is, controleer of deze vijand langzamer moet bewegen
+            // (alle wezens behalve de speler die de zandloper pakte)
+            const shouldApplySlowMotion = isSlowMotion && (!gameCore.gameState.slowMotionPlayer || 
+                (gameCore.gameState.slowMotionPlayer !== window.player1 && 
+                 gameCore.gameState.slowMotionPlayer !== window.player2));
+            
+            // Pas slowmotion toe op de beweging
+            if (shouldApplySlowMotion) {
+                enemy.x += moveX * slowMotionFactor;
+            } else {
+                enemy.x += moveX;
+            }
             
             // Controleer of de vijand moet omdraaien bij patrouilleren
             // Alleen als er geen speler of puppy wordt achtervolgd
@@ -2205,16 +2270,24 @@ function updateEnemies(players) {
                 }
             }
             
-            // Zwaartekracht toepassen
-            enemy.velY += gameCore.GRAVITY;
+            // Zwaartekracht toepassen met slowmotion factor
+            if (shouldApplySlowMotion) {
+                enemy.velY += gameCore.GRAVITY * slowMotionFactor;
+            } else {
+                enemy.velY += gameCore.GRAVITY;
+            }
             
             // Begrens vallende snelheid
             if (enemy.velY > gameCore.MAX_FALL_SPEED) {
                 enemy.velY = gameCore.MAX_FALL_SPEED;
             }
             
-            // Verticale beweging toepassen
-            enemy.y += enemy.velY;
+            // Verticale beweging toepassen met slowmotion factor
+            if (shouldApplySlowMotion) {
+                enemy.y += enemy.velY * slowMotionFactor;
+            } else {
+                enemy.y += enemy.velY;
+            }
             
             // Reset grondstatus
             enemy.onGround = false;

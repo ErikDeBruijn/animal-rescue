@@ -158,8 +158,8 @@ function loadLevel(levelIndex) {
     // We behouden de score tussen levels, dus reset niet tenzij de URL expliciet veranderd is
     // (bijvoorbeeld als de gebruiker een nieuw spel start)
 
-    // Update de URL met het huidige level voor delen en refreshen
-    window.location.hash = `level=${levelIndex}`;
+    // Update de URL met het huidige level voor delen en refreshen (1-based voor gebruiker)
+    window.location.hash = `level=${levelIndex + 1}`;
     
     // Update de editor link
     gameCore.updateEditorLink();
@@ -510,6 +510,23 @@ function gameLoop() {
         if (frameCount % 30 === 0) {
             if (window.gameControls && gameControls.debugKeyState) {
                 gameControls.debugKeyState();
+            }
+        }
+        
+        // Update slowmotion status als actief
+        if (gameCore.gameState.slowMotion) {
+            // Slow motion visueel effect - blauwachtige tint op het scherm
+            gameCore.ctx.fillStyle = 'rgba(100, 180, 255, 0.15)';
+            gameCore.ctx.fillRect(0, 0, gameCore.canvas.width, gameCore.canvas.height);
+            
+            // Verminder de timer
+            gameCore.gameState.slowMotionTime--;
+            
+            // Als timer afgelopen is, deactiveer slowmotion
+            if (gameCore.gameState.slowMotionTime <= 0) {
+                gameCore.gameState.slowMotion = false;
+                gameCore.gameState.slowMotionPlayer = null;
+                gameCore.gameState.slowMotionFactor = 1.0;
             }
         }
         

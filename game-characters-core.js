@@ -107,8 +107,8 @@ function drawPlayer(player) {
 
 // Draw enemies
 function drawEnemies() {
-    if (!window.levels) return;
-    const currentLevelData = window.levels[gameCore.currentLevel];
+    if (!gameCore.currentLevel) return;
+    const currentLevelData = gameCore.currentLevel;
     const enemies = currentLevelData.enemies || [];
     
     enemies.forEach(enemy => {

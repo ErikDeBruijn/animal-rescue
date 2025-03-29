@@ -97,6 +97,102 @@ function drawCollectible(collectible) {
         
         // Restore the canvas transformation
         gameCore.ctx.restore();
+    } else if (collectible.type === "HOURGLASS") {
+        // Draw a hourglass
+        const centerX = collectible.x + collectible.width/2;
+        const centerY = collectible.y + collectible.height/2;
+        
+        // Pulsing effect for the hourglass
+        const pulseTime = Date.now() / 500;
+        const pulseScale = 1.0 + Math.sin(pulseTime) * 0.05;
+        
+        gameCore.ctx.save();
+        gameCore.ctx.translate(centerX, centerY);
+        gameCore.ctx.scale(pulseScale, pulseScale);
+        
+        // Draw hourglass frame (light blue with golden frame)
+        gameCore.ctx.fillStyle = '#87CEFA'; // Light sky blue
+        
+        // Hourglass upper body
+        gameCore.ctx.beginPath();
+        const width = collectible.width * 0.7;
+        const height = collectible.height * 0.35;
+        
+        // Upper half trapezoid
+        gameCore.ctx.moveTo(-width/2, -height);
+        gameCore.ctx.lineTo(width/2, -height);
+        gameCore.ctx.lineTo(width/4, 0);
+        gameCore.ctx.lineTo(-width/4, 0);
+        gameCore.ctx.closePath();
+        gameCore.ctx.fill();
+        
+        // Lower half trapezoid 
+        gameCore.ctx.beginPath();
+        gameCore.ctx.moveTo(-width/4, 0);
+        gameCore.ctx.lineTo(width/4, 0);
+        gameCore.ctx.lineTo(width/2, height);
+        gameCore.ctx.lineTo(-width/2, height);
+        gameCore.ctx.closePath();
+        gameCore.ctx.fill();
+        
+        // Golden frame
+        gameCore.ctx.strokeStyle = '#DAA520'; // Golden frame
+        gameCore.ctx.lineWidth = 2;
+        
+        // Upper frame
+        gameCore.ctx.beginPath();
+        gameCore.ctx.moveTo(-width/2, -height);
+        gameCore.ctx.lineTo(width/2, -height);
+        gameCore.ctx.lineTo(width/4, 0);
+        gameCore.ctx.lineTo(-width/4, 0);
+        gameCore.ctx.closePath();
+        gameCore.ctx.stroke();
+        
+        // Lower frame
+        gameCore.ctx.beginPath();
+        gameCore.ctx.moveTo(-width/4, 0);
+        gameCore.ctx.lineTo(width/4, 0);
+        gameCore.ctx.lineTo(width/2, height);
+        gameCore.ctx.lineTo(-width/2, height);
+        gameCore.ctx.closePath();
+        gameCore.ctx.stroke();
+        
+        // Draw sand particles with animation
+        gameCore.ctx.fillStyle = '#FFD700'; // Gold color for sand
+        
+        // Animation for sand falling effect
+        const sandLevel = Math.abs(Math.sin(pulseTime * 0.5)); // 0 to 1 value for sand level
+        
+        // Upper chamber (decreasing sand)
+        const upperSandHeight = height * (1 - sandLevel) * 0.8;
+        gameCore.ctx.beginPath();
+        gameCore.ctx.moveTo(-width/2.2, -height + 2);
+        gameCore.ctx.lineTo(width/2.2, -height + 2);
+        gameCore.ctx.lineTo(width/4.4, -height + 2 + upperSandHeight);
+        gameCore.ctx.lineTo(-width/4.4, -height + 2 + upperSandHeight);
+        gameCore.ctx.closePath();
+        gameCore.ctx.fill();
+        
+        // Lower chamber (increasing sand)
+        const lowerSandHeight = height * sandLevel * 0.8;
+        gameCore.ctx.beginPath();
+        gameCore.ctx.moveTo(-width/4.4, height - 2 - lowerSandHeight);
+        gameCore.ctx.lineTo(width/4.4, height - 2 - lowerSandHeight);
+        gameCore.ctx.lineTo(width/2.2, height - 2);
+        gameCore.ctx.lineTo(-width/2.2, height - 2);
+        gameCore.ctx.closePath();
+        gameCore.ctx.fill();
+        
+        // Draw falling sand particles
+        gameCore.ctx.fillStyle = '#FFD700';
+        const particleSize = 1.5;
+        gameCore.ctx.beginPath();
+        gameCore.ctx.rect(-particleSize/2, -particleSize/2 - 5 + sandLevel * 10, particleSize, particleSize);
+        gameCore.ctx.rect(-particleSize - 1, particleSize/2 + sandLevel * 8, particleSize, particleSize);
+        gameCore.ctx.rect(particleSize/2, 2 + sandLevel * 6, particleSize, particleSize);
+        gameCore.ctx.fill();
+        
+        gameCore.ctx.restore();
     } else {
         // Default: Draw a star (original code)
         gameCore.ctx.fillStyle = 'gold';

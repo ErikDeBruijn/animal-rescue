@@ -6,6 +6,8 @@
 function getLevels(GROUND_LEVEL) {    return [
         {
     name: "AA!!! Draak!!!",
+    music: "retro-8bit-happy-videogame-music-243997.mp3",
+    theme: "day",
     allowedAnimals: ["UNICORN","CAT","MOLE"],
     startPositions: [
         {x: 50, y: 350},
@@ -35,7 +37,10 @@ function getLevels(GROUND_LEVEL) {    return [
     },
     collectibles: [
         {x: 453, y: 266, width: 30, height: 30},
-        {x: 210, y: 217, width: 30, height: 30, type: "PEPPER"}
+        {x: 210, y: 217, width: 30, height: 30, type: "PEPPER"},
+        {x: 445, y: 189, width: 30, height: 30, type: "DOGFOOD"},
+        {x: 597, y: 36, width: 30, height: 30, type: "DOGFOOD"},
+        {x: 275, y: 130, width: 30, height: 30, type: "HOURGLASS"}
     ]
 },
         {
@@ -52,7 +57,6 @@ function getLevels(GROUND_LEVEL) {    return [
         {x: 389, y: 270, width: 150, height: 20, type: "NORMAL"},
         {x: 650, y: 376, width: 150, height: 20, type: "NORMAL"},
         {x: 613, y: 195, width: 30, height: 200, type: "TREE"},
-        {x: 8, y: 357, width: 120, height: 40, type: "CLOUD"},
         {x: 692, y: 351, width: 100, height: 20, type: "TRAMPOLINE"},
         {x: 438, y: 197, width: 100, height: 20, type: "NORMAL"},
         {x: 315, y: 143, width: 100, height: 20, type: "NORMAL"},
@@ -73,8 +77,9 @@ function getLevels(GROUND_LEVEL) {    return [
         saved: false
     },
     collectibles: [
-        {x: 32, y: 23, width: 30, height: 30},
-        {x: 54, y: 284, width: 30, height: 30, type: "PEPPER"}
+        {x: 32, y: 23, width: 30, height: 30, type: "HOURGLASS"},
+        {x: 54, y: 284, width: 30, height: 30, type: "PEPPER"},
+        {x: 467, y: 340, width: 30, height: 30, type: "DOGFOOD"}
     ]
 },
         {
@@ -110,11 +115,12 @@ function getLevels(GROUND_LEVEL) {    return [
         saved: false
     },
     collectibles: [
-        {x: 380, y: 8, width: 30, height: 30}
+        {x: 380, y: 8, width: 30, height: 30},
+        {x: 154, y: 332, width: 30, height: 30, type: "HOURGLASS"}
     ]
 },
         {
-    name: "Irritante spikes!!!",
+    name: "Irritante spikes!",
     music: "level-vii-short-258782.mp3",
     theme: "night",
     allowedAnimals: ["SQUIRREL","UNICORN","CAT"],
@@ -648,9 +654,8 @@ function getLevels(GROUND_LEVEL) {    return [
     ]
 },
         {
-    name: "Binky's park",
+    name: "Trampoline park",
     music: "best-game-console-301284.mp3",
-    allowedAnimals: ["TURTLE","CAT","MOLE"],
     theme: "day",
     allowedAnimals: ["TURTLE","UNICORN","CAT","MOLE"],
     startPositions: [
@@ -661,7 +666,8 @@ function getLevels(GROUND_LEVEL) {    return [
         {x: 207, y: 177, width: 121, height: 221, type: "CLIMB"},
         {x: 212, y: 157, width: 100, height: 20, type: "TRAMPOLINE"},
         {x: 128, y: 369, width: 100, height: 20, type: "TRAMPOLINE"},
-        {x: 464, y: 133, width: 219, height: 101, type: "WATER"}
+        {x: 464, y: 133, width: 219, height: 101, type: "WATER"},
+        {x: 542, y: 56, width: 100, height: 20, type: "CLOUD"}
     ],
     traps: [
 
