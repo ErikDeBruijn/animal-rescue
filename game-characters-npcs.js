@@ -603,12 +603,17 @@ function drawPiranha(piranha) {
     // Determine direction based on movement
     const facingLeft = piranha.direction === -1;
     
-    // Body (blue)
-    gameCore.ctx.fillStyle = '#0077be'; // Blue color for piranha
-    gameCore.ctx.fillRect(piranha.x, piranha.y, piranha.width, piranha.height);
+    // Body (bluegreen top, red bottom)
+    // Top half (bluegreen)
+    gameCore.ctx.fillStyle = '#1a9b8d'; // Bluegreen color for top
+    gameCore.ctx.fillRect(piranha.x, piranha.y, piranha.width, piranha.height/2);
     
-    // Fish tail
-    gameCore.ctx.fillStyle = '#0077be';
+    // Bottom half (red)
+    gameCore.ctx.fillStyle = '#cc0000'; // Red color for bottom
+    gameCore.ctx.fillRect(piranha.x, piranha.y + piranha.height/2, piranha.width, piranha.height/2);
+    
+    // Fish tail (match the blue-green color)
+    gameCore.ctx.fillStyle = '#1a9b8d';
     gameCore.ctx.beginPath();
     
     if (facingLeft) {
@@ -688,7 +693,7 @@ function drawPiranha(piranha) {
     gameCore.ctx.fill();
     
     // Fins (top and bottom)
-    gameCore.ctx.fillStyle = '#006bb3'; // Slightly darker blue for fins
+    gameCore.ctx.fillStyle = '#0e7b70'; // Darker blue-green for fins
     
     // Top fin
     gameCore.ctx.beginPath();
@@ -706,16 +711,46 @@ function drawPiranha(piranha) {
     gameCore.ctx.lineTo(piranha.x + piranha.width * 0.5, piranha.y + piranha.height);
     gameCore.ctx.fill();
     
-    // Bubble effect in water (randomly)
-    if (Math.random() > 0.9) {
-        const bubbleSize = Math.random() * piranha.width * 0.1 + piranha.width * 0.05;
-        const bubbleX = facingLeft ? piranha.x + piranha.width : piranha.x;
-        const bubbleY = piranha.y + Math.random() * piranha.height;
+    // Bubble effect in water (randomly, more when hunting)
+    const bubbleChance = piranha.huntingPlayer ? 0.7 : 0.9; // Meer bubbels tijdens het jagen
+    if (Math.random() > bubbleChance) {
+        // Bepaal hoeveel bubbels we willen maken
+        const bubbleCount = piranha.huntingPlayer ? 2 : 1;
         
-        gameCore.ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+        for (let i = 0; i < bubbleCount; i++) {
+            const bubbleSize = Math.random() * piranha.width * 0.1 + piranha.width * 0.05;
+            const bubbleX = facingLeft ? 
+                            piranha.x + piranha.width - Math.random() * 15 : 
+                            piranha.x + Math.random() * 15;
+            const bubbleY = piranha.y + Math.random() * piranha.height;
+            
+            gameCore.ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            gameCore.ctx.beginPath();
+            gameCore.ctx.arc(bubbleX, bubbleY, bubbleSize, 0, Math.PI * 2);
+            gameCore.ctx.fill();
+        }
+    }
+    
+    // Toon een "alert" teken boven de piranha als deze een speler achtervolgt
+    if (piranha.huntingPlayer) {
+        // Teken een uitroepteken boven de piranha
+        gameCore.ctx.fillStyle = 'red';
         gameCore.ctx.beginPath();
-        gameCore.ctx.arc(bubbleX, bubbleY, bubbleSize, 0, Math.PI * 2);
+        gameCore.ctx.arc(
+            piranha.x + piranha.width/2,
+            piranha.y - 15,
+            5,
+            0, Math.PI * 2
+        );
         gameCore.ctx.fill();
+        
+        // Teken een kleine streep onder de cirkel
+        gameCore.ctx.fillRect(
+            piranha.x + piranha.width/2 - 1.5,
+            piranha.y - 8,
+            3,
+            6
+        );
     }
 }
 
