@@ -1067,7 +1067,6 @@ class Player {
                 // Dode piranha's kunnen geen schade aanrichten
                 if (enemy.isDead || enemy.canHurtPlayer === false) {
                     // Skip schade voor dode piranha's
-                    console.log("Collision met dode piranha - geen schade");
                 } 
                 // Als kat met actieve klauwen vijand aanraakt, verwijder vijand
                 else if (this.animalType === "CAT") {
@@ -2248,11 +2247,9 @@ function updateEnemies(players) {
                                 if (piranhaCenter < playerCenter) {
                                     // Naar beneden zwemmen (richting speler)
                                     enemy.y += enemy.speed * 0.8; // Veel sneller verticaal bewegen
-                                    console.log("Piranha zwemt omlaag naar speler");
                                 } else {
                                     // Naar boven zwemmen (richting speler)
                                     enemy.y -= enemy.speed * 0.8; // Veel sneller verticaal bewegen
-                                    console.log("Piranha zwemt omhoog naar speler");
                                 }
                                 
                                 // Maak dubbel zo veel bubbels als normaal tijdens het jagen

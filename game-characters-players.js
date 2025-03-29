@@ -61,7 +61,6 @@ function drawTurtle(player) {
     if (player.oxygenLevel !== undefined && player.isUnderwater) {
         // Decrease oxygen more slowly (4x slower than originally)
         player.oxygenLevel = Math.max(0, player.oxygenLevel - 0.25);
-        console.log("Turtle oxygen level underwater: " + player.oxygenLevel);
     }
     
     // Draw oxygen meter above the turtle, but only if it's not 100%
