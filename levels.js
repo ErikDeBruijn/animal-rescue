@@ -326,7 +326,7 @@ function getLevels(GROUND_LEVEL) {    return [
 },
         {
     name: "Raak de spikes niet aan!!!",
-    allowedAnimals: ["TURTLE","UNICORN", "CAT"],
+    allowedAnimals: ["TURTLE","UNICORN","CAT"],
     startPositions: [
         {x: 50, y: 350},
         {x: 100, y: 350}
@@ -349,13 +349,13 @@ function getLevels(GROUND_LEVEL) {    return [
         {x: 49, y: 191, width: 100, height: 20, type: "CLOUD"},
         {x: 128, y: 188, width: 100, height: 20, type: "CLOUD"},
         {x: 209, y: 191, width: 100, height: 20, type: "CLOUD"},
-        {x: 180, y: 298, width: 619, height: 85, type: "WATER"}
+        {x: 180, y: 314, width: 619, height: 85, type: "WATER"}
     ],
     traps: [
         {x: 178, y: 381, width: 622, height: 20, type: "SPIKES"}
     ],
     enemies: [
-        {x: 315, y: 120, width: 60, height: 50, type: "DRAGON", patrolDistance: 100, speed: 1}
+        {x: 341, y: 306, width: 60, height: 50, type: "PIRANHA", patrolDistance: 100, speed: 1}
     ],
     puppy: {
         x: 457, 
@@ -370,7 +370,7 @@ function getLevels(GROUND_LEVEL) {    return [
 },
         {
     name: "Pak de sterren!!!",
-    allowedAnimals: ["SQUIRREL","TURTLE","UNICORN", "CAT"],
+    allowedAnimals: ["SQUIRREL","TURTLE","UNICORN","CAT"],
     startPositions: [
         {x: 50, y: 350},
         {x: 100, y: 350}
@@ -381,55 +381,7 @@ function getLevels(GROUND_LEVEL) {    return [
         {x: 408, y: 381, width: 100, height: 20, type: "WATER"},
         {x: 443, y: 380, width: 100, height: 20, type: "WATER"},
         {x: 587, y: 380, width: 100, height: 20, type: "WATER"},
-        {x: 662, y: 378, width: 100, height: 20, type: "WATER"},
-        {x: 700, y: 51, width: 100, height: 20, type: "WATER"},
-        {x: 660, y: 26, width: 100, height: 20, type: "WATER"},
-        {x: 652, y: 6, width: 100, height: 20, type: "WATER"},
-        {x: 656, y: 41, width: 100, height: 20, type: "WATER"},
-        {x: 649, y: 59, width: 100, height: 20, type: "WATER"},
-        {x: 713, y: 64, width: 100, height: 20, type: "WATER"},
-        {x: 645, y: 78, width: 100, height: 20, type: "WATER"},
-        {x: 705, y: 83, width: 100, height: 20, type: "WATER"},
-        {x: 636, y: 100, width: 100, height: 20, type: "WATER"},
-        {x: 707, y: 103, width: 100, height: 20, type: "WATER"},
-        {x: 631, y: 124, width: 100, height: 20, type: "WATER"},
-        {x: 726, y: 125, width: 100, height: 20, type: "WATER"},
-        {x: 628, y: 114, width: 100, height: 20, type: "WATER"},
-        {x: 626, y: 88, width: 100, height: 20, type: "WATER"},
-        {x: 626, y: 65, width: 100, height: 20, type: "WATER"},
-        {x: 620, y: 42, width: 100, height: 20, type: "WATER"},
-        {x: 622, y: 18, width: 100, height: 20, type: "WATER"},
-        {x: 629, y: 3, width: 100, height: 20, type: "WATER"},
-        {x: 637, y: 144, width: 100, height: 20, type: "WATER"},
-        {x: 720, y: 144, width: 100, height: 20, type: "WATER"},
-        {x: 631, y: 159, width: 100, height: 20, type: "WATER"},
-        {x: 633, y: 188, width: 100, height: 20, type: "WATER"},
-        {x: 633, y: 180, width: 100, height: 20, type: "WATER"},
-        {x: 631, y: 203, width: 100, height: 20, type: "WATER"},
-        {x: 629, y: 220, width: 100, height: 20, type: "WATER"},
-        {x: 628, y: 238, width: 100, height: 20, type: "WATER"},
-        {x: 625, y: 259, width: 100, height: 20, type: "WATER"},
-        {x: 627, y: 277, width: 100, height: 20, type: "WATER"},
-        {x: 624, y: 301, width: 100, height: 20, type: "WATER"},
-        {x: 623, y: 326, width: 100, height: 20, type: "WATER"},
-        {x: 623, y: 348, width: 100, height: 20, type: "WATER"},
-        {x: 617, y: 362, width: 100, height: 20, type: "WATER"},
-        {x: 717, y: 160, width: 100, height: 20, type: "WATER"},
-        {x: 723, y: 185, width: 100, height: 20, type: "WATER"},
-        {x: 723, y: 179, width: 100, height: 20, type: "WATER"},
-        {x: 720, y: 197, width: 100, height: 20, type: "WATER"},
-        {x: 718, y: 209, width: 100, height: 20, type: "WATER"},
-        {x: 714, y: 231, width: 100, height: 20, type: "WATER"},
-        {x: 713, y: 246, width: 100, height: 20, type: "WATER"},
-        {x: 713, y: 266, width: 100, height: 20, type: "WATER"},
-        {x: 710, y: 288, width: 100, height: 20, type: "WATER"},
-        {x: 715, y: 312, width: 100, height: 20, type: "WATER"},
-        {x: 713, y: 302, width: 100, height: 20, type: "WATER"},
-        {x: 622, y: 316, width: 100, height: 20, type: "WATER"},
-        {x: 624, y: 291, width: 100, height: 20, type: "WATER"},
-        {x: 718, y: 328, width: 100, height: 20, type: "WATER"},
-        {x: 719, y: 345, width: 100, height: 20, type: "WATER"},
-        {x: 719, y: 357, width: 100, height: 20, type: "WATER"},
+        {x: 649, y: 33, width: 151, height: 363, type: "WATER"},
         {x: 50, y: 85, width: 100, height: 20, type: "CLOUD"},
         {x: 225, y: 82, width: 100, height: 20, type: "CLOUD"},
         {x: 414, y: 84, width: 100, height: 20, type: "CLOUD"},
@@ -514,6 +466,7 @@ function getLevels(GROUND_LEVEL) {    return [
 },
         {
     name: "Zwemmen!!!",
+    music: "pixel-fight-8-bit-arcade-music-background-music-for-video-208775.mp3",
     allowedAnimals: ["TURTLE","UNICORN","CAT"],
     startPositions: [
         {x: 50, y: 350},
@@ -524,7 +477,7 @@ function getLevels(GROUND_LEVEL) {    return [
         {x: 31, y: 98, width: 100, height: 20, type: "CLOUD"},
         {x: 32, y: 168, width: 100, height: 20, type: "CLOUD"},
         {x: 28, y: 253, width: 100, height: 20, type: "CLOUD"},
-        {x: 144, y: 73, width: 656, height: 325, type: "WATER"}
+        {x: 175, y: 96, width: 625, height: 354, type: "WATER"}
     ],
     traps: [
         {x: 407, y: 209, width: 40, height: 20, type: "SPIKES"},
@@ -538,7 +491,7 @@ function getLevels(GROUND_LEVEL) {    return [
         {x: 725, y: 214, width: 40, height: 20, type: "SPIKES"}
     ],
     enemies: [
-        {x: 589, y: 146, width: 50, height: 40, type: "LION", patrolDistance: 100, speed: 1}
+        {x: 589, y: 146, width: 50, height: 40, type: "PIRANHA", patrolDistance: 100, speed: 1}
     ],
     puppy: {
         x: 350, 
@@ -660,6 +613,35 @@ function getLevels(GROUND_LEVEL) {    return [
     },
     collectibles: [
         {x: 770, y: 119, width: 30, height: 30, type: "STAR"}
+    ]
+},
+        {
+    name: "Lopende banden",
+    music: "retro-8bit-happy-videogame-music-243997.mp3",
+    allowedAnimals: ["SQUIRREL","TURTLE","UNICORN","CAT","MOLE"],
+    startPositions: [
+        {x: NaN, y: NaN},
+        {x: 100, y: 350}
+    ],
+    platforms: [
+        {x: 201, y: 92, width: 100, height: 20, type: "TREADMILL", speed: 2},
+        {x: 309, y: 153, width: 100, height: 20, type: "TREADMILL", speed: 2}
+    ],
+    traps: [
+
+    ],
+    enemies: [
+
+    ],
+    puppy: {
+        x: 350, 
+        y: 375, 
+        width: 30, 
+        height: 25, 
+        saved: false
+    },
+    collectibles: [
+        {x: 650, y: 150, width: 30, height: 30, type: "STAR"}
     ]
 }
     ];
