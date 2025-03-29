@@ -244,3 +244,53 @@ button:hover {
     border: 1px solid white; 
     margin-left: 5px;
 }
+
+/* Fullscreen knop stijl */
+#fullscreen-button {
+    position: absolute;
+    top: 10px;
+    left: 60px; /* Plaats naast de audio knop (die is 40px breed + 10px afstand) */
+    background-color: #45882f;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 5px 10px;
+    cursor: pointer;
+    font-size: 16px;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+}
+
+#fullscreen-button:hover {
+    background-color: #5aa93f;
+}
+
+/* Fullscreen icon styling */
+#fullscreen-button span {
+    font-size: 20px;
+    margin-right: 5px;
+}
+
+/* Game container stijl */
+#game-container {
+    position: relative;
+    margin-top: 20px;
+}
+
+/* Fullscreen specifieke stijlen */
+#game-container:fullscreen,
+#game-container:-webkit-full-screen,
+#game-container:-moz-full-screen,
+#game-container:-ms-fullscreen {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #8ecbf5;
+    overflow: hidden;
+}
