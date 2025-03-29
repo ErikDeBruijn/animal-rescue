@@ -129,15 +129,13 @@ function getLevels(GROUND_LEVEL) {    return [
     traps: [
         {x: 582, y: 380, width: 40, height: 20, type: "SPIKES"},
         {x: 536, y: 379, width: 40, height: 20, type: "SPIKES"},
-        {x: 401, y: 379, width: 40, height: 20, type: "SPIKES"},
-        {x: 356, y: 379, width: 40, height: 20, type: "SPIKES"},
-        {x: 221, y: 381, width: 40, height: 20, type: "SPIKES"},
+        {x: 320, y: 378, width: 83, height: 20, type: "FIRE"},
         {x: 719, y: 380, width: 40, height: 20, type: "SPIKES"},
         {x: 761, y: 378, width: 40, height: 20, type: "SPIKES"},
         {x: 754, y: 178, width: 40, height: 20, type: "SPIKES"},
         {x: 646, y: 177, width: 40, height: 20, type: "SPIKES"},
         {x: 495, y: 178, width: 40, height: 20, type: "SPIKES"},
-        {x: 178, y: 379, width: 40, height: 20, type: "SPIKES"}
+        {x: 185, y: 379, width: 72, height: 20, type: "FIRE"}
     ],
     enemies: [
         {x: 626, y: 355, width: 50, height: 40, type: "LION", patrolDistance: 100, speed: 1}
@@ -590,10 +588,9 @@ function getLevels(GROUND_LEVEL) {    return [
         {x: 695, y: 286, width: 100, height: 20, type: "WATER"}
     ],
     traps: [
-
+        {x: 151, y: 378, width: 161, height: 20, type: "FIRE"}
     ],
     enemies: [
-        {x: 238, y: 354, width: 50, height: 40, type: "LION", patrolDistance: 100, speed: 1},
         {x: 444, y: 355, width: 50, height: 40, type: "LION", patrolDistance: 100, speed: 1},
         {x: 606, y: 359, width: 50, height: 40, type: "LION", patrolDistance: 100, speed: 1},
         {x: 235, y: 5, width: 50, height: 40, type: "LION", patrolDistance: 100, speed: 1},
@@ -618,14 +615,47 @@ function getLevels(GROUND_LEVEL) {    return [
         {
     name: "Lopende banden",
     music: "retro-8bit-happy-videogame-music-243997.mp3",
-    allowedAnimals: ["SQUIRREL","TURTLE","UNICORN","CAT","MOLE"],
+    allowedAnimals: ["UNICORN","CAT"],
     startPositions: [
-        {x: NaN, y: NaN},
-        {x: 100, y: 350}
+        {x: 223, y: 54},
+        {x: 625, y: 58}
     ],
     platforms: [
         {x: 201, y: 92, width: 100, height: 20, type: "TREADMILL", speed: 2},
-        {x: 309, y: 153, width: 100, height: 20, type: "TREADMILL", speed: 2}
+        {x: 309, y: 153, width: 100, height: 20, type: "TREADMILL", speed: 4},
+        {x: 617, y: 98, width: 100, height: 20, type: "TREADMILL", speed: -2},
+        {x: 514, y: 154, width: 100, height: 20, type: "TREADMILL", speed: -2}
+    ],
+    traps: [
+
+    ],
+    enemies: [
+
+    ],
+    puppy: {
+        x: 350, 
+        y: 375, 
+        width: 30, 
+        height: 25, 
+        saved: false
+    },
+    collectibles: [
+        {x: 650, y: 150, width: 30, height: 30, type: "STAR"}
+    ]
+},
+        {
+    name: "Binky's park",
+    music: "best-game-console-301284.mp3",
+    allowedAnimals: ["TURTLE","CAT","MOLE"],
+    startPositions: [
+        {x: 50, y: 350},
+        {x: 100, y: 350}
+    ],
+    platforms: [
+        {x: 207, y: 177, width: 121, height: 221, type: "CLIMB"},
+        {x: 212, y: 157, width: 100, height: 20, type: "TRAMPOLINE"},
+        {x: 128, y: 369, width: 100, height: 20, type: "TRAMPOLINE"},
+        {x: 464, y: 133, width: 219, height: 101, type: "WATER"}
     ],
     traps: [
 

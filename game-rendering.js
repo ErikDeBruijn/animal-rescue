@@ -108,6 +108,147 @@ function drawTrap(trap) {
             gameCore.ctx.lineTo(trap.x + i * spikeWidth + spikeWidth, trap.y + trap.height - 5);
             gameCore.ctx.fill();
         }
+    } else if (trap.type === "FIRE") {
+        // Fire trap with animated flames
+        const time = Date.now() / 25; // Even faster animation speed (was 50)
+        
+        // Draw base (logs or coals)
+        gameCore.ctx.fillStyle = '#3a1700'; // Dark brown for logs
+        gameCore.ctx.fillRect(trap.x, trap.y + trap.height - 6, trap.width, 6);
+        
+        // Draw fire embers/coals with glow - faster pulsing
+        gameCore.ctx.fillStyle = '#ff3800'; // Glowing embers
+        for (let i = 0; i < trap.width; i += 6) {
+            const emberSize = 3 + Math.sin(time * 0.4 + i * 0.5) * 1.5; // Even more intense pulsing
+            gameCore.ctx.beginPath();
+            gameCore.ctx.arc(trap.x + i + 3, trap.y + trap.height - 3, emberSize, 0, Math.PI * 2);
+            gameCore.ctx.fill();
+        }
+        
+        // Upward movement effect using time - faster oscillation but same amplitude
+        const upwardMovement = Math.sin(time * 0.4) * 3; // Faster vertical oscillation
+        
+        // Draw animated flames
+        const flameCount = Math.ceil(trap.width / 15);
+        const flameWidth = trap.width / flameCount;
+        
+        for (let i = 0; i < flameCount; i++) {
+            // Get oscillating height modifier for each flame to simulate rising motion
+            // Faster oscillation but same amplitude
+            const heightMod1 = Math.sin(time * 0.5 + i) * 0.2 + 1; // 0.8-1.2 range
+            const heightMod2 = Math.sin(time * 0.45 + i * 2) * 0.15 + 1; // 0.85-1.15 range
+            const heightMod3 = Math.sin(time * 0.55 + i * 1.5) * 0.1 + 1; // 0.9-1.1 range
+            
+            // Multiple flame layers with different colors
+            drawFlame(
+                trap.x + i * flameWidth + flameWidth/2, 
+                trap.y + trap.height - 5 + upwardMovement, 
+                flameWidth * 0.8, 
+                trap.height * 1.7 * heightMod1, // Taller flames
+                time + i * 3, 
+                '#ff5a00' // Orange
+            );
+            
+            drawFlame(
+                trap.x + i * flameWidth + flameWidth/2, 
+                trap.y + trap.height - 5 + upwardMovement * 0.8, 
+                flameWidth * 0.6, 
+                trap.height * 1.4 * heightMod2, // Taller flames
+                time + i * 2 + 10, 
+                '#ffdd00' // Yellow
+            );
+            
+            drawFlame(
+                trap.x + i * flameWidth + flameWidth/2, 
+                trap.y + trap.height - 5 + upwardMovement * 0.6, 
+                flameWidth * 0.4, 
+                trap.height * 1.1 * heightMod3, // Taller flames
+                time + i * 4 + 5, 
+                '#ffffff' // White-hot center
+            );
+        }
+        
+        // Draw smoke particles
+        gameCore.ctx.fillStyle = 'rgba(100, 100, 100, 0.3)';
+        for (let i = 0; i < 5; i++) { // More smoke particles
+            // Much faster rising smoke
+            const smokeSpeed = time * 0.06 + i * 5; // Double the speed
+            const verticalOffset = (smokeSpeed % 15) * 3; // Makes smoke rise faster
+            
+            const smokeX = trap.x + Math.sin(time * 0.15 + i * 10) * trap.width/3 + trap.width/2; // Faster horizontal drift
+            const smokeY = trap.y - trap.height - i * 12 - verticalOffset - Math.sin(time * 0.25 + i) * 5; // Faster vertical movement
+            const smokeSize = 4 + Math.sin(time * 0.4 + i * 2) * 2; // Faster size fluctuation
+            
+            gameCore.ctx.beginPath();
+            gameCore.ctx.arc(smokeX, smokeY, smokeSize, 0, Math.PI * 2);
+            gameCore.ctx.fill();
+        }
+        
+        // Heat distortion (if trap was active for a while)
+        if (!trap.soundPlaying && Math.random() < 0.1) {
+            // Play fire sound with 10% chance per frame if not already playing
+            try {
+                if (typeof gameAudio !== 'undefined' && gameAudio.playSound) {
+                    gameAudio.playSound('fire', 0.4);
+                    trap.soundPlaying = true;
+                    
+                    // Reset sound playing flag after a delay to allow replaying
+                    setTimeout(() => {
+                        trap.soundPlaying = false;
+                    }, 2000);
+                }
+            } catch (e) {
+                console.error('Error playing fire sound:', e);
+            }
+        }
+    }
+    
+    // Helper function to draw a flame shape
+    function drawFlame(x, y, width, height, time, color) {
+        const waveAmount = width * 0.38; // More wavy for faster apparent motion
+        
+        gameCore.ctx.fillStyle = color;
+        gameCore.ctx.beginPath();
+        
+        // Start at the bottom center
+        gameCore.ctx.moveTo(x, y);
+        
+        // Calculate vertical stretch factor (flames stretch more at the top) - faster fluctuation
+        const stretchFactor = 1.2 + Math.sin(time * 0.3) * 0.3;
+        
+        // Left flame edge (wavy, uses sine wave with upward motion)
+        for (let i = 0; i <= 1; i += 0.1) {
+            // Apply more stretch to higher parts of the flame (upward rising effect)
+            const verticalStretch = i * i * stretchFactor;
+            const py = y - height * (i + verticalStretch * 0.2);
+            
+            // Much faster oscillation for more lively flames
+            const waveFactor = Math.sin(time * 0.6 + i * 15) * waveAmount * i;
+            const px = x - width/2 * (1 - i) + waveFactor;
+            
+            gameCore.ctx.lineTo(px, py);
+        }
+        
+        // Flame tip (varies with time) - more dynamic with faster movement
+        const tipOffset = Math.sin(time * 0.5) * (width * 0.3); // Faster movement, slightly larger range
+        const tipHeight = height * (1 + Math.sin(time * 0.4) * 0.15); // Faster varying height
+        gameCore.ctx.lineTo(x + tipOffset, y - tipHeight);
+        
+        // Right flame edge (wavy, different phase)
+        for (let i = 1; i >= 0; i -= 0.1) {
+            // Apply more stretch to higher parts of the flame (upward rising effect)
+            const verticalStretch = i * i * stretchFactor;
+            const py = y - height * (i + verticalStretch * 0.2);
+            
+            // Different phase and much faster oscillation on the right side
+            const waveFactor = Math.sin(time * 0.6 + i * 15 + 3) * waveAmount * i;
+            const px = x + width/2 * (1 - i) + waveFactor;
+            
+            gameCore.ctx.lineTo(px, py);
+        }
+        
+        gameCore.ctx.closePath();
+        gameCore.ctx.fill();
     }
 }
 
