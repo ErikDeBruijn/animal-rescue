@@ -1063,8 +1063,14 @@ class Player {
         enemies.forEach((enemy, enemyIndex) => {
             // Check direct collision with player
             if (this.collidesWithObject(enemy)) {
+                // Controleer eerst of de vijand een dode piranha is
+                // Dode piranha's kunnen geen schade aanrichten
+                if (enemy.isDead || enemy.canHurtPlayer === false) {
+                    // Skip schade voor dode piranha's
+                    console.log("Collision met dode piranha - geen schade");
+                } 
                 // Als kat met actieve klauwen vijand aanraakt, verwijder vijand
-                if (this.animalType === "CAT") {
+                else if (this.animalType === "CAT") {
                     console.log(`Cat colliding with enemy! clawActive: ${this.clawActive}`);
                     
                     if (this.clawActive) {
@@ -1943,6 +1949,31 @@ function updateEnemies(players) {
             enemy.onGround = false;  // Whether the enemy is on ground/platform
         }
         
+        // Skip alle bewegingslogica voor dode piranha's
+        // Dode piranha's bewegen niet, ze vallen alleen door zwaartekracht
+        if (enemy.isDead) {
+            // Alleen toepassen van zwaartekracht
+            enemy.velY += gameCore.GRAVITY;
+            
+            // Limiet aan vallende snelheid
+            if (enemy.velY > gameCore.MAX_FALL_SPEED) {
+                enemy.velY = gameCore.MAX_FALL_SPEED;
+            }
+            
+            // Alleen verticale beweging (vallen)
+            enemy.y += enemy.velY;
+            
+            // Controleer grondcollisie
+            if (enemy.y + enemy.height >= gameCore.GROUND_LEVEL) {
+                enemy.y = gameCore.GROUND_LEVEL - enemy.height;
+                enemy.velY = 0;
+                enemy.onGround = true;
+            }
+            
+            // Skip alle andere bewegingslogica
+            return;
+        }
+        
         // Initialize fire breathing for dragons
         if (enemy.type === "DRAGON" && enemy.fireBreathingTimer === undefined) {
             enemy.fireBreathingTimer = 0;
@@ -2297,9 +2328,22 @@ function updateEnemies(players) {
                             
                             return; // Skip andere platform checks voor piranha's in water
                         } else {
-                            // Piranha is buiten water, niet laten bewegen
+                            // Piranha is buiten water, markeer als dood
                             enemy.isSwimming = false;
                             enemy.huntingPlayer = false;
+                            enemy.isDead = true;  // Markeer de piranha als dood
+                            
+                            // Niet meer laten bewegen, alleen laten vallen door zwaartekracht
+                            enemy.velX = 0;       // Stop horizontale beweging
+                            enemy.direction = enemy.direction || 1; // Behoud richting voor tekening
+                            
+                            // Vertraag licht vallende piranha (lijkt meer op een dood visje)
+                            enemy.velY = Math.min(enemy.velY, 2);
+                            
+                            // Verhinderen dat de piranha spelers kan beschadigen
+                            enemy.canHurtPlayer = false;
+                            
+                            console.log("Piranha gestorven - buiten water");
                         }
                     }
                 } 

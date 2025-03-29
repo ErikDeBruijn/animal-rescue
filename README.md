@@ -107,7 +107,7 @@ Het spel bevat meerdere levels met toenemende moeilijkheidsgraad:
 - **Lasers**: Dodelijke horizontale stralen die niemand kan passeren.
 - **Leeuwen**: Gevaarlijke vijanden die het op jullie puppy hebben gemunt.
 - **Draken**: Vuurspuwende vijanden! Pas op voor hun vlammen.
-- **Piranha's**: Gevaarlijke vissen die in water zwemmen. Ze achtervolgen je agressief zodra je in het water komt, dus probeer ze te vermijden!
+- **Piranha's**: Gevaarlijke vissen die in water zwemmen. Ze achtervolgen je agressief zodra je in het water komt, dus probeer ze te vermijden! Piranha's die uit het water raken floppen hulpeloos op hun rug en kunnen geen schade meer aanrichten.
 - **Pepers**: Verzamel deze om tijdelijk vuur te kunnen spuwen en vijanden te verslaan.
 - **Puppy**: Red de puppy voordat je de ster verzamelt!
 - **Sterren**: Verzamel de ster om het level te voltooien (nadat je de puppy hebt gered) en scoor 50 punten per ster.

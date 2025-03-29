@@ -603,6 +603,56 @@ function drawPiranha(piranha) {
     // Determine direction based on movement
     const facingLeft = piranha.direction === -1;
     
+    // Controleer of de piranha dood is (buiten water)
+    if (piranha.isDead) {
+        // Save the current context state
+        gameCore.ctx.save();
+        
+        // Translate to the center of the piranha
+        gameCore.ctx.translate(
+            piranha.x + piranha.width/2,
+            piranha.y + piranha.height/2
+        );
+        
+        // Rotate 180 degrees (upside down)
+        gameCore.ctx.rotate(Math.PI);
+        
+        // Draw back at the negative position to center the rotated piranha
+        // Body (grayish color when dead)
+        // Top half (grayish-green)
+        gameCore.ctx.fillStyle = '#607d79'; // Faded bluegreen color for top
+        gameCore.ctx.fillRect(-piranha.width/2, -piranha.height/2, piranha.width, piranha.height/2);
+        
+        // Bottom half (grayish-red)
+        gameCore.ctx.fillStyle = '#7a4242'; // Faded red color for bottom
+        gameCore.ctx.fillRect(-piranha.width/2, 0, piranha.width, piranha.height/2);
+        
+        // Restore the context for further drawing
+        gameCore.ctx.restore();
+        
+        // Add X for eyes (dead piranha)
+        const eyeX = facingLeft ? piranha.x + piranha.width * 0.2 : piranha.x + piranha.width * 0.8;
+        const eyeY = piranha.y + piranha.height * 0.3;
+        
+        // Draw X mark
+        gameCore.ctx.strokeStyle = 'black';
+        gameCore.ctx.lineWidth = 2;
+        
+        // X shape for eye
+        gameCore.ctx.beginPath();
+        gameCore.ctx.moveTo(eyeX - 4, eyeY - 4);
+        gameCore.ctx.lineTo(eyeX + 4, eyeY + 4);
+        gameCore.ctx.moveTo(eyeX + 4, eyeY - 4);
+        gameCore.ctx.lineTo(eyeX - 4, eyeY + 4);
+        gameCore.ctx.stroke();
+        
+        // Reset line width
+        gameCore.ctx.lineWidth = 1;
+        
+        return; // Skip rest of drawing for dead piranha
+    }
+    
+    // Regular piranha drawing (alive)
     // Body (bluegreen top, red bottom)
     // Top half (bluegreen)
     gameCore.ctx.fillStyle = '#1a9b8d'; // Bluegreen color for top
