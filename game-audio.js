@@ -19,6 +19,12 @@ let userInteractionOccurred = false;
 // Houdt bij welke muziek we willen afspelen zodra gebruikersinteractie heeft plaatsgevonden
 let pendingMusicToPlay = null;
 
+// Event listener voor het document om gebruikersinteractie te detecteren
+document.addEventListener('DOMContentLoaded', () => {
+    // We wachten tot de pagina volledig geladen is
+    setupUserInteractionDetection();
+});
+
 // Laad een geluidsbestand
 function loadSound(name, path) {
     console.log(`Bezig met laden van geluid: ${name} van pad: ${path}`);
