@@ -499,11 +499,40 @@ function drawPuppy(puppy) {
         
         // Speel het puppyCrying geluid af wanneer de help-bubbel verschijnt (bij eerste frame)
         if (!puppy.helpSoundPlayed) {
-            // Gebruik het gameAudio systeem om het geluid af te spelen
-            if (gameAudio.sounds['puppyCrying']) {
-                gameAudio.playSound('puppyCrying');
-            }
+            // Reset flag zodat we maximaal elke 9 seconden het geluid proberen af te spelen (als het mislukt)
             puppy.helpSoundPlayed = true;
+            
+            // Gebruik het gameAudio systeem om het geluid af te spelen
+            // We voegen extra foutafhandeling toe specifiek voor het puppy geluid
+            try {
+                console.log('Puppy hulpgeluid afspelen...');
+                
+                // Voeg een extra controle toe om te zien of het geluid daadwerkelijk beschikbaar is
+                if (gameAudio && gameAudio.sounds && gameAudio.sounds['puppyCrying']) {
+                    gameAudio.playSound('puppyCrying');
+                } else {
+                    // Het geluid is niet beschikbaar, controleer of de speelfunctie beschikbaar is
+                    console.warn('Puppy geluid niet gevonden, probeer via fallback methode');
+                    
+                    // Directe fallback als het geluid niet beschikbaar is
+                    if (gameAudio && typeof gameAudio.playSound === 'function') {
+                        // Probeert andere hondgeluiden als het primaire geluid niet werkt
+                        ['puppy', 'dog', 'bark'].forEach(alternativeName => {
+                            if (gameAudio.sounds[alternativeName]) {
+                                console.log(`Probeer alternatief geluid: ${alternativeName}`);
+                                gameAudio.playSound(alternativeName);
+                                return; // Stop na het eerste geldige alternatief
+                            }
+                        });
+                    }
+                }
+            } catch (e) {
+                console.error('Fout bij afspelen puppy help geluid:', e);
+                // Reset de helpSoundPlayed flag zodat we het later nog een keer proberen
+                setTimeout(() => {
+                    puppy.helpSoundPlayed = false;
+                }, 3000); // Probeer over 3 seconden nog een keer
+            }
         }
     } else if (puppy.helpCounter >= 550) {
         // Verberg de help-bubbel na 9.2 seconden
