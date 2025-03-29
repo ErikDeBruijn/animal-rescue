@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Functie die controleert of alle benodigde game componenten geladen zijn
 function initializeGameWhenReady() {
-    if (!window.gameEntities || !window.gameCore || !window.gameControls || !window.gameRendering || !window.gameCharacters) {
+    if (!window.gameEntities || !window.gameCore || !window.gameControls || !window.gameRendering || !window.gameCharacters || !window.gameAudio) {
         // Als nog niet alle componenten geladen zijn, wacht dan 100ms en probeer opnieuw
         // Geen console.log meer om spamming te voorkomen
         setTimeout(initializeGameWhenReady, 100);
@@ -69,8 +69,9 @@ function init() {
     // Dit wordt hier gedaan omdat we nu de level info hebben
     resizeGameArea();
     
-    // Laad geluidseffecten
-    loadGameSounds();
+    // Laad geluidseffecten en voeg geluidsbediening toe
+    gameAudio.loadGameSounds();
+    gameAudio.addSoundControl();
     
     // Start de game loop
     gameLoop();
@@ -84,126 +85,9 @@ function resizeGameArea() {
     // Dit kan later gebruikt worden voor responsive spel weergave
 }
 
-// Laad alle geluidseffecten
-function loadGameSounds() {
-    // Definieer het pad naar de geluidsbestanden (bijvoorbeeld in een nieuwe 'sounds' map)
-    const soundsPath = 'sounds/';
-    
-    // Speel geluiden met standaard volumes
-    const soundsToLoad = [
-        { name: 'jump', file: 'jump.mp3', volume: 0.7 },
-        { name: 'splash', file: 'splash.mp3', volume: 0.6 },
-        { name: 'collect', file: 'collect.mp3', volume: 0.8 },
-        { name: 'puppy', file: 'puppy.mp3', volume: 0.9 },
-        { name: 'claw', file: 'claw.mp3', volume: 0.5 },
-        { name: 'dig', file: 'dig.mp3', volume: 0.6 },
-        { name: 'bounce', file: 'bounce.mp3', volume: 0.7 },
-        { name: 'fire', file: 'fire.mp3', volume: 0.5 },
-        { name: 'gameOver', file: 'game-over.mp3', volume: 0.8 },
-        { name: 'underwater', file: 'under-water.mp3', volume: 0.4, loop: true }
-    ];
-    
-    // Maak een visuele indicator tijdens het laden
-    const loadingIndicator = document.createElement('div');
-    loadingIndicator.className = 'sound-loading';
-    loadingIndicator.textContent = 'Geluiden laden...';
-    loadingIndicator.style.position = 'absolute';
-    loadingIndicator.style.bottom = '10px';
-    loadingIndicator.style.right = '10px';
-    loadingIndicator.style.background = 'rgba(0,0,0,0.5)';
-    loadingIndicator.style.color = 'white';
-    loadingIndicator.style.padding = '5px 10px';
-    loadingIndicator.style.borderRadius = '5px';
-    document.body.appendChild(loadingIndicator);
-    
-    // Sla de geluidsinfo op in een global object zodat loadSound er bij kan
-    window._soundLoadInfo = {};
-    soundsToLoad.forEach(sound => {
-        window._soundLoadInfo[sound.name] = {
-            volume: sound.volume,
-            loop: sound.loop
-        };
-    });
-    
-    // Probeer eerst .mp3 en .m4a bestanden te vinden
-    Promise.all(soundsToLoad.map(sound => {
-        // Maak een lijst van bestandsformaten om te proberen (eerst mp3, dan m4a)
-        const audioFormats = ['.mp3', '.m4a']; 
-        
-        // Functie om geluid te laden met een specifiek formaat
-        const tryLoadSound = (format, index) => {
-            // Bepaal pad op basis van of we een custom bestandsnaam hebben
-            const filename = sound.file || (sound.name + format);
-            const filePath = soundsPath + filename;
-            
-            return gameCore.loadSound(sound.name, filePath)
-                .then(name => {
-                    // Stel het standaardvolume in als dat is opgegeven
-                    if (sound.volume !== undefined && gameCore.sounds[name]) {
-                        gameCore.sounds[name].volume = sound.volume;
-                    }
-                    return name;
-                })
-                .catch(err => {
-                    // Als dit formaat niet werkte en er zijn nog formaten over, probeer de volgende
-                    if (index < audioFormats.length - 1) {
-                        return tryLoadSound(audioFormats[index + 1], index + 1);
-                    } else {
-                        // Alle formaten zijn mislukt, log een waarschuwing
-                        console.warn(`Kon geluid ${sound.name} niet laden: ${err.message}`);
-                        return null; // Return null voor mislukte geluiden zodat Promise.all doorgaat
-                    }
-                });
-        };
-        
-        // Start met het eerste bestandsformaat
-        return tryLoadSound(audioFormats[0], 0);
-    }))
-    .then(() => {
-        // Alle geluiden zijn geladen
-        console.log('Alle geluiden geladen');
-        loadingIndicator.textContent = 'Geluiden geladen!';
-        setTimeout(() => {
-            loadingIndicator.remove();
-        }, 2000);
-    })
-    .catch(err => {
-        console.error('Fout bij laden van geluiden:', err);
-        loadingIndicator.textContent = 'Enkele geluiden niet geladen';
-        setTimeout(() => {
-            loadingIndicator.remove();
-        }, 2000);
-    });
-    
-    // Voeg geluidsbediening toe aan de UI
-    addSoundControl();
-}
+// Geluidsfunctionaliteit is verplaatst naar game-audio.js
 
-// Voeg een geluid aan/uit knop toe aan de UI
-function addSoundControl() {
-    const soundButton = document.createElement('button');
-    soundButton.id = 'sound-toggle';
-    soundButton.textContent = '🔊';
-    soundButton.style.position = 'absolute';
-    soundButton.style.top = '10px';
-    soundButton.style.left = '10px'; // Gewijzigd van rechts naar links
-    soundButton.style.width = '40px';
-    soundButton.style.height = '40px';
-    soundButton.style.fontSize = '20px';
-    soundButton.style.background = 'rgba(0,0,0,0.5)';
-    soundButton.style.color = 'white';
-    soundButton.style.border = 'none';
-    soundButton.style.borderRadius = '5px';
-    soundButton.style.cursor = 'pointer';
-    soundButton.style.zIndex = '1000'; // Zorg dat het boven andere knoppen komt
-    
-    soundButton.addEventListener('click', () => {
-        const soundEnabled = gameCore.toggleSound();
-        soundButton.textContent = soundEnabled ? '🔊' : '🔇';
-    });
-    
-    document.body.appendChild(soundButton);
-}
+// Geluidsbediening is verplaatst naar game-audio.js
 
 // Laad een level
 function loadLevel(levelIndex) {

@@ -323,8 +323,8 @@ class Player {
             this.onGround = false;
             
             // Speel springgeluid
-            if (typeof gameCore.playSound === 'function') {
-                gameCore.playSound('jump', 0.7);
+            if (typeof gameAudio !== 'undefined' && typeof gameAudio.playSound === 'function') {
+                gameAudio.playSound('jump', 0.7);
             }
         }
         
@@ -368,8 +368,8 @@ class Player {
                 this.canClaw = false; // Kan pas opnieuw gebruiken na afkoelen
                 
                 // Speel klauwgeluid
-                if (typeof gameCore.playSound === 'function') {
-                    gameCore.playSound('claw', 0.5);
+                if (typeof gameAudio !== 'undefined' && typeof gameAudio.playSound === 'function') {
+                    gameAudio.playSound('claw', 0.5);
                 }
                 
                 // Feedback message
@@ -550,8 +550,8 @@ class Player {
                         this.isUnderwater = true;
                         
                         // Speel onderwater geluid af als het nog niet speelt
-                        if (typeof gameCore.playUnderwaterSound === 'function') {
-                            gameCore.playUnderwaterSound();
+                        if (typeof gameAudio !== 'undefined' && typeof gameAudio.playUnderwaterSound === 'function') {
+                            gameAudio.playUnderwaterSound();
                         }
                         
                         // Zuurstof wordt nu afgetrokken in game-rendering.js
@@ -619,16 +619,16 @@ class Player {
                                     platform.compressed = false;
                                     
                                     // Speel bounce geluid
-                                    if (typeof gameCore.playSound === 'function') {
-                                        gameCore.playSound('bounce', 0.7);
+                                    if (typeof gameAudio !== 'undefined' && typeof gameAudio.playSound === 'function') {
+                                        gameAudio.playSound('bounce', 0.7);
                                     }
                                 } else {
                                     // Normale bouncing zonder compressie
                                     this.velY = Math.min(-this.velY * 0.7, -5);
                                     
                                     // Speel bounce geluid
-                                    if (typeof gameCore.playSound === 'function') {
-                                        gameCore.playSound('bounce', 0.7);
+                                    if (typeof gameAudio !== 'undefined' && typeof gameAudio.playSound === 'function') {
+                                        gameAudio.playSound('bounce', 0.7);
                                     }
                                 }
                                 this.onGround = false;
@@ -862,8 +862,8 @@ class Player {
                     console.log("Fire breath activated! Timer set to 5 seconds");
                     
                     // Speel vuurgeluid
-                    if (typeof gameCore.playSound === 'function') {
-                        gameCore.playSound('fire', 0.5);
+                    if (typeof gameAudio !== 'undefined' && typeof gameAudio.playSound === 'function') {
+                        gameAudio.playSound('fire', 0.5);
                     }
                 }
                 this.isBreathingFire = true;
@@ -917,8 +917,8 @@ class Player {
                     gameCore.gameState.message = "Vuur! Je kunt nu vuur spuwen met SPATIE!";
                     
                     // Speel verzamelgeluid
-                    if (typeof gameCore.playSound === 'function') {
-                        gameCore.playSound('collect');
+                    if (typeof gameAudio !== 'undefined' && typeof gameAudio.playSound === 'function') {
+                        gameAudio.playSound('collect', 0.8);
                     }
                     
                     // Voeg een vertraging toe om het bericht te tonen
@@ -936,8 +936,8 @@ class Player {
                     updateScoreDisplay();
                     
                     // Speel verzamelgeluid
-                    if (typeof gameCore.playSound === 'function') {
-                        gameCore.playSound('collect');
+                    if (typeof gameAudio !== 'undefined' && typeof gameAudio.playSound === 'function') {
+                        gameAudio.playSound('collect', 0.8);
                     }
                     
                     // Toon puntenpopup
@@ -1136,8 +1136,8 @@ class Player {
             }
             
             // Stop onderwater geluid als speler uit het water is
-            if (typeof gameCore.stopUnderwaterSound === 'function') {
-                gameCore.stopUnderwaterSound();
+            if (typeof gameAudio !== 'undefined' && typeof gameAudio.stopUnderwaterSound === 'function') {
+                gameAudio.stopUnderwaterSound();
             }
         }
     }
@@ -1203,8 +1203,8 @@ class Player {
                 gameCore.gameState.message = `${this.name} heeft geen levens meer!`;
                 
                 // Speel game over geluid
-                if (typeof gameCore.playSound === 'function') {
-                    gameCore.playSound('gameOver', 0.8);
+                if (typeof gameAudio !== 'undefined' && typeof gameAudio.playSound === 'function') {
+                    gameAudio.playSound('gameOver', 0.8);
                 }
                 
                 // Reset lives 
@@ -1265,8 +1265,8 @@ class Player {
         console.log("DIGGING ACTIVATED! 🦔💪");
         
         // Speel graafgeluid
-        if (typeof gameCore.playSound === 'function') {
-            gameCore.playSound('dig', 0.6);
+        if (typeof gameAudio !== 'undefined' && typeof gameAudio.playSound === 'function') {
+            gameAudio.playSound('dig', 0.6);
         }
         
         // Store the starting position for interpolation
@@ -1660,8 +1660,8 @@ function updatePuppy() {
             updateScoreDisplay();
             
             // Speel puppy gered geluid
-            if (typeof gameCore.playSound === 'function') {
-                gameCore.playSound('puppy', 0.9);
+            if (typeof gameAudio !== 'undefined' && typeof gameAudio.playSound === 'function') {
+                gameAudio.playSound('puppy', 0.9);
             }
             
             // Toon puntenpopup
