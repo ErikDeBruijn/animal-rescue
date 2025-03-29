@@ -2174,8 +2174,59 @@ function updateEnemies(players) {
             
             // Controleer platform collisies
             platforms.forEach(platform => {
-                // Sla water en wolkenplatforms over voor vijanden
-                if (platform.type === "WATER" || platform.type === "CLOUD") return;
+                // Speciale behandeling voor piranha's: ze kunnen in water bewegen
+                if (enemy.type === "PIRANHA") {
+                    if (platform.type === "WATER") {
+                        // Controleer of de piranha in het water is
+                        if (enemy.x + enemy.width > platform.x && 
+                            enemy.x < platform.x + platform.width &&
+                            enemy.y + enemy.height > platform.y && 
+                            enemy.y < platform.y + platform.height) {
+                            
+                            // Piranha is in water, markeer als "zwemmend"
+                            enemy.isSwimming = true;
+                            
+                            // In water kan de piranha ook verticaal bewegen (langzaam)
+                            // Voeg vertical patrouille toe als die er nog niet is
+                            if (enemy.verticalDirection === undefined) {
+                                enemy.verticalDirection = Math.random() > 0.5 ? 1 : -1; // Willekeurige start richting
+                                enemy.verticalMovement = 0;
+                                enemy.maxVerticalMovement = 50 + Math.random() * 30; // Willekeurige max hoogte
+                            }
+                            
+                            // Update verticale beweging
+                            enemy.verticalMovement += enemy.verticalDirection;
+                            
+                            // Verander richting als de max bereikt is
+                            if (Math.abs(enemy.verticalMovement) >= enemy.maxVerticalMovement) {
+                                enemy.verticalDirection *= -1;
+                            }
+                            
+                            // Pas verticale beweging toe (langzamer dan horizontaal)
+                            enemy.y += enemy.verticalDirection * (enemy.speed * 0.3);
+                            
+                            // Zorg dat de piranha binnen het water blijft
+                            if (enemy.y < platform.y) {
+                                enemy.y = platform.y;
+                                enemy.verticalDirection = 1; // Naar beneden
+                            } else if (enemy.y + enemy.height > platform.y + platform.height) {
+                                enemy.y = platform.y + platform.height - enemy.height;
+                                enemy.verticalDirection = -1; // Naar boven
+                            }
+                            
+                            // Reset zwaartekracht voor piranha's in water
+                            enemy.velY = 0;
+                            
+                            return; // Skip andere platform checks voor piranha's in water
+                        } else {
+                            // Piranha is buiten water, niet laten bewegen
+                            enemy.isSwimming = false;
+                        }
+                    }
+                } 
+                
+                // Sla water en wolkenplatforms over voor andere vijanden (niet voor piranha's)
+                if ((enemy.type !== "PIRANHA" && platform.type === "WATER") || platform.type === "CLOUD") return;
                 
                 // Controleer of de vijand op het platform staat
                 if (enemy.velY > 0 && 

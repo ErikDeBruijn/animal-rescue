@@ -598,9 +598,131 @@ function drawPuppy(puppy) {
     }
 }
 
+// Draw a piranha
+function drawPiranha(piranha) {
+    // Determine direction based on movement
+    const facingLeft = piranha.direction === -1;
+    
+    // Body (blue)
+    gameCore.ctx.fillStyle = '#0077be'; // Blue color for piranha
+    gameCore.ctx.fillRect(piranha.x, piranha.y, piranha.width, piranha.height);
+    
+    // Fish tail
+    gameCore.ctx.fillStyle = '#0077be';
+    gameCore.ctx.beginPath();
+    
+    if (facingLeft) {
+        // Tail to the right when facing left
+        gameCore.ctx.moveTo(piranha.x + piranha.width, piranha.y + piranha.height * 0.5);
+        gameCore.ctx.lineTo(piranha.x + piranha.width + piranha.width * 0.3, piranha.y);
+        gameCore.ctx.lineTo(piranha.x + piranha.width + piranha.width * 0.3, piranha.y + piranha.height);
+        gameCore.ctx.lineTo(piranha.x + piranha.width, piranha.y + piranha.height * 0.5);
+    } else {
+        // Tail to the left when facing right
+        gameCore.ctx.moveTo(piranha.x, piranha.y + piranha.height * 0.5);
+        gameCore.ctx.lineTo(piranha.x - piranha.width * 0.3, piranha.y);
+        gameCore.ctx.lineTo(piranha.x - piranha.width * 0.3, piranha.y + piranha.height);
+        gameCore.ctx.lineTo(piranha.x, piranha.y + piranha.height * 0.5);
+    }
+    gameCore.ctx.fill();
+    
+    // Eye
+    gameCore.ctx.fillStyle = 'white';
+    gameCore.ctx.beginPath();
+    if (facingLeft) {
+        gameCore.ctx.arc(
+            piranha.x + piranha.width * 0.2, 
+            piranha.y + piranha.height * 0.3, 
+            piranha.width * 0.1, 
+            0, Math.PI * 2
+        );
+    } else {
+        gameCore.ctx.arc(
+            piranha.x + piranha.width * 0.8, 
+            piranha.y + piranha.height * 0.3, 
+            piranha.width * 0.1, 
+            0, Math.PI * 2
+        );
+    }
+    gameCore.ctx.fill();
+    
+    // Pupil
+    gameCore.ctx.fillStyle = 'black';
+    gameCore.ctx.beginPath();
+    if (facingLeft) {
+        gameCore.ctx.arc(
+            piranha.x + piranha.width * 0.15, 
+            piranha.y + piranha.height * 0.3, 
+            piranha.width * 0.05, 
+            0, Math.PI * 2
+        );
+    } else {
+        gameCore.ctx.arc(
+            piranha.x + piranha.width * 0.85, 
+            piranha.y + piranha.height * 0.3, 
+            piranha.width * 0.05, 
+            0, Math.PI * 2
+        );
+    }
+    gameCore.ctx.fill();
+    
+    // Dangerous teeth
+    gameCore.ctx.fillStyle = 'white';
+    gameCore.ctx.beginPath();
+    
+    if (facingLeft) {
+        // Teeth on the left side when facing left
+        for (let i = 0; i < 3; i++) {
+            gameCore.ctx.moveTo(piranha.x, piranha.y + piranha.height * (0.3 + i * 0.2));
+            gameCore.ctx.lineTo(piranha.x - piranha.width * 0.1, piranha.y + piranha.height * (0.4 + i * 0.2));
+            gameCore.ctx.lineTo(piranha.x, piranha.y + piranha.height * (0.5 + i * 0.2));
+        }
+    } else {
+        // Teeth on the right side when facing right
+        for (let i = 0; i < 3; i++) {
+            gameCore.ctx.moveTo(piranha.x + piranha.width, piranha.y + piranha.height * (0.3 + i * 0.2));
+            gameCore.ctx.lineTo(piranha.x + piranha.width + piranha.width * 0.1, piranha.y + piranha.height * (0.4 + i * 0.2));
+            gameCore.ctx.lineTo(piranha.x + piranha.width, piranha.y + piranha.height * (0.5 + i * 0.2));
+        }
+    }
+    gameCore.ctx.fill();
+    
+    // Fins (top and bottom)
+    gameCore.ctx.fillStyle = '#006bb3'; // Slightly darker blue for fins
+    
+    // Top fin
+    gameCore.ctx.beginPath();
+    gameCore.ctx.moveTo(piranha.x + piranha.width * 0.5, piranha.y);
+    gameCore.ctx.lineTo(piranha.x + piranha.width * 0.3, piranha.y - piranha.height * 0.3);
+    gameCore.ctx.lineTo(piranha.x + piranha.width * 0.7, piranha.y - piranha.height * 0.3);
+    gameCore.ctx.lineTo(piranha.x + piranha.width * 0.5, piranha.y);
+    gameCore.ctx.fill();
+    
+    // Bottom fin
+    gameCore.ctx.beginPath();
+    gameCore.ctx.moveTo(piranha.x + piranha.width * 0.5, piranha.y + piranha.height);
+    gameCore.ctx.lineTo(piranha.x + piranha.width * 0.3, piranha.y + piranha.height + piranha.height * 0.3);
+    gameCore.ctx.lineTo(piranha.x + piranha.width * 0.7, piranha.y + piranha.height + piranha.height * 0.3);
+    gameCore.ctx.lineTo(piranha.x + piranha.width * 0.5, piranha.y + piranha.height);
+    gameCore.ctx.fill();
+    
+    // Bubble effect in water (randomly)
+    if (Math.random() > 0.9) {
+        const bubbleSize = Math.random() * piranha.width * 0.1 + piranha.width * 0.05;
+        const bubbleX = facingLeft ? piranha.x + piranha.width : piranha.x;
+        const bubbleY = piranha.y + Math.random() * piranha.height;
+        
+        gameCore.ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+        gameCore.ctx.beginPath();
+        gameCore.ctx.arc(bubbleX, bubbleY, bubbleSize, 0, Math.PI * 2);
+        gameCore.ctx.fill();
+    }
+}
+
 // Export the NPC render functions
 window.gameCharactersNPCs = {
     drawLion,
     drawDragon,
-    drawPuppy
+    drawPuppy,
+    drawPiranha
 };

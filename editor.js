@@ -77,7 +77,8 @@ const objectColors = {
     },
     enemy: {
         LION: '#ff9800',    // Oranje voor leeuwen
-        DRAGON: '#ff0000'   // Rood voor draken
+        DRAGON: '#ff0000',   // Rood voor draken
+        PIRANHA: '#0077be'  // Blauw voor piranha's
     },
     trap: {
         SPIKES: '#8c8c8c'   // Grijs voor spikes
@@ -1130,9 +1131,15 @@ function createPlacementPreview(type) {
             if (enemyType === 'LION') {
                 width = 50;
                 height = 40;
-            } else {
+            } else if (enemyType === 'DRAGON') {
                 width = 60;
                 height = 50;
+            } else if (enemyType === 'PIRANHA') {
+                width = 40;
+                height = 35;
+            } else {
+                width = 50;
+                height = 40;
             }
             
             editorState.placementPreview = {
@@ -1655,9 +1662,15 @@ function createNewObject(x, y) {
             if (enemyType === 'LION') {
                 width = 50;
                 height = 40;
-            } else {
+            } else if (enemyType === 'DRAGON') {
                 width = 60;
                 height = 50;
+            } else if (enemyType === 'PIRANHA') {
+                width = 40;
+                height = 35;
+            } else {
+                width = 50;
+                height = 40;
             }
             
             const newEnemy = {

@@ -117,6 +117,8 @@ function drawEnemies() {
             window.gameCharactersNPCs.drawLion(enemy);
         } else if (enemy.type === "DRAGON") {
             window.gameCharactersNPCs.drawDragon(enemy);
+        } else if (enemy.type === "PIRANHA") {
+            window.gameCharactersNPCs.drawPiranha(enemy);
         }
         
         // Draw burning effect if the enemy is being hit by fire
@@ -164,6 +166,7 @@ window.gameCharacters = {
     // NPC render functions (from npcs module)
     drawLion: window.gameCharactersNPCs.drawLion,
     drawDragon: window.gameCharactersNPCs.drawDragon,
+    drawPiranha: window.gameCharactersNPCs.drawPiranha,
     
     // Effect render functions (from effects module)
     drawBurningEffect: window.gameCharactersEffects.drawBurningEffect,
