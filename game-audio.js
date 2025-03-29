@@ -5,9 +5,10 @@
 const sounds = {};
 let soundEnabled = true;
 
-// Onderwater en wind geluid afspelen, stoppen of pauzeren
-let underwaterSoundPlaying = false;
-let windSoundPlaying = false;
+// Houdt bij welke loopende geluiden actief zijn
+const loopingSounds = {
+    // Format: soundName: isPlaying
+};
 
 // Laad een geluidsbestand
 function loadSound(name, path) {
@@ -20,6 +21,8 @@ function loadSound(name, path) {
     // Stel loop in als dat nodig is
     if (soundInfo && soundInfo.loop) {
         sound.loop = true;
+        // Initialiseer de status voor loopende geluiden
+        loopingSounds[name] = false;
     }
     
     sounds[name] = sound;
@@ -29,7 +32,7 @@ function loadSound(name, path) {
     });
 }
 
-// Speel een geluid af met optioneel volume (0.0 - 1.0)
+// Speel een gewoon (niet-looping) geluid af met optioneel volume (0.0 - 1.0)
 function playSound(name, volume) {
     if (!soundEnabled || !sounds[name]) return;
     
@@ -45,24 +48,46 @@ function playSound(name, volume) {
     sound.play().catch(err => console.log('Geluid afspelen mislukt:', err));
 }
 
-// Speel onderwater geluid af
-function playUnderwaterSound() {
-    if (!soundEnabled || !sounds['underwater'] || underwaterSoundPlaying) return;
+// Start een loopend geluid (bijv. onderwater of wind)
+function playLoopingSound(name) {
+    // Check of geluid bestaat en of het loop=true moet zijn
+    if (!soundEnabled || !sounds[name] || !loopingSounds.hasOwnProperty(name)) return;
     
-    if (sounds['underwater'].paused) {
-        sounds['underwater'].currentTime = 0;
-        sounds['underwater'].play().catch(err => console.log('Geluid afspelen mislukt:', err));
+    // Als het geluid al speelt, hoeven we niets te doen
+    if (loopingSounds[name]) return;
+    
+    const sound = sounds[name];
+    if (sound.paused) {
+        sound.currentTime = 0;
+        sound.play().catch(err => console.log(`${name} geluid afspelen mislukt:`, err));
     }
-    underwaterSoundPlaying = true;
+    
+    loopingSounds[name] = true;
 }
 
-// Stop onderwater geluid
-function stopUnderwaterSound() {
-    if (!sounds['underwater'] || !underwaterSoundPlaying) return;
+// Stop een loopend geluid
+function stopLoopingSound(name) {
+    // Check of geluid bestaat en of het een loopend geluid is
+    if (!sounds[name] || !loopingSounds.hasOwnProperty(name)) return;
     
-    sounds['underwater'].pause();
-    sounds['underwater'].currentTime = 0;
-    underwaterSoundPlaying = false;
+    // Als het geluid niet speelt, hoeven we niets te doen
+    if (!loopingSounds[name]) return;
+    
+    const sound = sounds[name];
+    sound.pause();
+    sound.currentTime = 0;
+    loopingSounds[name] = false;
+}
+
+// Stop alle loopende geluiden
+function stopAllLoopingSounds() {
+    Object.keys(loopingSounds).forEach(name => {
+        if (loopingSounds[name] && sounds[name]) {
+            sounds[name].pause();
+            sounds[name].currentTime = 0;
+            loopingSounds[name] = false;
+        }
+    });
 }
 
 // Audio aan/uit zetten
@@ -78,8 +103,11 @@ function toggleSound() {
                 sound.currentTime = 0;
             }
         });
-        underwaterSoundPlaying = false;
-        windSoundPlaying = false;
+        
+        // Reset alle loopende geluiden
+        Object.keys(loopingSounds).forEach(name => {
+            loopingSounds[name] = false;
+        });
     }
     
     return soundEnabled;
@@ -201,24 +229,27 @@ function addSoundControl() {
     document.body.appendChild(soundButton);
 }
 
-// Speel wind geluid af
-function playWindSound() {
-    if (!soundEnabled || !sounds['wind'] || windSoundPlaying) return;
-    
-    if (sounds['wind'].paused) {
-        sounds['wind'].currentTime = 0;
-        sounds['wind'].play().catch(err => console.log('Wind geluid afspelen mislukt:', err));
-    }
-    windSoundPlaying = true;
+// Legacy functies voor backwards compatibiliteit
+// Deze roepen de nieuwe generieke functies aan
+
+// Speel onderwater geluid af (legacy functie)
+function playUnderwaterSound() {
+    playLoopingSound('underwater');
 }
 
-// Stop wind geluid
+// Stop onderwater geluid (legacy functie)
+function stopUnderwaterSound() {
+    stopLoopingSound('underwater');
+}
+
+// Speel wind geluid af (legacy functie)
+function playWindSound() {
+    playLoopingSound('wind');
+}
+
+// Stop wind geluid (legacy functie)
 function stopWindSound() {
-    if (!sounds['wind'] || !windSoundPlaying) return;
-    
-    sounds['wind'].pause();
-    sounds['wind'].currentTime = 0;
-    windSoundPlaying = false;
+    stopLoopingSound('wind');
 }
 
 // Exporteer geluidsfuncties
@@ -228,6 +259,13 @@ window.gameAudio = {
     loadSound,
     playSound,
     toggleSound,
+    
+    // Nieuwe generieke functies voor loopende geluiden
+    playLoopingSound,
+    stopLoopingSound,
+    stopAllLoopingSounds,
+    
+    // Legacy functies voor backwards compatibiliteit
     playUnderwaterSound,
     stopUnderwaterSound,
     playWindSound,

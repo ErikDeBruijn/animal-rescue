@@ -177,8 +177,13 @@ class Player {
         // Stop wind geluid als eenhoorn wisselt naar een ander dier
         if (this.animalType === "UNICORN" && this.flying) {
             this.flying = false;
-            if (typeof gameAudio !== 'undefined' && typeof gameAudio.stopWindSound === 'function') {
-                gameAudio.stopWindSound();
+            if (typeof gameAudio !== 'undefined') {
+                if (typeof gameAudio.stopLoopingSound === 'function') {
+                    gameAudio.stopLoopingSound('wind');
+                } else if (typeof gameAudio.stopWindSound === 'function') {
+                    // Legacy fallback
+                    gameAudio.stopWindSound();
+                }
             }
         }
         
@@ -201,8 +206,13 @@ class Player {
                 // Stop wind geluid als andere speler een eenhoorn was
                 if (otherPlayer.animalType === "UNICORN" && otherPlayer.flying) {
                     otherPlayer.flying = false;
-                    if (typeof gameAudio !== 'undefined' && typeof gameAudio.stopWindSound === 'function') {
-                        gameAudio.stopWindSound();
+                    if (typeof gameAudio !== 'undefined') {
+                        if (typeof gameAudio.stopLoopingSound === 'function') {
+                            gameAudio.stopLoopingSound('wind');
+                        } else if (typeof gameAudio.stopWindSound === 'function') {
+                            // Legacy fallback
+                            gameAudio.stopWindSound();
+                        }
                     }
                 }
                 
@@ -410,8 +420,13 @@ class Player {
             this.flying = true;
             
             // Speel wind geluid af als de eenhoorn vliegt
-            if (typeof gameAudio !== 'undefined' && typeof gameAudio.playWindSound === 'function') {
-                gameAudio.playWindSound();
+            if (typeof gameAudio !== 'undefined') {
+                if (typeof gameAudio.playLoopingSound === 'function') {
+                    gameAudio.playLoopingSound('wind');
+                } else if (typeof gameAudio.playWindSound === 'function') {
+                    // Legacy fallback
+                    gameAudio.playWindSound();
+                }
             }
         } else {
             // Normale zwaartekracht, maar minder sterk voor eenhoorn (langzamer vallen)
@@ -419,8 +434,13 @@ class Player {
             this.velY += gameCore.GRAVITY * gravityFactor;
             
             // Als de eenhoorn stopt met vliegen, stop het wind geluid
-            if (this.flying && typeof gameAudio !== 'undefined' && typeof gameAudio.stopWindSound === 'function') {
-                gameAudio.stopWindSound();
+            if (this.flying && typeof gameAudio !== 'undefined') {
+                if (typeof gameAudio.stopLoopingSound === 'function') {
+                    gameAudio.stopLoopingSound('wind');
+                } else if (typeof gameAudio.stopWindSound === 'function') {
+                    // Legacy fallback
+                    gameAudio.stopWindSound();
+                }
             }
             
             this.flying = false;
@@ -452,8 +472,13 @@ class Player {
                     this.flying = false; // Stop met vliegen als de vliegkracht op is
                     
                     // Stop het wind geluid als de vliegkracht op is
-                    if (typeof gameAudio !== 'undefined' && typeof gameAudio.stopWindSound === 'function') {
-                        gameAudio.stopWindSound();
+                    if (typeof gameAudio !== 'undefined') {
+                        if (typeof gameAudio.stopLoopingSound === 'function') {
+                            gameAudio.stopLoopingSound('wind');
+                        } else if (typeof gameAudio.stopWindSound === 'function') {
+                            // Legacy fallback
+                            gameAudio.stopWindSound();
+                        }
                     }
                 }
             } else {
@@ -582,8 +607,13 @@ class Player {
                         this.isUnderwater = true;
                         
                         // Speel onderwater geluid af als het nog niet speelt
-                        if (typeof gameAudio !== 'undefined' && typeof gameAudio.playUnderwaterSound === 'function') {
-                            gameAudio.playUnderwaterSound();
+                        if (typeof gameAudio !== 'undefined') {
+                            if (typeof gameAudio.playLoopingSound === 'function') {
+                                gameAudio.playLoopingSound('underwater');
+                            } else if (typeof gameAudio.playUnderwaterSound === 'function') {
+                                // Legacy fallback
+                                gameAudio.playUnderwaterSound();
+                            }
                         }
                         
                         // Zuurstof wordt nu afgetrokken in game-rendering.js
@@ -1168,8 +1198,13 @@ class Player {
             }
             
             // Stop onderwater geluid als speler uit het water is
-            if (typeof gameAudio !== 'undefined' && typeof gameAudio.stopUnderwaterSound === 'function') {
-                gameAudio.stopUnderwaterSound();
+            if (typeof gameAudio !== 'undefined') {
+                if (typeof gameAudio.stopLoopingSound === 'function') {
+                    gameAudio.stopLoopingSound('underwater');
+                } else if (typeof gameAudio.stopUnderwaterSound === 'function') {
+                    // Legacy fallback
+                    gameAudio.stopUnderwaterSound();
+                }
             }
         }
     }
@@ -1208,8 +1243,13 @@ class Player {
         // Reset flying state and stop wind sound
         if (this.animalType === "UNICORN") {
             this.flying = false;
-            if (typeof gameAudio !== 'undefined' && typeof gameAudio.stopWindSound === 'function') {
-                gameAudio.stopWindSound();
+            if (typeof gameAudio !== 'undefined') {
+                if (typeof gameAudio.stopLoopingSound === 'function') {
+                    gameAudio.stopLoopingSound('wind');
+                } else if (typeof gameAudio.stopWindSound === 'function') {
+                    // Legacy fallback
+                    gameAudio.stopWindSound();
+                }
             }
         }
     }
@@ -1237,14 +1277,9 @@ class Player {
             this.isInvulnerable = true;
             this.invulnerableTimer = 120; // 2 seconds at 60 fps
             
-            // Stop alle geluidseffecten zoals wind of onderwater
-            if (typeof gameAudio !== 'undefined') {
-                if (typeof gameAudio.stopWindSound === 'function') {
-                    gameAudio.stopWindSound();
-                }
-                if (typeof gameAudio.stopUnderwaterSound === 'function') {
-                    gameAudio.stopUnderwaterSound();
-                }
+            // Stop alle lopende geluidseffecten
+            if (typeof gameAudio !== 'undefined' && typeof gameAudio.stopAllLoopingSounds === 'function') {
+                gameAudio.stopAllLoopingSounds();
             }
             
             // Check for game over condition

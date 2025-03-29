@@ -319,11 +319,8 @@ function updateAvailableAnimalsUI() {
 function nextLevel() {
     // Stop alle lopende geluidseffecten (wind, onderwater geluid, etc.)
     if (typeof gameAudio !== 'undefined') {
-        if (typeof gameAudio.stopWindSound === 'function') {
-            gameAudio.stopWindSound();
-        }
-        if (typeof gameAudio.stopUnderwaterSound === 'function') {
-            gameAudio.stopUnderwaterSound();
+        if (typeof gameAudio.stopAllLoopingSounds === 'function') {
+            gameAudio.stopAllLoopingSounds();
         }
     }
     
@@ -340,11 +337,8 @@ function nextLevel() {
 function resetCurrentLevel() {
     // Stop alle lopende geluidseffecten (wind, onderwater geluid, etc.)
     if (typeof gameAudio !== 'undefined') {
-        if (typeof gameAudio.stopWindSound === 'function') {
-            gameAudio.stopWindSound();
-        }
-        if (typeof gameAudio.stopUnderwaterSound === 'function') {
-            gameAudio.stopUnderwaterSound();
+        if (typeof gameAudio.stopAllLoopingSounds === 'function') {
+            gameAudio.stopAllLoopingSounds();
         }
     }
     
