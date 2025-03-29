@@ -260,6 +260,13 @@ class Player {
         // Update onkwetsbaarheidstimer als die actief is
         this.updateInvulnerability();
         
+        // Update respawn timer als die actief is
+        if (this.isRespawning) {
+            this.updateRespawnTimer();
+            // Als speler aan het respawnen is, onderbreek verdere updates
+            return;
+        }
+        
         // Reset underwater status aan het begin van elke update
         // Wordt weer op true gezet als speler in water is
         this.isUnderwater = false;
@@ -1285,7 +1292,6 @@ class Player {
      * - Setting invulnerability period
      * - Updating the UI
      * - Checking for game over condition
-     * - Resetting player position
      * 
      * @param {string} damageType - Type of damage that caused life loss (e.g., "LASER")
      * @returns {boolean} true if game over, false otherwise
@@ -1299,9 +1305,9 @@ class Player {
             // UI update
             this.updatePlayerInfoUI();
             
-            // Invulnerability period
+            // Invulnerability period - Langer dan voorheen
             this.isInvulnerable = true;
-            this.invulnerableTimer = 120; // 2 seconds at 60 fps
+            this.invulnerableTimer = 180; // 3 seconds at 60 fps (was 2 seconden)
             
             // Speel geluid af afhankelijk van schade type
             if (typeof gameAudio !== 'undefined' && typeof gameAudio.playSound === 'function') {
@@ -1330,6 +1336,11 @@ class Player {
                     gameAudio.playSound('gameOver', 0.9);
                 }
                 
+                // Initialiseer respawn delay
+                this.isRespawning = true;
+                this.respawnTimer = 10; // 10 seconden
+                this.respawnTimerFrames = 10 * 60; // 10 seconden in frames (bij 60 fps)
+                
                 // Reset lives 
                 this.lives = 3;
                 
@@ -1341,8 +1352,10 @@ class Player {
                 return true; // Game over
             }
             
-            // Reset position
-            this.resetToStart();
+            // NIEUW: blijf op dezelfde plek in plaats van naar de start te resetten
+            // Alleen de snelheid wordt gereset
+            this.velX = 0;
+            this.velY = 0;
         }
         return false; // Not game over
     }
@@ -1742,6 +1755,54 @@ class Player {
                 this.isInvulnerable = false;
             }
         }
+    }
+    
+    /**
+     * Updates the respawn timer when a player has lost all lives
+     * Shows a countdown above the player's position
+     */
+    updateRespawnTimer() {
+        if (!this.isRespawning) return;
+        
+        // Verminder de timer met één frame
+        this.respawnTimerFrames--;
+        
+        // Update de secondenteller (alleen als een hele seconde is verstreken)
+        if (this.respawnTimerFrames % 60 === 0) {
+            this.respawnTimer = Math.floor(this.respawnTimerFrames / 60);
+        }
+        
+        // Als de timer afgelopen is, reset de respawn status
+        if (this.respawnTimerFrames <= 0) {
+            this.isRespawning = false;
+            this.isInvulnerable = true;
+            this.invulnerableTimer = 120; // 2 seconden onkwetsbaar na respawn
+            
+            // Toon bericht dat de speler weer terug is
+            gameCore.gameState.message = `${this.name} is terug in het spel!`;
+            
+            // Wis het bericht na 2 seconden
+            setTimeout(() => {
+                if (gameCore.gameState.message === `${this.name} is terug in het spel!`) {
+                    gameCore.gameState.message = "";
+                }
+            }, 2000);
+        }
+    }
+    
+    /**
+     * Draws respawn countdown above player when respawning
+     * Should be called from the render function
+     */
+    drawRespawnCountdown() {
+        if (!this.isRespawning) return;
+        
+        // Teken de resterende seconden boven de speler
+        gameCore.ctx.font = "bold 20px Arial";
+        gameCore.ctx.fillStyle = "red";
+        gameCore.ctx.textAlign = "center";
+        gameCore.ctx.fillText(`${this.respawnTimer}`, this.x + this.width/2, this.y - 10);
+        gameCore.ctx.textAlign = "left"; // Reset text alignment
     }
 }
 

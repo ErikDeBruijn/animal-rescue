@@ -3,6 +3,34 @@
 
 // Draw player method for each animal type
 function drawPlayer(player) {
+    // Als de speler aan het respawnen is, teken de speler semi-transparant
+    // en teken de respawn countdown boven de speler
+    if (player.isRespawning) {
+        // Semi-transparent effect for respawning
+        gameCore.ctx.globalAlpha = 0.3;
+        
+        // Draw the appropriate animal type (semi-transparent)
+        if (player.animalType === "SQUIRREL") {
+            window.gameCharactersPlayers.drawSquirrel(player);
+        } else if (player.animalType === "TURTLE") {
+            window.gameCharactersPlayers.drawTurtle(player);
+        } else if (player.animalType === "UNICORN") {
+            window.gameCharactersPlayers.drawUnicorn(player);
+        } else if (player.animalType === "CAT") {
+            window.gameCharactersPlayers.drawCat(player);
+        } else if (player.animalType === "MOLE") {
+            window.gameCharactersPlayers.drawMole(player);
+        }
+        
+        // Reset de alpha om de countdown normaal te tekenen
+        gameCore.ctx.globalAlpha = 1.0;
+        
+        // Teken de respawn countdown
+        player.drawRespawnCountdown();
+        
+        return;
+    }
+    
     // Check if the player is invulnerable
     if (player.isInvulnerable) {
         // Calculate flicker effect based on timer
