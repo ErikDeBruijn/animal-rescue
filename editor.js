@@ -88,7 +88,8 @@ const objectColors = {
     puppy: '#BE9B7B',       // Lichtbruin voor puppy
     collectible: {
         STAR: '#ffff00',     // Geel voor ster
-        PEPPER: '#d70000'    // Rood voor peper
+        PEPPER: '#d70000',   // Rood voor peper
+        DOGFOOD: '#D2B48C'   // Lichtbruin voor hondenvoer
     },
     startPos: '#00ff00'     // Groen voor startposities
 };
@@ -366,7 +367,19 @@ function initEditor() {
     }
     
     // Stel het huidige level in (gebruik de parameter of val terug op 0)
-    editorState.currentLevel = lastLevelParam !== null ? parseInt(lastLevelParam) : 0;
+    // Als er een level parameter is, converteer van 1-based (URL) naar 0-based (intern)
+    if (lastLevelParam !== null) {
+        const levelNumber = parseInt(lastLevelParam);
+        // Zorg ervoor dat we een geldig level nummer hebben (minimaal 1) voordat we 1 aftrekken
+        if (!isNaN(levelNumber) && levelNumber >= 1) {
+            // Converteer van 1-based (URL/gebruiker) naar 0-based (intern)
+            editorState.currentLevel = levelNumber - 1;
+        } else {
+            editorState.currentLevel = 0;
+        }
+    } else {
+        editorState.currentLevel = 0;
+    }
     
     // Zorg dat de level index geldig is
     if (editorState.currentLevel >= levels.length) {
@@ -596,7 +609,9 @@ function playCurrentLevel() {
         
         if (data.success) {
             // Navigeer naar het spel met het juiste level (gebruik fragment identifier)
-            window.location.href = `index.html#level=${editorState.currentLevel}`;
+            // Converteer van 0-based (intern) naar 1-based (URL/gebruiker)
+            const displayLevelNum = Number(editorState.currentLevel) + 1;
+            window.location.href = `index.html#level=${displayLevelNum}`;
         } else {
             alert('Fout bij het opslaan van het level voordat het gespeeld kan worden: ' + data.error);
         }
@@ -674,6 +689,16 @@ function setupEventListeners() {
         
         // Update verwijderknop status
         updateDeleteButton();
+        
+        // Update de URL hash om het geselecteerde level weer te geven
+        // Convert van 0-based (intern) naar 1-based (URL)
+        if (e.target.value !== 'new') {
+            const displayLevelNum = Number(e.target.value) + 1;
+            window.location.hash = `level=${displayLevelNum}`;
+        } else {
+            // Voor nieuwe levels, verwijder de hash
+            history.pushState("", document.title, window.location.pathname + window.location.search);
+        }
     });
     
     // Nieuwe level knop
@@ -1128,6 +1153,14 @@ function setupEventListeners() {
         setActiveObjectType('collectible-pepper');
     });
     
+    document.getElementById('collectible-dogfood-btn').addEventListener('click', function() {
+        setActiveObjectType('collectible-dogfood');
+    });
+    
+    document.getElementById('collectible-hourglass-btn').addEventListener('click', function() {
+        setActiveObjectType('collectible-hourglass');
+    });
+    
     document.getElementById('start-pos-btn').addEventListener('click', function() {
         setActiveObjectType('startPosition');
     });
@@ -1157,6 +1190,8 @@ function setupEventListeners() {
         document.getElementById('puppy-btn').classList.remove('selected');
         document.getElementById('collectible-star-btn').classList.remove('selected');
         document.getElementById('collectible-pepper-btn').classList.remove('selected');
+        document.getElementById('collectible-dogfood-btn').classList.remove('selected');
+        document.getElementById('collectible-hourglass-btn').classList.remove('selected');
         document.getElementById('start-pos-btn').classList.remove('selected');
         document.getElementById('trap-btn').classList.remove('selected');
         
@@ -1424,6 +1459,24 @@ function createPlacementPreview(type) {
                 width: 30,
                 height: 30,
                 collectibleType: 'PEPPER'
+            };
+            break;
+            
+        case 'collectible-dogfood':
+            editorState.placementPreview = {
+                type: 'collectible',
+                width: 30,
+                height: 30,
+                collectibleType: 'DOGFOOD'
+            };
+            break;
+            
+        case 'collectible-hourglass':
+            editorState.placementPreview = {
+                type: 'collectible',
+                width: 30,
+                height: 30,
+                collectibleType: 'HOURGLASS'
             };
             break;
             
@@ -2047,6 +2100,32 @@ function createNewObject(x, y) {
             editorState.selectedObject = newPepperCollectible;
             break;
             
+        case 'collectible-dogfood':
+            const newDogfoodCollectible = {
+                x: x - 15,
+                y: y - 15,
+                width: 30,
+                height: 30,
+                type: 'DOGFOOD'
+            };
+            
+            editorState.editingLevel.collectibles.push(newDogfoodCollectible);
+            editorState.selectedObject = newDogfoodCollectible;
+            break;
+            
+        case 'collectible-hourglass':
+            const newHourglassCollectible = {
+                x: x - 15,
+                y: y - 15,
+                width: 30,
+                height: 30,
+                type: 'HOURGLASS'
+            };
+            
+            editorState.editingLevel.collectibles.push(newHourglassCollectible);
+            editorState.selectedObject = newHourglassCollectible;
+            break;
+            
         case 'startPosition':
             if (editorState.editingLevel.startPositions.length < 2) {
                 const newStartPos = {
@@ -2106,6 +2185,8 @@ function deleteSelectedObject() {
             break;
         case 'collectible-star':
         case 'collectible-pepper':
+        case 'collectible-dogfood':
+        case 'collectible-hourglass':
             editorState.editingLevel.collectibles = editorState.editingLevel.collectibles.filter(c => c !== object);
             break;
         case 'startPosition':
@@ -2791,7 +2872,43 @@ function drawPuppy(puppy) {
 function drawCollectible(collectible) {
     const type = collectible.type || 'STAR'; // Default type is STAR if not specified
     
-    if (type === 'PEPPER') {
+    if (type === 'DOGFOOD') {
+        // Teken hondenvoer (bot vorm)
+        ctx.fillStyle = '#D2B48C'; // Tan/light brown color
+        
+        const centerX = collectible.x + collectible.width / 2;
+        const centerY = collectible.y + collectible.height / 2;
+        
+        // Voeg rotatie toe (10 graden in radialen)
+        const rotationAngle = 10 * Math.PI / 180;
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.rotate(rotationAngle);
+        
+        // Teken het bot - eerst de rechthoek in het midden (meer langwerpig)
+        const bodyWidth = collectible.width * 0.7;
+        const bodyHeight = collectible.height * 0.2;
+        ctx.fillRect(-bodyWidth/2, -bodyHeight/2, bodyWidth, bodyHeight);
+        
+        // Teken de bot uiteinden (kleinere radius)
+        ctx.beginPath();
+        ctx.arc(-bodyWidth/2, -bodyHeight/1.3, bodyHeight/0.9, 0, Math.PI * 2);
+        ctx.arc(-bodyWidth/2, bodyHeight/1.3, bodyHeight/0.9, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.beginPath();
+        ctx.arc(bodyWidth/2, -bodyHeight/1.3, bodyHeight/0.9, 0, Math.PI * 2);
+        ctx.arc(bodyWidth/2, bodyHeight/1.3, bodyHeight/0.9, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Omtrek van het bot
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(-bodyWidth/2, -bodyHeight/2, bodyWidth, bodyHeight);
+        
+        // Herstel de canvas transformatie
+        ctx.restore();
+    } else if (type === 'PEPPER') {
         // Teken een peper
         ctx.fillStyle = objectColors.collectible.PEPPER;
         
