@@ -143,6 +143,86 @@ function nextLevel() {
     // omdat deze toegang nodig heeft tot de spelers
 }
 
+// Audio systeem
+const sounds = {};
+let soundEnabled = true;
+
+// Laad een geluidsbestand
+function loadSound(name, path) {
+    const sound = new Audio(path);
+    sound.preload = 'auto';
+    
+    // Haal geluidsopties op als die er zijn (voor deze functie meegegeven door loadGameSounds)
+    const soundInfo = window._soundLoadInfo && window._soundLoadInfo[name];
+    
+    // Stel loop in als dat nodig is
+    if (soundInfo && soundInfo.loop) {
+        sound.loop = true;
+    }
+    
+    sounds[name] = sound;
+    return new Promise((resolve, reject) => {
+        sound.addEventListener('canplaythrough', () => resolve(name), { once: true });
+        sound.addEventListener('error', reject);
+    });
+}
+
+// Speel een geluid af met optioneel volume (0.0 - 1.0)
+function playSound(name, volume) {
+    if (!soundEnabled || !sounds[name]) return;
+    
+    // Als het geluid al speelt, reset het en speel opnieuw
+    const sound = sounds[name];
+    sound.currentTime = 0;
+    
+    // Pas volume aan als opgegeven, anders gebruik standaardvolume
+    if (volume !== undefined) {
+        sound.volume = Math.max(0, Math.min(1, volume)); // Begrens tussen 0 en 1
+    }
+    
+    sound.play().catch(err => console.log('Geluid afspelen mislukt:', err));
+}
+
+// Onderwater geluid afspelen, stoppen of pauzeren
+let underwaterSoundPlaying = false;
+
+function playUnderwaterSound() {
+    if (!soundEnabled || !sounds['underwater'] || underwaterSoundPlaying) return;
+    
+    if (sounds['underwater'].paused) {
+        sounds['underwater'].currentTime = 0;
+        sounds['underwater'].play().catch(err => console.log('Geluid afspelen mislukt:', err));
+    }
+    underwaterSoundPlaying = true;
+}
+
+function stopUnderwaterSound() {
+    if (!sounds['underwater'] || !underwaterSoundPlaying) return;
+    
+    sounds['underwater'].pause();
+    sounds['underwater'].currentTime = 0;
+    underwaterSoundPlaying = false;
+}
+
+// Audio aan/uit zetten
+function toggleSound() {
+    soundEnabled = !soundEnabled;
+    
+    // Alle geluiden stoppen als geluid uit wordt gezet
+    if (!soundEnabled) {
+        // Stop alle spelende geluiden
+        Object.values(sounds).forEach(sound => {
+            if (!sound.paused) {
+                sound.pause();
+                sound.currentTime = 0;
+            }
+        });
+        underwaterSoundPlaying = false;
+    }
+    
+    return soundEnabled;
+}
+
 // Exporteer de benodigde functies en objecten
 window.gameCore = {
     // Constants
@@ -169,5 +249,13 @@ window.gameCore = {
     
     // Functions that will be implemented elsewhere but exposed here
     nextLevel: null,
-    resetCurrentLevel: null
+    resetCurrentLevel: null,
+    
+    // Audio system
+    sounds,
+    loadSound,
+    playSound,
+    toggleSound,
+    playUnderwaterSound,
+    stopUnderwaterSound
 };

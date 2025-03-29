@@ -14,6 +14,7 @@ In Dieren Redders bestuur je samen met je kind verschillende dieren om levels te
 - **Schildpad** 🐢: Kan zwemmen door water (let op het zuurstofniveau!)
 - **Eenhoorn** 🦄: Kan vliegen (met omhoog-toets) en op wolkenplatforms staan
 - **Kat** 🐱: Kan klauwen gebruiken voor aanvallen en heeft soepele bewegingen
+- **Mol** 🦔: Kan graven door muren en de grond (met speciale-kracht-knop)
 
 De spelers moeten samenwerken en van dier wisselen om alle uitdagingen in het level te overwinnen, de puppy te redden en sterren te verzamelen. Sommige dieren hebben speciale krachten zoals vuurspuwen, die ze kunnen gebruiken tegen vijanden.
 
@@ -52,6 +53,8 @@ python server.py
 ```
 
 De game is beschikbaar op: http://localhost:5050
+
+# Ontwikkelen
 
 #### Development modus (met level editor)
 ```
@@ -107,6 +110,22 @@ Het spel bevat meerdere levels met toenemende moeilijkheidsgraad:
 - **Pepers**: Verzamel deze om tijdelijk vuur te kunnen spuwen en vijanden te verslaan.
 - **Puppy**: Red de puppy voordat je de ster verzamelt!
 - **Sterren**: Verzamel de ster om het level te voltooien (nadat je de puppy hebt gered) en scoor 50 punten per ster.
+
+## Geluidseffecten
+
+Dieren Redders bevat nu geluidseffecten! Plaats de volgende bestanden in de `sounds/` map:
+
+- **jump.mp3**: Geluid bij springen
+- **splash.mp3**: Geluid bij water
+- **collect.mp3**: Geluid bij verzamelen van items
+- **puppy.mp3**: Geluid bij redden van puppy
+- **claw.mp3**: Geluid bij gebruik van klauwen (kat)
+- **dig.mp3**: Geluid bij graven (mol)
+- **bounce.mp3**: Geluid bij gebruik van trampolines
+- **fire.mp3**: Geluid bij vuurspuwen
+- **game-over.mp3**: Geluid bij game over
+
+Je kunt het geluid aan/uit zetten met de knop rechtsboven in het spel.
 
 ## Tip voor Ouders
 

@@ -321,6 +321,11 @@ class Player {
         if ((gameControls.keys[this.controls.up] || gameControls.keys[this.controls.up.toLowerCase()]) && this.onGround) {
             this.velY = this.jumpPower;
             this.onGround = false;
+            
+            // Speel springgeluid
+            if (typeof gameCore.playSound === 'function') {
+                gameCore.playSound('jump', 0.7);
+            }
         }
         
         // Snel naar beneden gaan met pijl-omlaag (handig om in water te komen)
@@ -361,6 +366,11 @@ class Player {
                 this.clawActive = true;
                 this.clawTimer = 30; // Klauwen actief voor 30 frames (halve seconde)
                 this.canClaw = false; // Kan pas opnieuw gebruiken na afkoelen
+                
+                // Speel klauwgeluid
+                if (typeof gameCore.playSound === 'function') {
+                    gameCore.playSound('claw', 0.5);
+                }
                 
                 // Feedback message
                 gameCore.gameState.message = "Kat gebruikt klauwen!";
@@ -509,6 +519,11 @@ class Player {
                     if (otherPlayer instanceof Player) {
                         otherPlayer.velY += 0.5; // Kleine extra zwaartekracht voor de onderste speler
                     }
+                    
+                    // Speel springgeluid voor springen op andere speler
+                    if (typeof gameCore.playSound === 'function') {
+                        gameCore.playSound('jump');
+                    }
                 } else {
                     // De andere speler landt op deze speler
                     this.y = otherPlayer.y + otherPlayer.height;
@@ -533,6 +548,11 @@ class Player {
                         
                         // Markeer dat de schildpad onder water is
                         this.isUnderwater = true;
+                        
+                        // Speel onderwater geluid af als het nog niet speelt
+                        if (typeof gameCore.playUnderwaterSound === 'function') {
+                            gameCore.playUnderwaterSound();
+                        }
                         
                         // Zuurstof wordt nu afgetrokken in game-rendering.js
                         // Dit zorgt voor betere zichtbaarheid van het effect
@@ -597,9 +617,19 @@ class Player {
                                     // Reset de springkracht na gebruik
                                     platform.springForce = 0;
                                     platform.compressed = false;
+                                    
+                                    // Speel bounce geluid
+                                    if (typeof gameCore.playSound === 'function') {
+                                        gameCore.playSound('bounce', 0.7);
+                                    }
                                 } else {
                                     // Normale bouncing zonder compressie
                                     this.velY = Math.min(-this.velY * 0.7, -5);
+                                    
+                                    // Speel bounce geluid
+                                    if (typeof gameCore.playSound === 'function') {
+                                        gameCore.playSound('bounce', 0.7);
+                                    }
                                 }
                                 this.onGround = false;
                             }
@@ -813,7 +843,6 @@ class Player {
                     console.log("Player 2 Mole digging activated with Control key");
                 }
             }
-        }            }
         }
         
         // Update vuurspuwen status als de speler een pepertje heeft gegeten
@@ -831,6 +860,11 @@ class Player {
                     this.fireBreathActive = true;
                     this.fireBreathTimer = maxTime; // 5 seconds of fire breath
                     console.log("Fire breath activated! Timer set to 5 seconds");
+                    
+                    // Speel vuurgeluid
+                    if (typeof gameCore.playSound === 'function') {
+                        gameCore.playSound('fire', 0.5);
+                    }
                 }
                 this.isBreathingFire = true;
             } else {
@@ -882,6 +916,11 @@ class Player {
                     this.fireBreathActive = false; // Track if fire has been used yet
                     gameCore.gameState.message = "Vuur! Je kunt nu vuur spuwen met SPATIE!";
                     
+                    // Speel verzamelgeluid
+                    if (typeof gameCore.playSound === 'function') {
+                        gameCore.playSound('collect');
+                    }
+                    
                     // Voeg een vertraging toe om het bericht te tonen
                     setTimeout(() => {
                         gameCore.gameState.message = "";
@@ -895,6 +934,11 @@ class Player {
                     // Voeg 50 punten toe aan de score voor het verzamelen van een ster
                     gameCore.gameState.score += 50;
                     updateScoreDisplay();
+                    
+                    // Speel verzamelgeluid
+                    if (typeof gameCore.playSound === 'function') {
+                        gameCore.playSound('collect');
+                    }
                     
                     // Toon puntenpopup
                     if (typeof gameRendering !== 'undefined' && typeof gameRendering.showPointsEarned === 'function') {
@@ -1090,6 +1134,11 @@ class Player {
             if (this.oxygenLevel > 50) {
                 this.lowOxygenWarning = false;
             }
+            
+            // Stop onderwater geluid als speler uit het water is
+            if (typeof gameCore.stopUnderwaterSound === 'function') {
+                gameCore.stopUnderwaterSound();
+            }
         }
     }
     
@@ -1153,6 +1202,11 @@ class Player {
                 // Game state update
                 gameCore.gameState.message = `${this.name} heeft geen levens meer!`;
                 
+                // Speel game over geluid
+                if (typeof gameCore.playSound === 'function') {
+                    gameCore.playSound('gameOver', 0.8);
+                }
+                
                 // Reset lives 
                 this.lives = 3;
                 
@@ -1209,6 +1263,11 @@ class Player {
         
         // Always log when digging starts, regardless of debug level
         console.log("DIGGING ACTIVATED! 🦔💪");
+        
+        // Speel graafgeluid
+        if (typeof gameCore.playSound === 'function') {
+            gameCore.playSound('dig', 0.6);
+        }
         
         // Store the starting position for interpolation
         this.originalPosition = { x: this.x, y: this.y };
@@ -1599,6 +1658,11 @@ function updatePuppy() {
             // Voeg 1000 punten toe voor het redden van de puppy
             gameCore.gameState.score += 1000;
             updateScoreDisplay();
+            
+            // Speel puppy gered geluid
+            if (typeof gameCore.playSound === 'function') {
+                gameCore.playSound('puppy', 0.9);
+            }
             
             // Toon puntenpopup
             if (typeof gameRendering !== 'undefined' && typeof gameRendering.showPointsEarned === 'function') {
