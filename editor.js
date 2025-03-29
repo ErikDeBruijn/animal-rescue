@@ -58,7 +58,8 @@ let editorState = {
     cursorPosition: { x: 0, y: 0 }, // Huidige muispositie voor preview
     tempNewLevelIndex: -1, // Tijdelijke index voor nieuw levels
     hasUnsavedChanges: false, // Bijhouden of er niet-opgeslagen wijzigingen zijn
-    originalLevelState: null // Kopie van de originele levelstaat voor vergelijking
+    originalLevelState: null, // Kopie van de originele levelstaat voor vergelijking
+    theme: 'day' // Default thema is dag
 };
 
 // Hulpkleuren voor verschillende objecttypes
@@ -142,6 +143,206 @@ function updateAnimalCheckboxes() {
 }
 
 // Zet het venster op
+// Functies voor dag/nacht thema-specifieke elementen
+function drawSun() {
+    const time = Date.now() / 15000; // Langzame animatie voor de zon
+    
+    // Bepaal positie (links boven)
+    const centerX = 80 + Math.sin(time) * 20;
+    const centerY = 80 + Math.cos(time) * 10;
+    const radius = 30;
+    
+    // Teken gloeiend effect
+    const gradient = ctx.createRadialGradient(centerX, centerY, radius * 0.5, centerX, centerY, radius * 1.5);
+    gradient.addColorStop(0, 'rgba(255, 255, 0, 0.8)');
+    gradient.addColorStop(0.5, 'rgba(255, 200, 0, 0.3)');
+    gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius * 1.5, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Teken de zon
+    ctx.fillStyle = '#FFCC00';
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Teken stralen
+    ctx.strokeStyle = '#FFCC00';
+    ctx.lineWidth = 3;
+    const rays = 8;
+    const innerRadius = radius * 1.2;
+    const outerRadius = radius * 1.8;
+    
+    for (let i = 0; i < rays; i++) {
+        const angle = (i * Math.PI * 2 / rays) + time;
+        const startX = centerX + Math.cos(angle) * innerRadius;
+        const startY = centerY + Math.sin(angle) * innerRadius;
+        const endX = centerX + Math.cos(angle) * outerRadius;
+        const endY = centerY + Math.sin(angle) * outerRadius;
+        
+        ctx.beginPath();
+        ctx.moveTo(startX, startY);
+        ctx.lineTo(endX, endY);
+        ctx.stroke();
+    }
+}
+
+function drawMoon() {
+    const time = Date.now() / 20000; // Zeer langzame animatie voor de maan
+    
+    // Bepaal positie (rechts boven)
+    const centerX = canvas.width - 100 + Math.sin(time) * 10;
+    const centerY = 100 + Math.cos(time) * 10;
+    const radius = 25;
+    
+    // Teken gloeiend effect
+    const gradient = ctx.createRadialGradient(centerX, centerY, radius * 0.5, centerX, centerY, radius * 1.8);
+    gradient.addColorStop(0, 'rgba(200, 200, 255, 0.4)');
+    gradient.addColorStop(0.5, 'rgba(200, 200, 255, 0.2)');
+    gradient.addColorStop(1, 'rgba(200, 200, 255, 0)');
+    
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius * 1.8, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Teken de maan
+    ctx.fillStyle = '#E6E6FA';
+    ctx.beginPath();
+    ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Teken maankraters
+    ctx.fillStyle = 'rgba(180, 180, 200, 0.6)';
+    // Krater 1
+    ctx.beginPath();
+    ctx.arc(centerX - radius * 0.3, centerY - radius * 0.4, radius * 0.15, 0, Math.PI * 2);
+    ctx.fill();
+    // Krater 2
+    ctx.beginPath();
+    ctx.arc(centerX + radius * 0.4, centerY + radius * 0.2, radius * 0.2, 0, Math.PI * 2);
+    ctx.fill();
+    // Krater 3
+    ctx.beginPath();
+    ctx.arc(centerX - radius * 0.1, centerY + radius * 0.5, radius * 0.1, 0, Math.PI * 2);
+    ctx.fill();
+}
+
+function drawStars() {
+    const time = Date.now() / 8000; // Langzame twinkeling voor sterren
+    ctx.fillStyle = 'white';
+    
+    // Teken meerdere sterren verspreid over de hemel
+    const numStars = 50;
+    for (let i = 0; i < numStars; i++) {
+        // Gebruik vaste posities voor sterren, maar met kleine animatie
+        const x = (i * 329) % canvas.width;
+        const y = (i * 237) % (GROUND_LEVEL - 50);
+        
+        // Laat sommige sterren twinkelen
+        const twinkle = 0.5 + Math.sin(time + i * 0.3) * 0.5;
+        const size = 1 + Math.sin(time + i) * 0.5;
+        
+        ctx.globalAlpha = twinkle;
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    // Teken enkele grotere sterren die echt twinkelen
+    for (let i = 0; i < 10; i++) {
+        const x = (i * 919) % canvas.width;
+        const y = (i * 537) % (GROUND_LEVEL - 50);
+        const twinkle = 0.7 + Math.sin(time * 2 + i * 0.7) * 0.3;
+        
+        // Teken een vijfpuntige ster voor de grote sterren
+        const outerRadius = 2 + Math.sin(time + i) * 0.5;
+        const innerRadius = outerRadius * 0.5;
+        
+        ctx.globalAlpha = twinkle;
+        ctx.beginPath();
+        for (let j = 0; j < 10; j++) {
+            const radius = j % 2 === 0 ? outerRadius : innerRadius;
+            const angle = j * Math.PI / 5 + time * (i % 3);
+            const starX = x + Math.cos(angle) * radius;
+            const starY = y + Math.sin(angle) * radius;
+            
+            if (j === 0) ctx.moveTo(starX, starY);
+            else ctx.lineTo(starX, starY);
+        }
+        ctx.closePath();
+        ctx.fill();
+    }
+    
+    ctx.globalAlpha = 1.0; // Reset alpha
+}
+
+function drawDayClouds() {
+    const time = Date.now() / 25000;
+    
+    // Teken witte, lichte wolken voor overdag
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+    
+    // Eerste wolkengroep
+    const drift1 = 20 * Math.sin(time * Math.PI);
+    ctx.beginPath();
+    ctx.arc(100 + drift1, 80, 30, 0, Math.PI * 2);
+    ctx.arc(130 + drift1, 70, 30, 0, Math.PI * 2);
+    ctx.arc(160 + drift1, 80, 25, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Tweede wolkengroep
+    const drift2 = 15 * Math.cos(time * Math.PI * 0.7);
+    ctx.beginPath();
+    ctx.arc(600 + drift2, 100, 35, 0, Math.PI * 2);
+    ctx.arc(650 + drift2, 90, 30, 0, Math.PI * 2);
+    ctx.arc(690 + drift2, 100, 25, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Extra wolk in het midden
+    const drift3 = 10 * Math.sin(time * Math.PI * 1.3);
+    ctx.beginPath();
+    ctx.arc(350 + drift3, 120, 25, 0, Math.PI * 2);
+    ctx.arc(380 + drift3, 110, 25, 0, Math.PI * 2);
+    ctx.arc(410 + drift3, 125, 20, 0, Math.PI * 2);
+    ctx.fill();
+}
+
+function drawNightClouds() {
+    const time = Date.now() / 25000;
+    
+    // Teken donkere, blauwe wolken voor 's nachts
+    ctx.fillStyle = 'rgba(70, 90, 120, 0.7)';
+    
+    // Eerste wolkengroep
+    const drift1 = 20 * Math.sin(time * Math.PI);
+    ctx.beginPath();
+    ctx.arc(100 + drift1, 80, 30, 0, Math.PI * 2);
+    ctx.arc(130 + drift1, 70, 30, 0, Math.PI * 2);
+    ctx.arc(160 + drift1, 80, 25, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Tweede wolkengroep
+    const drift2 = 15 * Math.cos(time * Math.PI * 0.7);
+    ctx.beginPath();
+    ctx.arc(600 + drift2, 100, 35, 0, Math.PI * 2);
+    ctx.arc(650 + drift2, 90, 30, 0, Math.PI * 2);
+    ctx.arc(690 + drift2, 100, 25, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Extra wolk in het midden - iets donkerder
+    const drift3 = 10 * Math.sin(time * Math.PI * 1.3);
+    ctx.fillStyle = 'rgba(50, 70, 100, 0.7)';
+    ctx.beginPath();
+    ctx.arc(350 + drift3, 120, 25, 0, Math.PI * 2);
+    ctx.arc(380 + drift3, 110, 25, 0, Math.PI * 2);
+    ctx.arc(410 + drift3, 125, 20, 0, Math.PI * 2);
+    ctx.fill();
+}
+
 window.onload = function() {
     initEditor();
     setupEventListeners();
@@ -232,6 +433,7 @@ function loadLevel(levelIndex) {
         // Maak een nieuw leeg level
         editorState.editingLevel = {
             name: "Nieuw Level",
+            theme: "day", // Standaard dag-thema
             allowedAnimals: ["SQUIRREL", "TURTLE", "UNICORN", "CAT", "MOLE"], // Standaard alle dieren toegestaan
             startPositions: [{x: 50, y: GROUND_LEVEL - 50}, {x: 100, y: GROUND_LEVEL - 50}],
             platforms: [],
@@ -303,6 +505,23 @@ function loadLevel(levelIndex) {
     
     // Update de dieren selectievakjes
     updateAnimalCheckboxes();
+    
+    // Update thema selectie
+    const themeSelect = document.getElementById('theme-select');
+    if (themeSelect) {
+        // Als het level een thema heeft, update de selector
+        if (editorState.editingLevel.theme) {
+            editorState.theme = editorState.editingLevel.theme;
+            themeSelect.value = editorState.editingLevel.theme;
+            
+            // Update CSS class op basis van thema
+            if (editorState.editingLevel.theme === 'night') {
+                document.documentElement.classList.add('night-theme');
+            } else {
+                document.documentElement.classList.remove('night-theme');
+            }
+        }
+    }
     
     // Render het level
     renderEditor();
@@ -607,9 +826,7 @@ function setupEventListeners() {
         let levelIndex = editorState.currentLevel;
         
         // Maak altijd eerst een nieuwe versie van de code
-        exportLevelCode();
-        
-        const levelCode = document.getElementById('export-code').textContent;
+        const levelCode = exportLevelCode();
         
         // Valideer het level voor het opslaan
         if (!validateLevel()) {
@@ -750,6 +967,37 @@ function setupEventListeners() {
         editorState.editingLevel.name = e.target.value;
         markUnsavedChanges();
     });
+    
+    // Theme selector
+    const themeSelect = document.getElementById('theme-select');
+    if (themeSelect) {
+        themeSelect.addEventListener('change', function() {
+            // Bewaar de oude themakeuze om te vergelijken
+            const oldTheme = editorState.editingLevel.theme || 'day';
+            
+            // Update editorState theme
+            editorState.theme = this.value;
+            
+            // Update het theme in het level zelf
+            editorState.editingLevel.theme = this.value;
+            
+            // Update CSS class op basis van thema
+            if (this.value === 'night') {
+                document.documentElement.classList.add('night-theme');
+            } else {
+                document.documentElement.classList.remove('night-theme');
+            }
+            
+            // Markeer als niet-opgeslagen als het thema is veranderd
+            if (oldTheme !== this.value) {
+                markUnsavedChanges();
+                console.log('Thema gewijzigd van', oldTheme, 'naar', this.value, '- Niet-opgeslagen wijzigingen:', editorState.hasUnsavedChanges);
+            }
+            
+            // Render opnieuw
+            renderEditor();
+        });
+    }
     
     // Music selector (if it exists in the DOM)
     const musicSelect = document.getElementById('level-music-select');
@@ -2021,6 +2269,21 @@ function renderEditor() {
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
+    // Teken de lucht achtergrond op basis van thema
+    const skyColor = getComputedStyle(document.documentElement).getPropertyValue('--sky-color');
+    ctx.fillStyle = skyColor;
+    ctx.fillRect(0, 0, canvas.width, GROUND_LEVEL);
+    
+    // Teken dag/nacht specifieke elementen
+    if (editorState.theme === 'day') {
+        drawSun();
+        drawDayClouds();
+    } else {
+        drawMoon();
+        drawStars();
+        drawNightClouds();
+    }
+    
     // Show warning message when laser platform type is selected
     if (editorState.selectedTool === 'place' && 
         editorState.selectedObjectType === 'platform' && 
@@ -2032,9 +2295,15 @@ function renderEditor() {
         ctx.textAlign = 'left'; // Reset text alignment
     }
     
-    // Teken de achtergrond (gras)
-    ctx.fillStyle = '#45882f';
+    // Teken de grond op basis van thema
+    const groundColor = getComputedStyle(document.documentElement).getPropertyValue('--ground-color');
+    ctx.fillStyle = groundColor;
     ctx.fillRect(0, GROUND_LEVEL, canvas.width, canvas.height - GROUND_LEVEL);
+    
+    // Teken gras op de grond op basis van thema
+    const grassColor = getComputedStyle(document.documentElement).getPropertyValue('--grass-color');
+    ctx.fillStyle = grassColor;
+    ctx.fillRect(0, GROUND_LEVEL, canvas.width, 10);
     
     // Teken een grid
     drawGrid();
@@ -2138,7 +2407,8 @@ function drawPlacementPreview() {
 function drawGrid() {
     const gridSize = 20;
     
-    ctx.strokeStyle = 'rgba(200, 200, 200, 0.3)';
+    // Gebruik CSS variabelen voor kleuren op basis van het huidige thema
+    ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--grid-color');
     ctx.lineWidth = 1;
     
     // Verticale lijnen
@@ -2158,7 +2428,7 @@ function drawGrid() {
     }
     
     // Dikkere lijn voor de grond
-    ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
+    ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--ground-line-color');
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(0, GROUND_LEVEL);
@@ -2753,6 +3023,9 @@ function exportLevelCode() {
         code += `    music: "${level.music}",\n`;
     }
     
+    // Voeg thema toe
+    code += `    theme: "${editorState.theme}",\n`;
+    
     // Voeg toegestane dieren toe als deze beschikbaar zijn
     if (level.allowedAnimals && level.allowedAnimals.length > 0) {
         code += `    allowedAnimals: ${JSON.stringify(level.allowedAnimals)},\n`;
@@ -2837,8 +3110,11 @@ function exportLevelCode() {
     
     code += `}`;
     
-    // Toon de geëxporteerde code
-    document.getElementById('export-code').textContent = code;
+    // Toon de geëxporteerde code (alleen als het element bestaat)
+    const exportCodeElement = document.getElementById('export-code');
+    if (exportCodeElement) {
+        exportCodeElement.textContent = code;
+    }
     
     // Update de editor weergave
     renderEditor();
