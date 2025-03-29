@@ -126,6 +126,7 @@ function loadGameSounds(soundsPath = 'sounds/') {
         { name: 'bounce', file: 'bounce.mp3', volume: 0.7 },
         { name: 'fire', file: 'fire.mp3', volume: 0.5 },
         { name: 'gameOver', file: 'game-over.mp3', volume: 0.8 },
+        { name: 'laserZap', file: 'laser-zap.mp3', volume: 1.0 }, // Maximaal volume voor laser zap
         { name: 'underwater', file: 'under-water.mp3', volume: 0.4, loop: true },
         { name: 'wind', file: 'wind.mp3', volume: 0.5, loop: true }
     ];

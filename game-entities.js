@@ -391,7 +391,7 @@ class Player {
             // bij het indrukken van de spatiebalk, niet bij het ingedrukt houden
             if (gameControls.keys[' '] && !this.spaceKeyWasDown && !this.clawActive && this.canClaw) {
                 this.clawActive = true;
-                this.clawTimer = 30; // Klauwen actief voor 30 frames (halve seconde)
+                this.clawTimer = 70; // Klauwen actief voor 30 frames (halve seconde)
                 this.canClaw = false; // Kan pas opnieuw gebruiken na afkoelen
                 
                 // Speel klauwgeluid (gewoon, niet als loop)
@@ -614,7 +614,7 @@ class Player {
                 // Collision handling afhankelijk van diersoort
                 if (platform.type === "LASER") {
                     // Laser platforms are deadly for all animals
-                    this.loseLife();
+                    this.loseLife("LASER");
                 } else if (platform.type === "WATER") {
                     if (this.animalType === "TURTLE") {
                         // Schildpad kan zwemmen
@@ -655,7 +655,7 @@ class Player {
                         }
                     } else {
                         // Andere dieren kunnen niet zwemmen
-                        this.loseLife();
+                        this.loseLife("WATER");
                     }
                 } else if (platform.type === "TRAMPOLINE") {
                     // Trampoline platform logica
@@ -1044,7 +1044,7 @@ class Player {
         // Valstrikken controleren
         traps.forEach(trap => {
             if (this.collidesWithObject(trap)) {
-                this.loseLife();
+                this.loseLife("TRAP");
             }
         });
         
@@ -1102,11 +1102,11 @@ class Player {
                     } else {
                         // Bij aanraking met een vijand, leven verliezen
                         console.log("Cat collided with enemy but claws not active - losing life");
-                        this.loseLife();
+                        this.loseLife("ENEMY");
                     }
                 } else {
                     // Bij aanraking met een vijand, leven verliezen
-                    this.loseLife();
+                    this.loseLife("ENEMY");
                 }
             }
             
@@ -1132,7 +1132,7 @@ class Player {
                 // Check if player is hit by fire
                 if (this.collidesWithObject(fireHitbox)) {
                     // Player is hit by dragon fire - lose a life
-                    this.loseLife();
+                    this.loseLife("FIRE");
                     gameCore.gameState.message = "Pas op voor drakenvuur!";
                     setTimeout(() => {
                         if (gameCore.gameState.message === "Pas op voor drakenvuur!") {
@@ -1286,9 +1286,10 @@ class Player {
      * - Checking for game over condition
      * - Resetting player position
      * 
+     * @param {string} damageType - Type of damage that caused life loss (e.g., "LASER")
      * @returns {boolean} true if game over, false otherwise
      */
-    loseLife() {
+    loseLife(damageType) {
         // Only lose a life if not currently invulnerable
         if (!this.isInvulnerable) {
             // Game logic: reduce lives
@@ -1300,6 +1301,14 @@ class Player {
             // Invulnerability period
             this.isInvulnerable = true;
             this.invulnerableTimer = 120; // 2 seconds at 60 fps
+            
+            // Speel geluid af afhankelijk van schade type
+            if (typeof gameAudio !== 'undefined' && typeof gameAudio.playSound === 'function') {
+                if (damageType === "LASER") {
+                    // Speel laser zap geluid op maximaal volume als de speler een laser raakt
+                    gameAudio.playSound('laserZap', 1.0);
+                }
+            }
             
             // Stop alle lopende geluidseffecten
             if (typeof gameAudio !== 'undefined' && typeof gameAudio.stopAllLoopingSounds === 'function') {
