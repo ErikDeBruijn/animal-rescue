@@ -910,24 +910,16 @@ class Player {
             }
         });
         
-        // Check if mole should activate or update digging with G (player 1) or Control (player 2)
+        // Check if mole should activate or update digging with configured dig button
         if (this.animalType === "MOLE") {
             // Update digging progress if already digging
             if (this.isDigging) {
                 this.updateDigging();
             }
             // Start digging if not already digging
-            else if (this.canDig) {
-                // For player 1, check G key
-                if (this.name === "Speler 1" && (gameControls.keys["g"] || gameControls.keys["G"])) {
-                    this.activateDigging();
-                    console.log("Player 1 Mole digging activated with G key");
-                }
-                // For player 2, check Control key
-                else if (this.name === "Speler 2" && (gameControls.keys["Control"] || gameControls.keys["ControlLeft"] || gameControls.keys["ControlRight"])) {
-                    this.activateDigging();
-                    console.log("Player 2 Mole digging activated with Control key");
-                }
+            else if (this.canDig && this.isDigButtonPressed()) {
+                this.activateDigging();
+                console.log(`${this.name} Mole digging activated with ${this.controls.dig} key`);
             }
         }
         
@@ -1510,12 +1502,16 @@ class Player {
      * Check if the digging button for this player is currently pressed
      */
     isDigButtonPressed() {
-        if (this.name === "Speler 1") {
-            return gameControls.keys['g'] || gameControls.keys['G'];
-        } else if (this.name === "Speler 2") {
+        // Get the dig button from player controls configuration
+        const digButton = this.controls.dig;
+        
+        // Handle special cases for Control key which can be multiple keys
+        if (digButton === "Control") {
             return gameControls.keys['Control'] || gameControls.keys['ControlLeft'] || gameControls.keys['ControlRight'];
         }
-        return false;
+        
+        // For normal keys like 'g', check both upper and lower case
+        return gameControls.keys[digButton] || gameControls.keys[digButton.toUpperCase()];
     }
     
     /**

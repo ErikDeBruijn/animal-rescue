@@ -133,8 +133,8 @@ function setupInputListeners() {
 
 // Definieer de controle mappings voor elke speler
 const controls = {
-    player1: { up: "w", down: "s", left: "a", right: "d" },
-    player2: { up: "ArrowUp", down: "ArrowDown", left: "ArrowLeft", right: "ArrowRight" }
+    player1: { up: "w", down: "s", left: "a", right: "d", dig: "g" },
+    player2: { up: "ArrowUp", down: "ArrowDown", left: "ArrowLeft", right: "ArrowRight", dig: "Control" }
 };
 
 // Exporteer de besturing
