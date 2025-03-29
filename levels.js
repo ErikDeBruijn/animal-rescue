@@ -6,7 +6,7 @@
 function getLevels(GROUND_LEVEL) {    return [
         {
     name: "AA!!! Draak!!!",
-    allowedAnimals: ["UNICORN","CAT"],
+    allowedAnimals: ["UNICORN","CAT","MOLE"],
     startPositions: [
         {x: 50, y: 350},
         {x: 100, y: 350}
@@ -17,7 +17,8 @@ function getLevels(GROUND_LEVEL) {    return [
         {x: 423, y: 227, width: 100, height: 20, type: "TREADMILL", speed: -1},
         {x: 175, y: 354, width: 100, height: 20, type: "TRAMPOLINE"},
         {x: 420, y: 303, width: 100, height: 20, type: "TRAMPOLINE"},
-        {x: 336, y: 155, width: 20, height: 244, type: "VERTICAL"}
+        {x: 336, y: 155, width: 20, height: 244, type: "VERTICAL"},
+        {x: 250, y: 155, width: 20, height: 244, type: "VERTICAL"}
     ],
     traps: [
 
@@ -72,7 +73,7 @@ function getLevels(GROUND_LEVEL) {    return [
 },
         {
     name: "Wat is dat?",
-    allowedAnimals: ["TURTLE","UNICORN","CAT"],
+    allowedAnimals: ["TURTLE","UNICORN","CAT","MOLE"],
     startPositions: [
         {x: 50, y: 350},
         {x: 100, y: 350}

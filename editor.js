@@ -93,7 +93,7 @@ function handleBackToGame() {
 function updateAnimalCheckboxes() {
     // Initialiseer dierenarray als deze niet bestaat in het level
     if (!editorState.editingLevel.allowedAnimals) {
-        editorState.editingLevel.allowedAnimals = ["SQUIRREL", "TURTLE", "UNICORN", "CAT"];
+        editorState.editingLevel.allowedAnimals = ["SQUIRREL", "TURTLE", "UNICORN", "CAT", "MOLE"];
     }
     
     // Zet alle checkboxes op basis van opgeslagen waarden
@@ -105,6 +105,8 @@ function updateAnimalCheckboxes() {
         editorState.editingLevel.allowedAnimals.includes("UNICORN");
     document.getElementById('animal-cat').checked = 
         editorState.editingLevel.allowedAnimals.includes("CAT");
+    document.getElementById('animal-mole').checked = 
+        editorState.editingLevel.allowedAnimals.includes("MOLE");
 }
 
 // Zet het venster op
@@ -198,7 +200,7 @@ function loadLevel(levelIndex) {
         // Maak een nieuw leeg level
         editorState.editingLevel = {
             name: "Nieuw Level",
-            allowedAnimals: ["SQUIRREL", "TURTLE", "UNICORN", "CAT"], // Standaard alle dieren toegestaan
+            allowedAnimals: ["SQUIRREL", "TURTLE", "UNICORN", "CAT", "MOLE"], // Standaard alle dieren toegestaan
             startPositions: [{x: 50, y: GROUND_LEVEL - 50}, {x: 100, y: GROUND_LEVEL - 50}],
             platforms: [],
             traps: [],
@@ -336,6 +338,9 @@ function setupEventListeners() {
     document.getElementById('animal-cat').addEventListener('change', function() {
         updateAllowedAnimals();
     });
+    document.getElementById('animal-mole').addEventListener('change', function() {
+        updateAllowedAnimals();
+    });
     
     // Function to update allowed animals based on checkboxes
     function updateAllowedAnimals() {
@@ -344,6 +349,7 @@ function setupEventListeners() {
         if (document.getElementById('animal-turtle').checked) allowedAnimals.push('TURTLE');
         if (document.getElementById('animal-unicorn').checked) allowedAnimals.push('UNICORN');
         if (document.getElementById('animal-cat').checked) allowedAnimals.push('CAT');
+        if (document.getElementById('animal-mole').checked) allowedAnimals.push('MOLE');
         
         // Update the level data
         editorState.editingLevel.allowedAnimals = allowedAnimals;

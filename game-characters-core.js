@@ -32,6 +32,8 @@ function drawPlayer(player) {
         window.gameCharactersPlayers.drawUnicorn(player);
     } else if (player.animalType === "CAT") {
         window.gameCharactersPlayers.drawCat(player);
+    } else if (player.animalType === "MOLE") {
+        window.gameCharactersPlayers.drawMole(player);
     }
     
     // Draw ice sliding effect - little motion lines behind the player
@@ -128,6 +130,7 @@ window.gameCharacters = {
     drawTurtle: window.gameCharactersPlayers.drawTurtle,
     drawUnicorn: window.gameCharactersPlayers.drawUnicorn,
     drawCat: window.gameCharactersPlayers.drawCat,
+    drawMole: window.gameCharactersPlayers.drawMole,
     drawFireBreath: window.gameCharactersPlayers.drawFireBreath,
     
     // NPC render functions (from npcs module)

@@ -15,7 +15,7 @@ editor.loadLevel = function(levelIndex) {
         
         const newLevel = {
             name: "Nieuw Level",
-            allowedAnimals: ["SQUIRREL", "TURTLE", "UNICORN", "CAT"],
+            allowedAnimals: ["SQUIRREL", "TURTLE", "UNICORN", "CAT", "MOLE"],
             platforms: [],
             enemies: [],
             traps: [],

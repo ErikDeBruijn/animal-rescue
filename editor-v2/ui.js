@@ -8,7 +8,7 @@ window.editor = window.editor || {};
 editor.updateAnimalCheckboxes = function() {
     // Initialiseer dierenarray als deze niet bestaat in het level
     if (!editor.state.editingLevel.allowedAnimals) {
-        editor.state.editingLevel.allowedAnimals = ["SQUIRREL", "TURTLE", "UNICORN", "CAT"];
+        editor.state.editingLevel.allowedAnimals = ["SQUIRREL", "TURTLE", "UNICORN", "CAT", "MOLE"];
     }
     
     // Zet alle checkboxes op basis van opgeslagen waarden
@@ -20,6 +20,8 @@ editor.updateAnimalCheckboxes = function() {
         editor.state.editingLevel.allowedAnimals.includes("UNICORN");
     document.getElementById('animal-cat').checked = 
         editor.state.editingLevel.allowedAnimals.includes("CAT");
+    document.getElementById('animal-mole').checked = 
+        editor.state.editingLevel.allowedAnimals.includes("MOLE");
 };
 
 // Update de UI knoppen op basis van het huidige level
@@ -231,7 +233,8 @@ editor.setupUI = function() {
         document.getElementById('animal-squirrel'),
         document.getElementById('animal-turtle'),
         document.getElementById('animal-unicorn'),
-        document.getElementById('animal-cat')
+        document.getElementById('animal-cat'),
+        document.getElementById('animal-mole')
     ];
     
     animalCheckboxes.forEach(checkbox => {
@@ -271,11 +274,13 @@ editor.updateAllowedAnimals = function() {
     const turtleCheckbox = document.getElementById('animal-turtle');
     const unicornCheckbox = document.getElementById('animal-unicorn');
     const catCheckbox = document.getElementById('animal-cat');
+    const moleCheckbox = document.getElementById('animal-mole');
     
     if (squirrelCheckbox && squirrelCheckbox.checked) allowedAnimals.push('SQUIRREL');
     if (turtleCheckbox && turtleCheckbox.checked) allowedAnimals.push('TURTLE');
     if (unicornCheckbox && unicornCheckbox.checked) allowedAnimals.push('UNICORN');
     if (catCheckbox && catCheckbox.checked) allowedAnimals.push('CAT');
+    if (moleCheckbox && moleCheckbox.checked) allowedAnimals.push('MOLE');
     
     // Update the level data
     editor.state.editingLevel.allowedAnimals = allowedAnimals;
