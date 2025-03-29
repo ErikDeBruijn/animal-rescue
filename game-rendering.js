@@ -3,7 +3,52 @@
 
 // Collectible object rendering
 function drawCollectible(collectible) {
-    if (collectible.type === "PEPPER") {
+    if (collectible.type === "DOGFOOD") {
+        // Draw dog food (a bone-shaped biscuit)
+        const centerX = collectible.x + collectible.width/2;
+        const centerY = collectible.y + collectible.height/2;
+        
+        // Add slight rotation for visual appeal
+        const rotationAngle = 10 * Math.PI / 180;
+        gameCore.ctx.save();
+        gameCore.ctx.translate(centerX, centerY);
+        gameCore.ctx.rotate(rotationAngle);
+        
+        // Draw the bone shape
+        gameCore.ctx.fillStyle = '#D2B48C'; // Tan/light brown color for dog biscuit
+        
+        // Main bone body (rectangle) - more elongated
+        const bodyWidth = collectible.width * 0.7;
+        const bodyHeight = collectible.height * 0.2;
+        gameCore.ctx.fillRect(-bodyWidth/2, -bodyHeight/2, bodyWidth, bodyHeight);
+        
+        // Left bone end (circle at left) - smaller radius
+        gameCore.ctx.beginPath();
+        gameCore.ctx.arc(-bodyWidth/2, -bodyHeight/1.3, bodyHeight/0.9, 0, Math.PI * 2);
+        gameCore.ctx.arc(-bodyWidth/2, bodyHeight/1.3, bodyHeight/0.9, 0, Math.PI * 2);
+        gameCore.ctx.fill();
+        
+        // Right bone end (circle at right) - smaller radius
+        gameCore.ctx.beginPath();
+        gameCore.ctx.arc(bodyWidth/2, -bodyHeight/1.3, bodyHeight/0.9, 0, Math.PI * 2);
+        gameCore.ctx.arc(bodyWidth/2, bodyHeight/1.3, bodyHeight/0.9, 0, Math.PI * 2);
+        gameCore.ctx.fill();
+        
+        // Add highlight
+        gameCore.ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+        gameCore.ctx.beginPath();
+        gameCore.ctx.ellipse(
+            -bodyWidth/4,
+            -bodyHeight/4,
+            bodyWidth/5,
+            bodyHeight/2,
+            0, 0, Math.PI * 2
+        );
+        gameCore.ctx.fill();
+        
+        // Restore the canvas transformation
+        gameCore.ctx.restore();
+    } else if (collectible.type === "PEPPER") {
         // Draw a pepper
         const centerX = collectible.x + collectible.width/2;
         const centerY = collectible.y + collectible.height/2;
@@ -198,7 +243,11 @@ function drawTrap(trap) {
                     }, 2000);
                 }
             } catch (e) {
-                console.error('Error playing fire sound:', e);
+                // Log error only once per trap to avoid console spam
+                if (!trap.errorLogged) {
+                    console.error('Error playing fire sound:', e);
+                    trap.errorLogged = true;
+                }
             }
         }
     }

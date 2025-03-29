@@ -328,7 +328,7 @@ const gameMultiplayer = {
                     gameCore.gameState.puppySaved = data.puppy_saved;
                     
                     // Update ook de puppy in het huidige level
-                    const currentLevelData = window.levels[gameCore.currentLevel];
+                    const currentLevelData = gameCore.currentLevel;
                     if (currentLevelData.puppy) {
                         currentLevelData.puppy.saved = data.puppy_saved;
                         
@@ -377,7 +377,7 @@ const gameMultiplayer = {
                 }
                 
                 // Als de collectibles informatie wordt meegestuurd, update dan de lokale collectibles
-                const currentLevelData = window.levels[gameCore.currentLevel];
+                const currentLevelData = gameCore.currentLevel;
                 
                 // Als hostplayer aangeeft dat alle collectibles verzameld zijn
                 if ('collectibles_completed' in data && data.collectibles_completed) {
@@ -417,23 +417,25 @@ const gameMultiplayer = {
                 }
                 
                 // Level verandering is complexer en vereist speciale behandeling
-                if ('current_level' in data && data.current_level !== gameCore.currentLevel) {
+                if ('current_level' in data && data.current_level !== gameCore.currentLevelIndex) {
                     console.log("Level change detected:", data.current_level);
-                    gameCore.currentLevel = data.current_level;
+                    const newLevelIndex = data.current_level;
+                    gameCore.currentLevelIndex = newLevelIndex;
+                    gameCore.currentLevel = window.levels[newLevelIndex];
                     
                     // Reset spelers
                     if (window.player1) {
                         window.player1.animalType = "SQUIRREL";
                         window.player1.updateAnimalProperties();
-                        window.player1.x = window.levels[gameCore.currentLevel].startPositions[0].x;
-                        window.player1.y = window.levels[gameCore.currentLevel].startPositions[0].y;
+                        window.player1.x = gameCore.currentLevel.startPositions[0].x;
+                        window.player1.y = gameCore.currentLevel.startPositions[0].y;
                     }
                     
                     if (window.player2) {
                         window.player2.animalType = "TURTLE";
                         window.player2.updateAnimalProperties();
-                        window.player2.x = window.levels[gameCore.currentLevel].startPositions[1].x;
-                        window.player2.y = window.levels[gameCore.currentLevel].startPositions[1].y;
+                        window.player2.x = gameCore.currentLevel.startPositions[1].x;
+                        window.player2.y = gameCore.currentLevel.startPositions[1].y;
                     }
                     
                     // Reset game state
@@ -504,7 +506,7 @@ const gameMultiplayer = {
                 }
                 
                 // Reset de onground-status op basis van de y-positie
-                const currentLevelData = window.levels[gameCore.currentLevel];
+                const currentLevelData = gameCore.currentLevel;
                 
                 // Check of de speler op de grond staat
                 if (player.playerObj.y + player.playerObj.height >= gameCore.GROUND_LEVEL) {

@@ -609,17 +609,17 @@ function drawPuppy(puppy) {
         puppy.showingHelp = false;
     }
     
-    // Draw a small SOS text bubble above the puppy to indicate it needs help
-    if (!gameCore.gameState.gameOver && puppy.showingHelp) {
+    // Draw a text bubble above the puppy either showing "Help!" or "Yummy!"
+    if (!gameCore.gameState.gameOver && (puppy.showingHelp || puppy.showingYummy)) {
         const bubbleWidth = puppy.width * 1.2;
         const bubbleHeight = puppy.height * 0.6;
         const bubbleX = puppyX - (bubbleWidth - puppy.width) / 2;
         const bubbleY = puppy.y - bubbleHeight - 15;
         
-        // Add a small trembling effect to the SOS text bubble
+        // Add a small trembling effect to the SOS text bubble or happy effect for Yummy
         const time = Date.now() / 150;
-        const trembleX = Math.sin(time) * 1.5;
-        const trembleY = Math.cos(time * 1.5) * 1;
+        const trembleX = puppy.showingYummy ? Math.sin(time*1.5) * 1.0 : Math.sin(time) * 1.5;
+        const trembleY = puppy.showingYummy ? Math.sin(time*2) * 0.8 : Math.cos(time * 1.5) * 1;
         
         // Initialiseer de puppy ooganimatie parameters als ze nog niet bestaan
         if (puppy.leftEyeBulge === undefined) puppy.leftEyeBulge = 0;
@@ -644,11 +644,27 @@ function drawPuppy(puppy) {
         gameCore.ctx.lineTo(puppyX + puppy.width/2, puppy.y);
         gameCore.ctx.fill();
         
-        // Draw "Help!" in the text bubble
-        gameCore.ctx.fillStyle = 'red';
-        gameCore.ctx.font = '10px Arial';
-        gameCore.ctx.textAlign = 'center';
-        gameCore.ctx.fillText('Help!', bubbleX + bubbleWidth/2 + trembleX, bubbleY + bubbleHeight/2 + 4 + trembleY);
+        if (puppy.showingYummy) {
+            // Draw "Yummy!" in the text bubble
+            gameCore.ctx.fillStyle = '#FF8C00'; // Dark orange
+            gameCore.ctx.font = 'bold 10px Arial';
+            gameCore.ctx.textAlign = 'center';
+            gameCore.ctx.fillText('Yummy!', bubbleX + bubbleWidth/2 + trembleX, bubbleY + bubbleHeight/2 + 4 + trembleY);
+            
+            // Decrease the yummy timer if it exists
+            if (puppy.yummyTimer !== undefined) {
+                puppy.yummyTimer--;
+                if (puppy.yummyTimer <= 0) {
+                    puppy.showingYummy = false;
+                }
+            }
+        } else {
+            // Draw "Help!" in the text bubble
+            gameCore.ctx.fillStyle = 'red';
+            gameCore.ctx.font = '10px Arial';
+            gameCore.ctx.textAlign = 'center';
+            gameCore.ctx.fillText('Help!', bubbleX + bubbleWidth/2 + trembleX, bubbleY + bubbleHeight/2 + 4 + trembleY);
+        }
         
         // Animated footprints for the puppy to indicate it's moving
         const footprintTime = Date.now() / 500;

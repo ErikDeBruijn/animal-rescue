@@ -724,7 +724,7 @@ function drawCat(player) {
         gameCore.ctx.stroke();
         
         // Check if there are any enemies in the current level
-        const currentLevelData = window.levels[gameCore.currentLevel];
+        const currentLevelData = gameCore.currentLevel;
         const enemies = currentLevelData.enemies || [];
         
         // Only show blood effects if there are enemies being hit

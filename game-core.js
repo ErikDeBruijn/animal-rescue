@@ -98,10 +98,11 @@ function getStartLevel() {
     const hash = window.location.hash;
     if (hash && hash.startsWith('#level=')) {
         const levelParam = hash.substring(7); // Extraheer het getal na #level=
-        const levelIndex = parseInt(levelParam);
-        // Controleer of het een geldige level index is
-        if (!isNaN(levelIndex) && levelIndex >= 0) {
-            startLevel = levelIndex;
+        const levelNumber = parseInt(levelParam);
+        // Controleer of het een geldig level nummer is (1-based voor gebruiker, 0-based intern)
+        if (!isNaN(levelNumber) && levelNumber >= 1) {
+            // Converteer van 1-based naar 0-based index
+            startLevel = levelNumber - 1;
         }
     }
 
@@ -110,10 +111,11 @@ function getStartLevel() {
     const queryLevelParam = urlParams.get('level');
     
     if (queryLevelParam !== null) {
-        const levelIndex = parseInt(queryLevelParam);
-        // Controleer of het een geldige level index is
-        if (!isNaN(levelIndex) && levelIndex >= 0) {
-            startLevel = levelIndex;
+        const levelNumber = parseInt(queryLevelParam);
+        // Controleer of het een geldig level nummer is (1-based voor gebruiker, 0-based intern)
+        if (!isNaN(levelNumber) && levelNumber >= 1) {
+            // Converteer van 1-based naar 0-based index
+            startLevel = levelNumber - 1;
         }
     }
     
@@ -134,7 +136,8 @@ function getStartLevel() {
 function updateEditorLink() {
     const editorLink = document.getElementById('editor-link');
     if (editorLink) {
-        editorLink.href = `editor.html#level=${gameCore.currentLevelIndex}`;
+        // Gebruik 1-based index voor de editor link om consistent te zijn met de URL parameter
+        editorLink.href = `editor.html#level=${gameCore.currentLevelIndex + 1}`;
     }
 }
 

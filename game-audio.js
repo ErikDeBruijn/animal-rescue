@@ -352,7 +352,8 @@ function loadGameSounds(soundsPath = 'sounds/') {
         { name: 'laserZap', file: 'laser-zap.mp3', volume: 1.0 }, // Maximaal volume voor laser zap
         { name: 'underwater', file: 'under-water.mp3', volume: 0.4, loop: true },
         { name: 'wind', file: 'wind.mp3', volume: 0.5, loop: true },
-        { name: 'collectPuppy', file: 'collect-puppy.mp3', volume: 0.9 },
+        { name: 'collectPuppy', file: 'tatatataa.mp3', volume: 1.0 },
+        { name: 'puppyBark', file: 'puppy-bark.mp3', volume: 1.0 },
         { name: 'bubblePop', file: 'bubble-pop.mp3', volume: 1.0 },
         { name: 'lose-life', file: 'lose-life.mp3', volume: 0.8 },
         { name: 'gameOver', file: 'game-over.mp3', volume: 0.9 }
