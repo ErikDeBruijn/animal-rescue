@@ -44,6 +44,8 @@ class Player {
         this.canClaw = true; // Start with the ability to claw
         this.clawTimer = 0;
         this.clawActive = false;
+        this.spaceKeyWasDown = false; // Track space key press/release
+        this.feedbackShown = false; // Track if message was already shown
         
         // Mole digging system - Enhanced version
         this.canDig = true;             // Ability to start digging
@@ -85,11 +87,6 @@ class Player {
             this.canClaw = true;
             this.clawActive = false;
             this.clawTimer = 0;
-        } else {
-            // Stop claw sound if switching to another animal
-            if (typeof gameAudio !== 'undefined' && typeof gameAudio.stopLoopingSound === 'function') {
-                gameAudio.stopLoopingSound('claw');
-            }
         }
         
         // Reset digging ability when switching to mole
@@ -276,12 +273,7 @@ class Player {
                     // Reset cooldown immediately for better responsiveness
                     this.canClaw = true;
                     
-                    // Stop klauwgeluid wanneer klauwen niet meer actief zijn
-                    if (typeof gameAudio !== 'undefined') {
-                        if (typeof gameAudio.stopLoopingSound === 'function') {
-                            gameAudio.stopLoopingSound('claw');
-                        }
-                    }
+                    // Klauwen zijn niet meer actief
                 }
             }
         }
@@ -394,34 +386,42 @@ class Player {
                 this.canClaw = true;
             }
             
-            // Force reset if cat can't claw for too long
-            if (gameControls.keys[' '] && !this.canClaw && !this.clawActive) {
-                this.canClaw = true;
-            }
-            
-            // Controleer of de spatiebalk is ingedrukt
-            if (gameControls.keys[' '] && !this.clawActive && this.canClaw) {
+            // Bij het indrukken van spatiebalk: activeer klauwen als dat kan
+            // We gebruiken key down/up om te zorgen dat de actie maar één keer uitgevoerd wordt
+            // bij het indrukken van de spatiebalk, niet bij het ingedrukt houden
+            if (gameControls.keys[' '] && !this.spaceKeyWasDown && !this.clawActive && this.canClaw) {
                 this.clawActive = true;
                 this.clawTimer = 30; // Klauwen actief voor 30 frames (halve seconde)
                 this.canClaw = false; // Kan pas opnieuw gebruiken na afkoelen
                 
-                // Speel klauwgeluid als loopend geluid
-                if (typeof gameAudio !== 'undefined') {
-                    if (typeof gameAudio.playLoopingSound === 'function') {
-                        gameAudio.playLoopingSound('claw');
-                    } else if (typeof gameAudio.playSound === 'function') {
-                        // Legacy fallback
-                        gameAudio.playSound('claw', 0.5);
-                    }
+                // Speel klauwgeluid (gewoon, niet als loop)
+                if (typeof gameAudio !== 'undefined' && typeof gameAudio.playSound === 'function') {
+                    gameAudio.playSound('claw', 0.5);
                 }
                 
-                // Feedback message
+                // Markeer dat de spatiebalk ingedrukt was
+                this.spaceKeyWasDown = true;
+            } else if (!gameControls.keys[' ']) {
+                // Reset als de spatiebalk is losgelaten
+                this.spaceKeyWasDown = false;
+                
+                // Force reset if cat can't claw for too long
+                if (!this.canClaw && !this.clawActive) {
+                    this.canClaw = true;
+                }
+            }
+            
+            // Feedback message wanneer de klauwen actief zijn
+            if (this.clawActive && !this.feedbackShown) {
                 gameCore.gameState.message = "Kat gebruikt klauwen!";
                 setTimeout(() => {
                     if (gameCore.gameState.message === "Kat gebruikt klauwen!") {
                         gameCore.gameState.message = "";
                     }
                 }, 1000);
+                this.feedbackShown = true;
+            } else if (!this.clawActive) {
+                this.feedbackShown = false;
             }
         }
         
@@ -1270,13 +1270,11 @@ class Player {
             }
         }
         
-        // Reset claw state and stop claw sound
+        // Reset claw state
         if (this.animalType === "CAT") {
             this.clawActive = false;
             this.clawTimer = 0;
-            if (typeof gameAudio !== 'undefined' && typeof gameAudio.stopLoopingSound === 'function') {
-                gameAudio.stopLoopingSound('claw');
-            }
+            this.spaceKeyWasDown = false;
         }
     }
     
