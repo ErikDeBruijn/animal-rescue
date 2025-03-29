@@ -85,6 +85,11 @@ class Player {
             this.canClaw = true;
             this.clawActive = false;
             this.clawTimer = 0;
+        } else {
+            // Stop claw sound if switching to another animal
+            if (typeof gameAudio !== 'undefined' && typeof gameAudio.stopLoopingSound === 'function') {
+                gameAudio.stopLoopingSound('claw');
+            }
         }
         
         // Reset digging ability when switching to mole
@@ -270,6 +275,13 @@ class Player {
                     this.clawActive = false;
                     // Reset cooldown immediately for better responsiveness
                     this.canClaw = true;
+                    
+                    // Stop klauwgeluid wanneer klauwen niet meer actief zijn
+                    if (typeof gameAudio !== 'undefined') {
+                        if (typeof gameAudio.stopLoopingSound === 'function') {
+                            gameAudio.stopLoopingSound('claw');
+                        }
+                    }
                 }
             }
         }
@@ -393,9 +405,14 @@ class Player {
                 this.clawTimer = 30; // Klauwen actief voor 30 frames (halve seconde)
                 this.canClaw = false; // Kan pas opnieuw gebruiken na afkoelen
                 
-                // Speel klauwgeluid
-                if (typeof gameAudio !== 'undefined' && typeof gameAudio.playSound === 'function') {
-                    gameAudio.playSound('claw', 0.5);
+                // Speel klauwgeluid als loopend geluid
+                if (typeof gameAudio !== 'undefined') {
+                    if (typeof gameAudio.playLoopingSound === 'function') {
+                        gameAudio.playLoopingSound('claw');
+                    } else if (typeof gameAudio.playSound === 'function') {
+                        // Legacy fallback
+                        gameAudio.playSound('claw', 0.5);
+                    }
                 }
                 
                 // Feedback message
@@ -1250,6 +1267,15 @@ class Player {
                     // Legacy fallback
                     gameAudio.stopWindSound();
                 }
+            }
+        }
+        
+        // Reset claw state and stop claw sound
+        if (this.animalType === "CAT") {
+            this.clawActive = false;
+            this.clawTimer = 0;
+            if (typeof gameAudio !== 'undefined' && typeof gameAudio.stopLoopingSound === 'function') {
+                gameAudio.stopLoopingSound('claw');
             }
         }
     }

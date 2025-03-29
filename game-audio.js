@@ -121,7 +121,7 @@ function loadGameSounds(soundsPath = 'sounds/') {
         { name: 'splash', file: 'splash.mp3', volume: 0.6 },
         { name: 'collect', file: 'collect.mp3', volume: 0.8 },
         { name: 'puppy', file: 'puppy.mp3', volume: 0.9 },
-        { name: 'claw', file: 'claw.mp3', volume: 0.5 },
+        { name: 'claw', file: 'claw.mp3', volume: 0.5, loop: true },
         { name: 'dig', file: 'dig.mp3', volume: 0.6 },
         { name: 'bounce', file: 'bounce.mp3', volume: 0.7 },
         { name: 'fire', file: 'fire.mp3', volume: 0.5 },
