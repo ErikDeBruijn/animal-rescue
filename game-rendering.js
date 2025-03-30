@@ -400,6 +400,92 @@ function drawTrap(trap) {
 // Platform rendering
 function drawPlatform(platform) {
     switch(platform.type) {
+        case "NUMBER":
+            // Draw number platform - interactive platform with a number
+            
+            // Check if platform was recently hit
+            const isHit = platform.hitEffect && platform.hitEffect.time > 0;
+            
+            // Update hit effect if active
+            if (isHit) {
+                platform.hitEffect.time--;
+                
+                // Flash effect (brighten the platform when hit)
+                if (platform.hitEffect.time > 15) {
+                    // Initial flash (very bright)
+                    gameCore.ctx.fillStyle = '#ffe0a0'; // Lighter orange
+                } else if (platform.hitEffect.time > 10) {
+                    // Second phase (less bright)
+                    gameCore.ctx.fillStyle = '#ffd080';
+                } else {
+                    // Final phase (return to normal)
+                    gameCore.ctx.fillStyle = '#ffc060'; 
+                }
+            } else {
+                // Normal color
+                gameCore.ctx.fillStyle = '#ffb733';
+            }
+            
+            // Draw the base
+            gameCore.ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+            
+            // Add border - thicker when hit
+            gameCore.ctx.strokeStyle = '#995500';
+            gameCore.ctx.lineWidth = isHit ? 3 : 2;
+            gameCore.ctx.strokeRect(platform.x, platform.y, platform.width, platform.height);
+            
+            // Draw subtle pulsing effect to indicate it's interactive
+            const pulseTime = Date.now() / 600;
+            const pulseIntensity = isHit ? 
+                0.5 + 0.3 * Math.sin(pulseTime * 2) : // More intense when hit
+                0.2 + 0.1 * Math.sin(pulseTime);      // Normal pulse
+            
+            // Draw highlight effect on top
+            gameCore.ctx.fillStyle = `rgba(255, 255, 255, ${pulseIntensity})`;
+            gameCore.ctx.fillRect(platform.x, platform.y, platform.width, 5);
+            
+            // Draw the number with a 3D effect
+            const numberValue = platform.numberValue !== undefined ? platform.numberValue : 0;
+            
+            // Shadow for 3D effect
+            gameCore.ctx.fillStyle = '#995500';
+            gameCore.ctx.font = `bold ${Math.min(platform.width, platform.height) * 0.7}px Arial`;
+            gameCore.ctx.textAlign = 'center';
+            gameCore.ctx.textBaseline = 'middle';
+            gameCore.ctx.fillText(
+                numberValue.toString(), 
+                platform.x + platform.width / 2 + 2, 
+                platform.y + platform.height / 2 + 3
+            );
+            
+            // Number in white
+            gameCore.ctx.fillStyle = 'white';
+            gameCore.ctx.fillText(
+                numberValue.toString(), 
+                platform.x + platform.width / 2, 
+                platform.y + platform.height / 2
+            );
+            
+            // Draw "fist bump" indicator on the bottom
+            gameCore.ctx.fillStyle = `rgba(255, 255, 255, ${pulseIntensity + 0.1})`;
+            
+            // Draw little arrow pointing up
+            const arrowWidth = platform.width * 0.3;
+            const arrowCenter = platform.x + platform.width / 2;
+            const arrowBottom = platform.y + platform.height - 2;
+            const arrowTop = arrowBottom - 6;
+            
+            gameCore.ctx.beginPath();
+            gameCore.ctx.moveTo(arrowCenter, arrowTop);
+            gameCore.ctx.lineTo(arrowCenter - arrowWidth / 2, arrowBottom);
+            gameCore.ctx.lineTo(arrowCenter + arrowWidth / 2, arrowBottom);
+            gameCore.ctx.fill();
+            
+            // Reset text alignment
+            gameCore.ctx.textAlign = 'left';
+            gameCore.ctx.textBaseline = 'alphabetic';
+            break;
+            
         case "TREADMILL":
             // Base treadmill color - dark gray for the main belt
             gameCore.ctx.fillStyle = '#444444'; 

@@ -901,6 +901,59 @@ class Player {
                                 }
                             }
                         }
+                        
+                        // Special case: NUMBER platforms can also be hit from below (fist bump)
+                        if (platform.type === "NUMBER") {
+                            // Check for collision from bottom (character jumping up into platform)
+                            if (this.velY < 0 && // Player is moving upward
+                                this.y > platform.y + platform.height - 15 && // Player is below the platform
+                                this.y < platform.y + platform.height + 10) { // But not too far below
+                                
+                                // Check horizontal alignment (player must be within the platform horizontally)
+                                if (this.x + this.width * 0.3 < platform.x + platform.width &&
+                                    this.x + this.width * 0.7 > platform.x) {
+                                    
+                                    // Player hit the number platform from below
+                                    console.log(`NUMBER platform hit: ${platform.numberValue}`);
+                                    
+                                    // Bounce the player down slightly
+                                    this.velY = 3;
+                                    this.y = platform.y + platform.height + 2;
+                                    
+                                    // Trigger number platform feedback - show which number was hit
+                                    gameCore.gameState.message = `Number ${platform.numberValue} activated!`;
+                                    
+                                    // Clear the message after 1 second
+                                    setTimeout(() => {
+                                        if (gameCore.gameState.message === `Number ${platform.numberValue} activated!`) {
+                                            gameCore.gameState.message = "";
+                                        }
+                                    }, 1000);
+                                    
+                                    // Trigger sound effect
+                                    if (typeof gameAudio !== 'undefined' && typeof gameAudio.playSound === 'function') {
+                                        gameAudio.playSound('bounce', 0.3); // Use bounce sound for now
+                                    }
+                                    
+                                    // Trigger a visual effect
+                                    platform.hitEffect = {
+                                        time: 20, // Effect lasts for 20 frames
+                                        intensity: 1.0 // Full intensity
+                                    };
+                                    
+                                    // Dispatch a custom event that can be listened to by game logic
+                                    // This can be used to implement the math game functionality
+                                    const numberEvent = new CustomEvent('numberPlatformHit', {
+                                        detail: {
+                                            platform: platform,
+                                            value: platform.numberValue,
+                                            player: this
+                                        }
+                                    });
+                                    window.dispatchEvent(numberEvent);
+                                }
+                            }
+                        }
                     }
                 }
                 

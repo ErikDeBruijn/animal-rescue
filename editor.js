@@ -74,7 +74,8 @@ const objectColors = {
         LASER: '#ff0000',   // Rood voor lasers (deadly platform)
         ICE: '#A5F2F3',     // Lichtblauw voor ijs
         VERTICAL: '#cc7722',  // Oranjebruin voor verticale muren
-        TREADMILL: '#444444' // Donkergrijs voor loopbanden
+        TREADMILL: '#444444', // Donkergrijs voor loopbanden
+        NUMBER: '#ffb733'   // Oranjegeel voor getallenplatforms
     },
     trap: {
         SPIKES: '#8c8c8c',   // Grijs voor spikes
@@ -1168,6 +1169,77 @@ function setupEventListeners() {
         }
     });
     
+    // Set up event listener for platform type change
+    document.getElementById('platform-type').addEventListener('change', function() {
+        console.log("Platform type changed to:", this.value);
+        
+        // Update the preview if we're in placement mode
+        if (editorState.placementMode && editorState.selectedObjectType === 'platform') {
+            createPlacementPreview('platform');
+        }
+        
+        // If we have a selected platform, update its type
+        if (editorState.selectedObject && editorState.selectedObjectType === 'platform') {
+            console.log("Updating selected platform type to:", this.value);
+            editorState.selectedObject.type = this.value;
+            
+            // Show/hide treadmill speed input based on platform type
+            const treadmillSpeedRow = document.getElementById('treadmill-speed-row');
+            if (this.value === 'TREADMILL') {
+                treadmillSpeedRow.style.display = 'block';
+                // Initialize speed if not set
+                if (editorState.selectedObject.speed === undefined) {
+                    editorState.selectedObject.speed = 2;
+                }
+            } else {
+                treadmillSpeedRow.style.display = 'none';
+                // Remove speed property if not a treadmill
+                if (this.value !== 'TREADMILL' && editorState.selectedObject.speed !== undefined) {
+                    delete editorState.selectedObject.speed;
+                }
+            }
+            
+            // Show/hide number value input based on platform type
+            const numberValueRow = document.getElementById('number-value-row');
+            if (this.value === 'NUMBER') {
+                numberValueRow.style.display = 'block';
+                // Initialize number value if not set
+                if (editorState.selectedObject.numberValue === undefined) {
+                    editorState.selectedObject.numberValue = 0;
+                }
+            } else {
+                numberValueRow.style.display = 'none';
+                // Remove number value property if not a number platform
+                if (this.value !== 'NUMBER' && editorState.selectedObject.numberValue !== undefined) {
+                    delete editorState.selectedObject.numberValue;
+                }
+            }
+            
+            renderEditor();
+            markUnsavedChanges();
+        }
+    });
+    
+    // Set up event listener for number value change
+    document.getElementById('number-value').addEventListener('change', function() {
+        console.log("Number value changed to:", this.value);
+        
+        // If we have a selected number platform, update its value
+        if (editorState.selectedObject && 
+            editorState.selectedObjectType === 'platform' && 
+            editorState.selectedObject.type === 'NUMBER') {
+            
+            // Parse the number value
+            const numberValue = parseInt(this.value);
+            
+            // Update the number value in the platform
+            editorState.selectedObject.numberValue = numberValue;
+            
+            renderEditor();
+            markUnsavedChanges();
+        }
+    });
+    
     document.getElementById('start-pos-btn').addEventListener('click', function() {
         setActiveObjectType('startPosition');
     });
@@ -2161,6 +2233,15 @@ function updatePropertiesPanel() {
         } else {
             treadmillSpeedRow.style.display = 'none';
         }
+        
+        // Show or hide number value input based on platform type
+        const numberValueRow = document.getElementById('number-value-row');
+        if (object.type === 'NUMBER') {
+            numberValueRow.style.display = 'block';
+            document.getElementById('number-value').value = object.numberValue || 0;
+        } else {
+            numberValueRow.style.display = 'none';
+        }
     } else if (type === 'enemy') {
         document.getElementById('enemy-props').style.display = 'block';
         document.getElementById('enemy-type').value = object.type || 'LION';
@@ -2597,6 +2678,34 @@ function drawPlatform(platform) {
                 ctx.fillRect(platform.x + platform.width - 5, platform.y + i, 5, 5);
             }
         }
+    } else if (platform.type === 'NUMBER') {
+        // Number platform drawing
+        
+        // Draw base
+        ctx.fillStyle = objectColors.platform.NUMBER;
+        ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+        
+        // Add border
+        ctx.strokeStyle = '#995500';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(platform.x, platform.y, platform.width, platform.height);
+        
+        // Draw number
+        const numberValue = platform.numberValue !== undefined ? platform.numberValue : 0;
+        ctx.fillStyle = 'white';
+        ctx.font = `bold ${Math.min(platform.width, platform.height) * 0.7}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(
+            numberValue.toString(), 
+            platform.x + platform.width / 2, 
+            platform.y + platform.height / 2 + 2
+        );
+        
+        // Reset text alignment
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'alphabetic';
+        
     } else if (platform.type === 'VERTICAL') {
         // Vertical platform drawing
         
@@ -2896,6 +3005,11 @@ function exportLevelCode() {
         // Add speed property for treadmill platforms
         if (platform.type === "TREADMILL" && platform.speed !== undefined) {
             platformCode += `, speed: ${platform.speed}`;
+        }
+        
+        // Add numberValue property for number platforms
+        if (platform.type === "NUMBER" && platform.numberValue !== undefined) {
+            platformCode += `, numberValue: ${platform.numberValue}`;
         }
         
         platformCode += `}`;
