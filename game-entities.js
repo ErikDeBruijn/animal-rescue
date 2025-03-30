@@ -2131,7 +2131,21 @@ function updatePuppy() {
                 if (!gameCore.gameState.gameOver && Math.random() > 0.2) {
                     // Game state update: game over
                     gameCore.gameState.gameOver = true;
-                    gameCore.gameState.message = "Oh nee! De puppy is gevangen! Druk op Spatie om opnieuw te proberen";
+                    gameCore.gameState.message = "Oh nee! De puppy is gevangen! Level wordt opnieuw gestart...";
+                    
+                    // Optioneel: speel een geluid af
+                    if (typeof gameAudio !== 'undefined' && typeof gameAudio.playSound === 'function') {
+                        gameAudio.playSound('puppy-crying', 0.7);
+                    }
+                    
+                    // Restart het level automatisch na een korte vertraging
+                    setTimeout(() => {
+                        // Reset het huidige level
+                        if (typeof gameCore.resetCurrentLevel === 'function') {
+                            gameCore.resetCurrentLevel();
+                            gameCore.gameState.message = ""; // Wis het bericht na het herstarten
+                        }
+                    }, 2000); // 2 seconden wachten voordat het level wordt herstart
                 }
             }
         }
