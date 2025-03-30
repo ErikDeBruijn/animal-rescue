@@ -147,11 +147,6 @@ function createMapNodes() {
     
     // First, create paths between connected nodes based on PATH_CONNECTIONS
     PATH_CONNECTIONS.forEach(([startLevelNum, endLevelNum, requiredLevel]) => {
-        // Only create paths that are unlocked
-        if (!mapState.unlockedLevels.includes(requiredLevel)) {
-            return; // Skip this path if it's not unlocked
-        }
-        
         const startNode = nodeMap[startLevelNum];
         const endNode = nodeMap[endLevelNum];
         
@@ -173,9 +168,16 @@ function createMapNodes() {
         const path = document.createElement('div');
         path.className = 'level-path';
         
-        // Mark path as completed if the starting level is completed
+        // Set path status class based on progression:
         if (mapState.completedLevels.includes(startLevelNum)) {
+            // Path from a completed level
             path.classList.add('path-completed');
+        } else if (mapState.unlockedLevels.includes(startLevelNum)) {
+            // Path from an unlocked but not completed level
+            path.classList.add('path-available');
+        } else {
+            // Path is not yet available
+            path.classList.add('path-locked');
         }
         
         // Position and rotate the path - center on both ends
@@ -184,6 +186,11 @@ function createMapNodes() {
         path.style.top = `${y1}px`; // Center vertically (no extra offset)
         path.style.transformOrigin = 'center left';
         path.style.transform = `rotate(${angle}deg)`;
+        
+        // Store the level info in the path dataset
+        path.dataset.startLevel = startLevelNum;
+        path.dataset.endLevel = endLevelNum;
+        path.dataset.requiredLevel = requiredLevel;
         
         mapContainer.appendChild(path);
     });
