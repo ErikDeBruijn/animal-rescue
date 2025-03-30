@@ -17,12 +17,35 @@ let memoryState = {
 };
 
 // Animal emoji for the cards
+// Checklist of animals we want to include:
+// - [x] Kat (🐱)
+// - [x] Hond (🐶)
+// - [x] Konijn (🐰)
+// - [x] Cavia (Guinea pig - using 🐹)
+// - [x] Hamster (🐹)
+// - [x] Papagaai (using 🦜)
+// - [x] Schildpad (🐢)
+// - [x] Eekhoorn (Squirrel - using 🐿️)
+// - [x] Eenhoorn (🦄)
+// - [x] Mol (Mole - removed as too similar to mouse)
+// - [x] Leeuw (🦁)
+// - [x] Draak (Dragon - using 🐉)
+// - [x] Kip (🐔)
+// - [x] Geit (Goat - using 🐐)
+// - [x] Koe (🐮)
+// - [x] Paard (🐴)
+// - [x] Vis (Fish - using 🐠)
+// - [x] Schaap (Sheep - using 🐑)
+// - [x] Vos (Fox - using 🦊)
+// - [x] Slang (Snake - using 🐍)
+// - [x] Vogelspin (Spider - using 🕷️)
+// - [x] Kikker (Frog - using 🐸)
+// - [x] Muis (Mouse - using 🐭)
+
 const animalEmojis = [
-    '🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼',
-    '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐔',
-    '🦄', '🦓', '🦒', '🦘', '🦬', '🐢', '🐙', '🦞',
-    '🦀', '🐳', '🐬', '🦈', '🦭', '🦧', '🐘', '🦛',
-    '🦏', '🐪', '🦙', '🦮', '🐕‍🦺', '🐩', '🐈', '🐓'
+    '🐱', '🐶', '🐰', '🐹', '🦜', '🐢', '🐿️', '🦄',
+    '🦁', '🐉', '🐔', '🐐', '🐮', '🐴', '🐠',
+    '🐑', '🦊', '🐍', '🕷️', '🐸', '🦇', '🦉', '🐭'
 ];
 
 // Get level from URL hash
