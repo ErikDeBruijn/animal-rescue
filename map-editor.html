@@ -213,7 +213,8 @@
             <textarea id="json-preview" class="json-preview" readonly></textarea>
             <div class="buttons-container">
                 <button id="copy-json">Kopiëren</button>
-                <button id="save-json">Opslaan</button>
+                <button id="save-json">Opslaan Lokaal</button>
+                <button id="save-server">Opslaan Server</button>
                 <button id="load-json">Laden</button>
             </div>
         </div>
@@ -222,6 +223,13 @@
             <button id="toggle-mode">Wissel Modus</button>
             <button id="return-button">Terug naar Spel</button>
             <button id="help-button">Help</button>
+        </div>
+        
+        <!-- Prominente opslaan knop die altijd zichtbaar is -->
+        <div style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
+            <button id="save-prominent" style="background-color: #4CAF50; color: white; font-size: 18px; padding: 15px 30px; border-radius: 8px; border: none; box-shadow: 0 4px 8px rgba(0,0,0,0.3); cursor: pointer;">
+                💾 Opslaan op Server
+            </button>
         </div>
     </div>
     
@@ -832,19 +840,73 @@
             
             // Save JSON to localStorage
             document.getElementById('save-json').addEventListener('click', function() {
-                window.mapData.saveMapData();
+                const mapDataJSON = JSON.stringify({
+                    LEVEL_POSITIONS: window.mapData.LEVEL_POSITIONS,
+                    PATH_CONNECTIONS: window.mapData.PATH_CONNECTIONS
+                }, null, 2);
+                
+                localStorage.setItem('mapData', mapDataJSON);
                 alert('Kaartdata opgeslagen in lokale opslag!');
             });
             
-            // Load JSON from localStorage
+            // Save JSON to server
+            document.getElementById('save-server').addEventListener('click', function() {
+                saveToServer();
+            });
+            
+            // Function to save map data to server
+            function saveToServer() {
+                const mapDataJSON = {
+                    LEVEL_POSITIONS: window.mapData.LEVEL_POSITIONS,
+                    PATH_CONNECTIONS: window.mapData.PATH_CONNECTIONS
+                };
+                
+                fetch('/api/map-data', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        mapData: mapDataJSON
+                    }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Kaartdata succesvol opgeslagen op de server!');
+                    } else {
+                        alert('Fout bij het opslaan op de server: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Fout bij het opslaan op de server: ' + error);
+                });
+            }
+            
+            // Load JSON from server
             document.getElementById('load-json').addEventListener('click', function() {
-                if (window.mapData.loadMapData()) {
-                    createMapNodes();
-                    updateJSONPreview();
-                    alert('Kaartdata geladen uit lokale opslag!');
-                } else {
-                    alert('Geen opgeslagen kaartdata gevonden.');
-                }
+                // Load from server
+                fetch('/api/map-data')
+                    .then(response => response.json())
+                    .then(result => {
+                        if (result.success && result.data) {
+                            // Update map data with loaded data
+                            window.mapData.LEVEL_POSITIONS = result.data.LEVEL_POSITIONS;
+                            window.mapData.PATH_CONNECTIONS = result.data.PATH_CONNECTIONS;
+                            
+                            // Update UI
+                            createMapNodes();
+                            updateJSONPreview();
+                            alert('Kaartdata succesvol geladen van de server!');
+                        } else {
+                            alert('Fout bij het laden van de kaartdata: ' + (result.error || 'Onbekende fout'));
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Fout bij het laden van de server: ' + error);
+                    });
             });
             
             // Return to game
@@ -858,6 +920,11 @@
                     const tab = this.dataset.tab;
                     selectTab(tab);
                 });
+            });
+            
+            // Prominent save button - always visible
+            document.getElementById('save-prominent').addEventListener('click', function() {
+                saveToServer();
             });
             
             // Help button

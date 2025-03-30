@@ -26,23 +26,39 @@ let mapState = {
 
 // Initialize the map
 function initMap() {
+    // First ensure mapData exists
+    if (!window.mapData) {
+        console.error("Map data not loaded! Make sure map-data.js is included before map.js");
+        return;
+    }
+    
     // Try to load map data if it exists
-    window.mapData.loadMapData();
-    
-    // Load game progress from localStorage
-    loadGameProgress();
-    
-    // Create the map elements
-    createMapNodes();
-    
-    // Set up player character at the current/last played level
-    setupPlayerCharacter();
-    
-    // Set up event listeners for keyboard controls
-    setupControls();
-    
-    // Start the game loop
-    startMapLoop();
+    Promise.resolve(window.mapData.loadMapData())
+        .then(() => {
+            // Load game progress from localStorage
+            loadGameProgress();
+            
+            // Create the map elements
+            createMapNodes();
+            
+            // Set up player character at the current/last played level
+            setupPlayerCharacter();
+            
+            // Set up event listeners for keyboard controls
+            setupControls();
+            
+            // Start the game loop
+            startMapLoop();
+        })
+        .catch(error => {
+            console.error("Error loading map data:", error);
+            // Continue with default data if loading fails
+            loadGameProgress();
+            createMapNodes();
+            setupPlayerCharacter();
+            setupControls();
+            startMapLoop();
+        });
 }
 
 // Load game progress from localStorage

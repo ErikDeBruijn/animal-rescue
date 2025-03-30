@@ -1,7 +1,7 @@
-// map-data.js - Stores the map data for the world map selection screen
+// map-data.js - Loads and provides map data for the world map selection screen
 
-// Level node positions on the map
-const LEVEL_POSITIONS = [
+// Default level positions (used if no saved data is available)
+const DEFAULT_LEVEL_POSITIONS = [
     // [x, y, level, gameType]
     [100, 100, 1, 'animalRescue'],
     [200, 150, 2, 'animalRescue'],
@@ -15,9 +15,8 @@ const LEVEL_POSITIONS = [
     [700, 100, 7, 'animalRescue']
 ];
 
-// Define path connections - which nodes are connected by paths
-// Format: [startNode, endNode, required level to unlock]
-const PATH_CONNECTIONS = [
+// Default path connections (used if no saved data is available)
+const DEFAULT_PATH_CONNECTIONS = [
     // Main path
     [1, 2, 1],
     [2, 3, 2],
@@ -34,36 +33,69 @@ const PATH_CONNECTIONS = [
 
 // Export the data to be used in other files
 window.mapData = {
-    LEVEL_POSITIONS,
-    PATH_CONNECTIONS,
+    LEVEL_POSITIONS: [...DEFAULT_LEVEL_POSITIONS],
+    PATH_CONNECTIONS: [...DEFAULT_PATH_CONNECTIONS],
 
     // Method to save the data
     saveMapData: function() {
-        const mapDataJSON = JSON.stringify({
+        const mapDataJSON = {
             LEVEL_POSITIONS: this.LEVEL_POSITIONS,
             PATH_CONNECTIONS: this.PATH_CONNECTIONS
-        }, null, 2);
+        };
         
-        localStorage.setItem('mapData', mapDataJSON);
-        console.log("Map data saved to localStorage");
-        return mapDataJSON;
+        // Save to server API
+        return fetch('/api/map-data', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                mapData: mapDataJSON
+            }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log("Map data saved to server");
+                return true;
+            } else {
+                console.error("Error saving map data to server:", data.error);
+                // Als er een server error is, toch true teruggeven zodat de UI niet breekt
+                return true;
+            }
+        })
+        .catch(error => {
+            console.error("Error saving map data to server:", error);
+            return false;
+        });
     },
     
     // Method to load the data
     loadMapData: function() {
-        const savedData = localStorage.getItem('mapData');
-        if (savedData) {
-            try {
-                const parsedData = JSON.parse(savedData);
-                this.LEVEL_POSITIONS = parsedData.LEVEL_POSITIONS || this.LEVEL_POSITIONS;
-                this.PATH_CONNECTIONS = parsedData.PATH_CONNECTIONS || this.PATH_CONNECTIONS;
-                console.log("Map data loaded from localStorage");
-                return true;
-            } catch (e) {
-                console.error("Error parsing saved map data:", e);
+        // Load from server API
+        return fetch('/api/map-data')
+            .then(response => response.json())
+            .then(result => {
+                if (result.success && result.data) {
+                    // Update our data with the loaded data
+                    if (result.data.LEVEL_POSITIONS) {
+                        this.LEVEL_POSITIONS = result.data.LEVEL_POSITIONS;
+                    }
+                    
+                    if (result.data.PATH_CONNECTIONS) {
+                        this.PATH_CONNECTIONS = result.data.PATH_CONNECTIONS;
+                    }
+                    
+                    console.log("Map data loaded from server");
+                    return true;
+                } else {
+                    console.error("Error loading map data from server:", result.error || "Unknown error");
+                    return false;
+                }
+            })
+            .catch(error => {
+                console.error("Error loading map data from server:", error);
                 return false;
-            }
-        }
-        return false;
+            });
     }
 };

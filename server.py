@@ -60,11 +60,13 @@ connected_clients = {}
 # Directory waar de game bestanden staan
 GAME_DIR = os.path.dirname(os.path.abspath(__file__))
 LEVELS_FILE = os.path.join(GAME_DIR, 'levels.js')
+MAP_DATA_JSON = os.path.join(GAME_DIR, 'map-data.json')
 
 # Lijst van bestanden die gemonitord moeten worden voor wijzigingen
 MONITORED_FILES = [
     'index.html', 'editor.html', 'game.js', 'game-core.js', 'game-entities.js', 
-    'game-rendering.js', 'game-controls.js', 'editor.js', 'levels.js'
+    'game-rendering.js', 'game-controls.js', 'editor.js', 'levels.js', 'map.js',
+    'map-editor.html', 'map-data.json'
 ]
 
 @app.route('/')
@@ -116,6 +118,12 @@ def editor():
         abort(404)
     return send_from_directory(GAME_DIR, 'editor.html')
 
+@app.route('/map-editor')
+@app.route('/map-editor.html')
+def map_editor():
+    """Serveer de map editor - deze is altijd toegankelijk"""
+    return send_from_directory(GAME_DIR, 'map-editor.html')
+
 @app.route('/api/music')
 def get_music_files():
     """Geef een lijst van beschikbare muziekbestanden terug"""
@@ -137,6 +145,90 @@ def get_music_files():
         'success': True,
         'music_files': music_list
     })
+
+@app.route('/api/map-data', methods=['GET'])
+def get_map_data():
+    """Haal de huidige map data op"""
+    try:
+        # Map data ophalen is altijd toegestaan
+        if os.path.exists(MAP_DATA_JSON):
+            with open(MAP_DATA_JSON, 'r', encoding='utf-8') as f:
+                content = f.read()
+                return jsonify({'success': True, 'data': json.loads(content)})
+        else:
+            # Als het bestand nog niet bestaat, geef standaard data terug
+            default_data = {
+                "LEVEL_POSITIONS": [
+                    [100, 100, 1, "animalRescue"],
+                    [200, 150, 2, "animalRescue"],
+                    [150, 250, 101, "memoryGame"],
+                    [300, 100, 3, "animalRescue"],
+                    [400, 150, 4, "animalRescue"],
+                    [350, 250, 102, "memoryGame"],
+                    [500, 100, 5, "animalRescue"],
+                    [600, 150, 6, "animalRescue"],
+                    [550, 250, 103, "memoryGame"],
+                    [700, 100, 7, "animalRescue"]
+                ],
+                "PATH_CONNECTIONS": [
+                    [1, 2, 1],
+                    [2, 3, 2],
+                    [3, 4, 3],
+                    [4, 5, 4],
+                    [5, 6, 5],
+                    [6, 7, 6],
+                    [2, 101, 2],
+                    [4, 102, 4],
+                    [6, 103, 6]
+                ]
+            }
+            return jsonify({'success': True, 'data': default_data})
+    except Exception as e:
+        logger.error(f"Error getting map data: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/map-data', methods=['POST'])
+def save_map_data():
+    """Sla de map data op als JSON"""
+    try:
+        data = request.json
+        if not data or 'mapData' not in data:
+            return jsonify({'success': False, 'error': 'Missing map data'}), 400
+        
+        map_data = data['mapData']
+        
+        # Validate that the data is proper JSON
+        try:
+            # Parse as JSON to validate
+            parsed_data = json.loads(json.dumps(map_data))
+            
+            # Controleer of de benodigde velden aanwezig zijn
+            if 'LEVEL_POSITIONS' not in parsed_data or 'PATH_CONNECTIONS' not in parsed_data:
+                return jsonify({'success': False, 'error': 'Invalid map data format - missing required fields'}), 400
+                
+            # Check dat de data arrays zijn
+            if not isinstance(parsed_data['LEVEL_POSITIONS'], list) or not isinstance(parsed_data['PATH_CONNECTIONS'], list):
+                return jsonify({'success': False, 'error': 'Invalid map data format - positions and connections must be arrays'}), 400
+        except json.JSONDecodeError as e:
+            return jsonify({'success': False, 'error': f'Invalid JSON format: {str(e)}'}), 400
+        
+        # Maak een backup als het bestand al bestaat
+        if os.path.exists(MAP_DATA_JSON):
+            with open(f"{MAP_DATA_JSON}.bak", 'w', encoding='utf-8') as f:
+                with open(MAP_DATA_JSON, 'r', encoding='utf-8') as src:
+                    f.write(src.read())
+        
+        # Schrijf de nieuwe map data als JSON
+        with open(MAP_DATA_JSON, 'w', encoding='utf-8') as f:
+            json.dump(map_data, f, indent=2)
+        
+        logger.info(f"Map data successfully saved as JSON")
+        return jsonify({'success': True})
+    except Exception as e:
+        logger.error(f"Error saving map data: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/<path:path>')
 def serve_static(path):
