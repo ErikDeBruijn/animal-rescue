@@ -14,6 +14,8 @@ let memoryState = {
     timer: null,
     gameStartTime: 0,
     difficulty: 'easy', // 'easy', 'medium', 'hard'
+    selectedCardIndex: -1, // Index of the currently selected card (-1 means no selection)
+    gridDimensions: { rows: 0, cols: 0 } // Dimensions of the grid for keyboard navigation
 };
 
 // Animal emoji for the cards
@@ -77,6 +79,9 @@ function initMemoryGame() {
         window.location.href = 'map.html';
     });
     
+    // Add keyboard event listeners
+    setupKeyboardControls();
+    
     // Start game after a slight delay
     setTimeout(startGame, 800);
 }
@@ -130,6 +135,10 @@ function createGrid() {
             cols = 3;
             grid.className = 'grid-3x3';
     }
+    
+    // Store grid dimensions for keyboard navigation
+    memoryState.gridDimensions.rows = rows;
+    memoryState.gridDimensions.cols = cols;
     
     totalCards = rows * cols;
     
@@ -195,10 +204,14 @@ function startGame() {
     memoryState.matchedPairs = 0;
     memoryState.flippedCards = [];
     memoryState.gameStartTime = Date.now();
+    memoryState.selectedCardIndex = 0; // Start with the first card selected
     
     // Reset score and moves display
     updateScoreDisplay();
     updateMovesDisplay();
+    
+    // Update selection visual
+    updateCardSelection();
     
     // Start timer
     memoryState.timer = setInterval(updateTimer, 1000);
@@ -373,17 +386,7 @@ function updateMovesDisplay() {
     document.getElementById('memory-moves').textContent = `Zetten: ${memoryState.moves}`;
 }
 
-// Play a sound effect
-function playSound(soundFile) {
-    if (window.gameAudio && window.gameAudio.playSound) {
-        window.gameAudio.playSound(soundFile);
-    } else {
-        // Fallback if gameAudio is not available
-        const audio = new Audio(`sounds/${soundFile}`);
-        audio.volume = 0.5;
-        audio.play().catch(error => console.error('Sound playback failed:', error));
-    }
-}
+// This function is now replaced by the one below
 
 // Fisher-Yates shuffle algorithm
 function shuffle(array) {
@@ -392,6 +395,99 @@ function shuffle(array) {
         [array[i], array[j]] = [array[j], array[i]];
     }
     return array;
+}
+
+// Setup keyboard controls
+function setupKeyboardControls() {
+    document.addEventListener('keydown', function(event) {
+        // Ignore keyboard input if game is not active
+        if (!memoryState.gameActive) return;
+        
+        // Get current grid position
+        const currentIndex = memoryState.selectedCardIndex;
+        const { rows, cols } = memoryState.gridDimensions;
+        
+        let row = Math.floor(currentIndex / cols);
+        let col = currentIndex % cols;
+        let newRow = row;
+        let newCol = col;
+        
+        // Handle navigation keys
+        switch(event.key) {
+            case 'ArrowUp':
+            case 'w':
+            case 'W':
+                newRow = Math.max(0, row - 1);
+                break;
+            case 'ArrowDown':
+            case 's':
+            case 'S':
+                newRow = Math.min(rows - 1, row + 1);
+                break;
+            case 'ArrowLeft':
+            case 'a':
+            case 'A':
+                newCol = Math.max(0, col - 1);
+                break;
+            case 'ArrowRight':
+            case 'd':
+            case 'D':
+                newCol = Math.min(cols - 1, col + 1);
+                break;
+            case ' ':
+            case 'Enter':
+                // Select/flip the current card
+                if (memoryState.selectedCardIndex >= 0 && memoryState.selectedCardIndex < memoryState.cards.length) {
+                    const cardToFlip = memoryState.cards[memoryState.selectedCardIndex];
+                    
+                    // Only trigger click if the card is not already flipped or matched
+                    if (!cardToFlip.classList.contains('flipped') && !cardToFlip.classList.contains('matched')) {
+                        // Simulate a click on the card
+                        cardToFlip.click();
+                    }
+                }
+                return; // Exit the function early
+            default:
+                return; // Exit if not a relevant key
+        }
+        
+        // Calculate new index based on grid position
+        const newIndex = newRow * cols + newCol;
+        
+        // Only update if there's been a change and the new index is valid
+        if (newIndex !== currentIndex && newIndex >= 0 && newIndex < memoryState.cards.length) {
+            memoryState.selectedCardIndex = newIndex;
+            updateCardSelection();
+            
+            // Play sound for navigation
+            playSound('blip-8-bit.mp3', 0.2); // Lower volume for navigation sounds
+        }
+    });
+}
+
+// Update the visual selection of cards
+function updateCardSelection() {
+    // Remove selection class from all cards
+    memoryState.cards.forEach(card => {
+        card.classList.remove('keyboard-selected');
+    });
+    
+    // Add selection class to the selected card
+    if (memoryState.selectedCardIndex >= 0 && memoryState.selectedCardIndex < memoryState.cards.length) {
+        memoryState.cards[memoryState.selectedCardIndex].classList.add('keyboard-selected');
+    }
+}
+
+// Play a sound effect with optional volume control
+function playSound(soundFile, volume = 0.5) {
+    if (window.gameAudio && window.gameAudio.playSound) {
+        window.gameAudio.playSound(soundFile, volume);
+    } else {
+        // Fallback if gameAudio is not available
+        const audio = new Audio(`sounds/${soundFile}`);
+        audio.volume = volume;
+        audio.play().catch(error => console.error('Sound playback failed:', error));
+    }
 }
 
 // Initialize game when DOM is loaded

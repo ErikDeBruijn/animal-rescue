@@ -60,6 +60,12 @@
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
 }
 
+/* Styling for keyboard navigation */
+.memory-card.keyboard-selected {
+    box-shadow: 0 0 0 3px #ffcc00, 0 6px 12px rgba(0, 0, 0, 0.3);
+    animation: pulse 1s infinite;
+}
+
 /* Container for the 3D flip effect */
 .card-inner {
     position: relative;
@@ -134,15 +140,18 @@
     transform: scale(1.1);
 }
 
-.score-display, .level-display, .time-display, .moves-display {
+.score-display, .level-display, .time-display, .moves-display, .keyboard-hint {
     position: absolute;
-    top: 10px;
     background-color: rgba(0, 0, 0, 0.7);
     color: white;
     padding: 5px 15px;
     border-radius: 20px;
     font-weight: bold;
     z-index: 10;
+}
+
+.score-display, .level-display, .time-display, .moves-display {
+    top: 10px;
 }
 
 .score-display {
@@ -161,6 +170,14 @@
 .moves-display {
     right: 10px;
     top: 50px;
+}
+
+.keyboard-hint {
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 0.9em;
+    animation: pulse 1.5s infinite;
 }
 
 .level-message {
