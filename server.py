@@ -267,6 +267,69 @@ def backup_map_data():
         logger.error(traceback.format_exc())
         return jsonify({'success': False, 'error': str(e)}), 500
 
+# Paths for walkable area data
+WALKABLE_AREA_JSON = os.path.join(GAME_DIR, 'walkable-area.json')
+
+@app.route('/api/walkable-area', methods=['GET'])
+def get_walkable_area():
+    """Haal de huidige walkable area data op"""
+    try:
+        # Walkable area data ophalen
+        if os.path.exists(WALKABLE_AREA_JSON):
+            with open(WALKABLE_AREA_JSON, 'r', encoding='utf-8') as f:
+                content = f.read()
+                return jsonify({'success': True, 'walkableData': json.loads(content)})
+        else:
+            # Als het bestand nog niet bestaat, geef lege data terug
+            default_data = {
+                "points": []
+            }
+            return jsonify({'success': True, 'walkableData': default_data})
+    except Exception as e:
+        logger.error(f"Error getting walkable area data: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/walkable-area', methods=['POST'])
+def save_walkable_area():
+    """Sla de walkable area data op als JSON"""
+    try:
+        data = request.json
+        if not data:
+            return jsonify({'success': False, 'error': 'Missing walkable area data'}), 400
+        
+        # Validate that the data is proper JSON
+        try:
+            # Parse as JSON to validate
+            parsed_data = json.loads(json.dumps(data))
+            
+            # Controleer of de benodigde velden aanwezig zijn
+            if 'points' not in parsed_data:
+                return jsonify({'success': False, 'error': 'Invalid walkable area format - missing points array'}), 400
+                
+            # Check dat de points een array is
+            if not isinstance(parsed_data['points'], list):
+                return jsonify({'success': False, 'error': 'Invalid walkable area format - points must be an array'}), 400
+        except json.JSONDecodeError as e:
+            return jsonify({'success': False, 'error': f'Invalid JSON format: {str(e)}'}), 400
+        
+        # Maak een backup als het bestand al bestaat
+        if os.path.exists(WALKABLE_AREA_JSON):
+            with open(f"{WALKABLE_AREA_JSON}.bak", 'w', encoding='utf-8') as f:
+                with open(WALKABLE_AREA_JSON, 'r', encoding='utf-8') as src:
+                    f.write(src.read())
+        
+        # Schrijf de nieuwe walkable area data als JSON
+        with open(WALKABLE_AREA_JSON, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2)
+        
+        logger.info(f"Walkable area data successfully saved as JSON")
+        return jsonify({'success': True})
+    except Exception as e:
+        logger.error(f"Error saving walkable area data: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/<path:path>')
 def serve_static(path):
     """Serveer alle statische bestanden"""

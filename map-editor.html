@@ -175,37 +175,6 @@
             resize: vertical;
         }
         
-        /* Paint mode styles */
-        #player-character {
-            position: absolute;
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            background-color: #FF4081;
-            z-index: 1000;
-            transition: none;
-            box-shadow: 0 0 15px rgba(255, 64, 129, 0.7);
-            cursor: crosshair;
-        }
-        
-        .player-position {
-            margin: 10px 0;
-            padding: 5px;
-            background-color: #f5f5f5;
-            border-radius: 4px;
-            font-family: monospace;
-        }
-        
-        .paint-controls {
-            margin-top: 10px;
-            padding: 5px;
-            background-color: #f5f5f5;
-            border-radius: 4px;
-        }
-        
-        #player-speed {
-            width: 100%;
-        }
     </style>
 </head>
 <body>
@@ -225,8 +194,6 @@
     <div class="map-container" id="map-container">
         <!-- Using background image instead of CSS islands -->
         <div class="map-background"></div>
-        <!-- Player character for free movement -->
-        <div id="player-character" style="display: none;"></div>
         <!-- Level nodes and paths will be added here dynamically -->
     </div>
     
@@ -234,8 +201,10 @@
         <div class="tab-buttons">
             <div class="tab-button active" data-tab="nodes">Level Nodes</div>
             <div class="tab-button" data-tab="paths">Paden</div>
-            <div class="tab-button" data-tab="paint">Paint Mode</div>
             <div class="tab-button" data-tab="json">JSON Data</div>
+        </div>
+        <div class="walkable-editor-link" style="text-align: center; margin: 10px 0;">
+            <a href="walkable-editor.html" class="button" style="display: inline-block; padding: 8px 15px; background-color: #673AB7; color: white; text-decoration: none; border-radius: 5px;">Walkable Area Editor</a>
         </div>
         
         <div class="tab-content active" id="nodes-tab">
@@ -282,21 +251,6 @@
             </div>
         </div>
         
-        <div class="tab-content" id="paint-tab">
-            <h3>Paint Mode</h3>
-            <p>Beweeg vrij over de kaart en plaats levels op specifieke locaties.</p>
-            <div class="buttons-container">
-                <button id="toggle-paint">Paint Mode Activeren</button>
-                <button id="place-level-here" disabled>Plaats Level Hier</button>
-            </div>
-            <div class="player-position">
-                <p>Positie: <span id="player-x">0</span>, <span id="player-y">0</span></p>
-            </div>
-            <div class="paint-controls">
-                <p><strong>Besturing:</strong> WASD of pijltjestoetsen om te bewegen</p>
-                <p><strong>Snelheid:</strong> <input type="range" id="player-speed" min="1" max="20" value="5"></p>
-            </div>
-        </div>
         
         <div class="tab-content" id="json-tab">
             <h3>JSON Data</h3>
@@ -1385,257 +1339,10 @@
             }, 1500);
         }
         
-        // Paint mode functionality
-        let paintMode = {
-            active: false,
-            playerX: 512, // Start in middle of 1024px map
-            playerY: 512,
-            keys: {
-                up: false,
-                down: false,
-                left: false,
-                right: false
-            },
-            speed: 5,
-            updateInterval: null
-        };
-        
-        // Toggle paint mode on/off
-        function togglePaintMode() {
-            paintMode.active = !paintMode.active;
-            const playerChar = document.getElementById('player-character');
-            const placeLevelButton = document.getElementById('place-level-here');
-            const toggleButton = document.getElementById('toggle-paint');
-            
-            if (paintMode.active) {
-                // Disable other editor modes
-                editorState.mode = 'paint';
-                document.getElementById('edit-mode').textContent = 'Modus: Paint';
-                
-                // Show player character
-                playerChar.style.display = 'block';
-                playerChar.style.left = `${paintMode.playerX - 15}px`;
-                playerChar.style.top = `${paintMode.playerY - 15}px`;
-                
-                // Enable place level button
-                placeLevelButton.disabled = false;
-                
-                // Update button text
-                toggleButton.textContent = 'Paint Mode Deactiveren';
-                toggleButton.style.backgroundColor = '#f44336';
-                
-                // Set up keyboard controls
-                setupPaintControls();
-                
-                // Start update loop
-                paintMode.updateInterval = setInterval(updatePaintMode, 20);
-                
-                // Update position display
-                updatePositionDisplay();
-            } else {
-                // Stop paint mode
-                clearInterval(paintMode.updateInterval);
-                
-                // Hide player character
-                playerChar.style.display = 'none';
-                
-                // Disable place level button
-                placeLevelButton.disabled = true;
-                
-                // Reset button text
-                toggleButton.textContent = 'Paint Mode Activeren';
-                toggleButton.style.backgroundColor = '';
-                
-                // Remove keyboard controls
-                removePaintControls();
-                
-                // Reset to default editor mode
-                editorState.mode = 'move';
-                document.getElementById('edit-mode').textContent = 'Modus: Verplaatsen';
-            }
-        }
-        
-        // Set up keyboard controls for paint mode
-        function setupPaintControls() {
-            document.addEventListener('keydown', handlePaintKeyDown);
-            document.addEventListener('keyup', handlePaintKeyUp);
-            
-            // Set up speed slider
-            const speedSlider = document.getElementById('player-speed');
-            speedSlider.addEventListener('input', function() {
-                paintMode.speed = parseInt(this.value);
-            });
-        }
-        
-        // Remove keyboard controls for paint mode
-        function removePaintControls() {
-            document.removeEventListener('keydown', handlePaintKeyDown);
-            document.removeEventListener('keyup', handlePaintKeyUp);
-        }
-        
-        // Handle key down events in paint mode
-        function handlePaintKeyDown(event) {
-            if (!paintMode.active) return;
-            
-            switch(event.key) {
-                case 'ArrowUp':
-                case 'w':
-                case 'W':
-                    paintMode.keys.up = true;
-                    event.preventDefault();
-                    break;
-                case 'ArrowDown':
-                case 's':
-                case 'S':
-                    paintMode.keys.down = true;
-                    event.preventDefault();
-                    break;
-                case 'ArrowLeft':
-                case 'a':
-                case 'A':
-                    paintMode.keys.left = true;
-                    event.preventDefault();
-                    break;
-                case 'ArrowRight':
-                case 'd':
-                case 'D':
-                    paintMode.keys.right = true;
-                    event.preventDefault();
-                    break;
-                case ' ':
-                    // Place a level at the current position
-                    placeLevelAtCurrentPosition();
-                    event.preventDefault();
-                    break;
-            }
-        }
-        
-        // Handle key up events in paint mode
-        function handlePaintKeyUp(event) {
-            if (!paintMode.active) return;
-            
-            switch(event.key) {
-                case 'ArrowUp':
-                case 'w':
-                case 'W':
-                    paintMode.keys.up = false;
-                    break;
-                case 'ArrowDown':
-                case 's':
-                case 'S':
-                    paintMode.keys.down = false;
-                    break;
-                case 'ArrowLeft':
-                case 'a':
-                case 'A':
-                    paintMode.keys.left = false;
-                    break;
-                case 'ArrowRight':
-                case 'd':
-                case 'D':
-                    paintMode.keys.right = false;
-                    break;
-            }
-        }
-        
-        // Update paint mode (player position)
-        function updatePaintMode() {
-            if (!paintMode.active) return;
-            
-            // Update player position based on key input
-            if (paintMode.keys.up) {
-                paintMode.playerY -= paintMode.speed;
-            }
-            if (paintMode.keys.down) {
-                paintMode.playerY += paintMode.speed;
-            }
-            if (paintMode.keys.left) {
-                paintMode.playerX -= paintMode.speed;
-            }
-            if (paintMode.keys.right) {
-                paintMode.playerX += paintMode.speed;
-            }
-            
-            // Keep player within map bounds
-            const mapContainer = document.getElementById('map-container');
-            const mapWidth = mapContainer.clientWidth;
-            const mapHeight = mapContainer.clientHeight;
-            
-            paintMode.playerX = Math.max(15, Math.min(paintMode.playerX, mapWidth - 15));
-            paintMode.playerY = Math.max(15, Math.min(paintMode.playerY, mapHeight - 15));
-            
-            // Update player position on screen
-            const playerChar = document.getElementById('player-character');
-            playerChar.style.left = `${paintMode.playerX - 15}px`;
-            playerChar.style.top = `${paintMode.playerY - 15}px`;
-            
-            // Update position display
-            updatePositionDisplay();
-        }
-        
-        // Update the position display
-        function updatePositionDisplay() {
-            document.getElementById('player-x').textContent = Math.round(paintMode.playerX);
-            document.getElementById('player-y').textContent = Math.round(paintMode.playerY);
-        }
-        
-        // Place a level at the current player position
-        function placeLevelAtCurrentPosition() {
-            // Find next available level number
-            const existingLevels = window.mapData.LEVEL_POSITIONS.map(node => node[2]);
-            let nextLevel = 1;
-            
-            while (existingLevels.includes(nextLevel)) {
-                nextLevel++;
-            }
-            
-            // Get the currently selected type from the dropdown
-            const type = document.getElementById('node-type').value;
-            
-            // Add the new node at the player position
-            window.mapData.LEVEL_POSITIONS.push([
-                Math.round(paintMode.playerX), 
-                Math.round(paintMode.playerY), 
-                nextLevel, 
-                type
-            ]);
-            
-            // Find highest level for path connections
-            let highestLevel = 0;
-            window.mapData.LEVEL_POSITIONS.forEach(([_, __, level]) => {
-                if (level !== nextLevel && level < 100 && level > highestLevel) {
-                    highestLevel = level;
-                }
-            });
-            
-            // Connect to highest level if it exists
-            if (highestLevel > 0) {
-                window.mapData.PATH_CONNECTIONS.push([highestLevel, nextLevel, highestLevel]);
-            }
-            
-            // Recreate the map
-            createMapNodes();
-            
-            // Update JSON preview
-            updateJSONPreview();
-            
-            // Show success notification
-            showNotification(`Level ${nextLevel} toegevoegd op positie (${Math.round(paintMode.playerX)}, ${Math.round(paintMode.playerY)})!`);
-        }
-        
-        // Additional setup for paint mode
-        function setupPaintModeHandlers() {
-            // Toggle paint mode button
-            document.getElementById('toggle-paint').addEventListener('click', togglePaintMode);
-            
-            // Place level here button
-            document.getElementById('place-level-here').addEventListener('click', placeLevelAtCurrentPosition);
-        }
         
         // Initialize the editor when the DOM is loaded
         document.addEventListener('DOMContentLoaded', function() {
             initEditor();
-            setupPaintModeHandlers();
         });
     </script>
 </body>

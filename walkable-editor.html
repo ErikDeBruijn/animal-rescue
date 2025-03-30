@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Huisdieren Redders - Walkable Area Editor</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="map.css">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <style>
+        /* Walkable Editor styles */
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            background-color: #8ecbf5;
+            margin: 0;
+            padding: 0;
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+        }
+        
+        .map-container {
+            margin-top: 20px;
+            position: relative;
+            cursor: crosshair;
+        }
+        
+        #paint-cursor {
+            position: absolute;
+            border-radius: 50%;
+            border: 2px solid #00FF00;
+            background-color: rgba(0, 255, 0, 0.3);
+            z-index: 1000; 
+            pointer-events: none;
+            display: block;
+        }
+        
+        #walkable-mask {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 3;
+        }
+        
+        .walkable-area {
+            position: absolute;
+            background-color: rgba(0, 255, 0, 0.4);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        
+        .editor-panel {
+            width: 300px;
+            padding: 15px;
+            margin-top: 20px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        .brush-controls, 
+        .paint-controls,
+        .mask-actions {
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 8px;
+        }
+        
+        h3 {
+            margin-top: 0;
+            color: #45882f;
+            text-align: center;
+        }
+        
+        .position-display {
+            font-family: monospace;
+            text-align: center;
+            margin-bottom: 10px;
+            background-color: #f5f5f5;
+            padding: 8px;
+            border-radius: 5px;
+        }
+        
+        select, button {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            padding: 8px 12px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            background-color: #45882f;
+            color: white;
+            cursor: pointer;
+        }
+        
+        select {
+            background-color: white;
+            color: #333;
+            border: 1px solid #ccc;
+        }
+        
+        .button-group {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+        }
+        
+        .paint-mode {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        
+        #brush-size, #mask-opacity {
+            width: 100%;
+            margin: 8px 0;
+        }
+        
+        #save-button {
+            background-color: #4CAF50;
+        }
+        
+        #clear-button {
+            background-color: #f44336;
+        }
+        
+        #return-button {
+            background-color: #2196F3;
+        }
+        
+        /* Responsive design */
+        @media (max-width: 1100px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .editor-panel {
+                width: 80%;
+                margin-top: 20px;
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Huisdieren Redders - Walkable Area Editor</h1>
+    
+    <div class="container">
+        <div class="map-container" id="map-container">
+            <!-- Using background image instead of CSS islands -->
+            <div class="map-background"></div>
+            <!-- Walkable area mask container -->
+            <div id="walkable-mask"></div>
+            <!-- Paint cursor for the walkable area tool -->
+            <div id="paint-cursor"></div>
+        </div>
+        
+        <div class="editor-panel">
+            <h3>Walkable Area Editor</h3>
+            <p>Teken het gebied waar de speler mag lopen op de wereldkaart.</p>
+            
+            <div class="position-display">
+                Positie: <span id="cursor-x">0</span>, <span id="cursor-y">0</span>
+            </div>
+            
+            <div class="paint-mode">
+                <label for="paint-mode">Modus:</label>
+                <select id="paint-mode">
+                    <option value="draw">Teken Gebied</option>
+                    <option value="erase">Wis Gebied</option>
+                </select>
+            </div>
+            
+            <div class="brush-controls">
+                <label for="brush-size">Kwast grootte:</label>
+                <input type="range" id="brush-size" min="5" max="50" value="20">
+                <span id="brush-size-value">20</span>
+            </div>
+            
+            <div class="paint-controls">
+                <label for="mask-opacity">Transparantie:</label>
+                <input type="range" id="mask-opacity" min="10" max="90" value="40">
+                <span id="opacity-value">40%</span>
+            </div>
+            
+            <div class="button-group">
+                <button id="save-button">Opslaan</button>
+                <button id="clear-button">Alles Wissen</button>
+                <button id="return-button" onclick="window.location.href='map-editor.html'">Terug</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Walkable area mask functionality
+        let walkableMask = {
+            points: [], // Array of walkable area points: [{x, y, size}]
+            currentX: 0,
+            currentY: 0,
+            brushSize: 20,
+            mode: 'draw', // 'draw' or 'erase'
+            opacity: 0.4,
+            isDragging: false
+        };
+        
+        // Initialize the editor
+        document.addEventListener('DOMContentLoaded', function() {
+            initWalkableEditor();
+        });
+        
+        function initWalkableEditor() {
+            const mapContainer = document.getElementById('map-container');
+            const paintCursor = document.getElementById('paint-cursor');
+            
+            // Initialize cursor size
+            updateBrushSize();
+            
+            // Set up event listeners
+            setupControls();
+            
+            // Try to load existing walkable area data
+            loadWalkableAreaData();
+            
+            // Update displays
+            updateOpacityDisplay();
+            updateBrushSizeDisplay();
+        }
+        
+        // Set up controls for walkable area mask
+        function setupControls() {
+            const mapContainer = document.getElementById('map-container');
+            const paintCursor = document.getElementById('paint-cursor');
+            
+            // Mouse move event to track cursor position
+            mapContainer.addEventListener('mousemove', trackCursorPosition);
+            
+            // Mouse events for painting
+            mapContainer.addEventListener('mousedown', startPainting);
+            document.addEventListener('mouseup', stopPainting);
+            
+            // Brush size control
+            document.getElementById('brush-size').addEventListener('input', function() {
+                updateBrushSize();
+                updateBrushSizeDisplay();
+            });
+            
+            // Opacity control
+            document.getElementById('mask-opacity').addEventListener('input', function() {
+                updateMaskOpacity();
+                updateOpacityDisplay();
+            });
+            
+            // Paint mode (draw/erase) selection
+            document.getElementById('paint-mode').addEventListener('change', updatePaintMode);
+            
+            // Clear mask button
+            document.getElementById('clear-button').addEventListener('click', clearWalkableMask);
+            
+            // Save mask button
+            document.getElementById('save-button').addEventListener('click', saveWalkableAreaData);
+        }
+        
+        // Track cursor position for painting
+        function trackCursorPosition(event) {
+            const mapContainer = document.getElementById('map-container');
+            const paintCursor = document.getElementById('paint-cursor');
+            const rect = mapContainer.getBoundingClientRect();
+            
+            // Calculate cursor position relative to map container
+            walkableMask.currentX = event.clientX - rect.left;
+            walkableMask.currentY = event.clientY - rect.top;
+            
+            // Update cursor position display
+            document.getElementById('cursor-x').textContent = Math.round(walkableMask.currentX);
+            document.getElementById('cursor-y').textContent = Math.round(walkableMask.currentY);
+            
+            // Update paint cursor position
+            paintCursor.style.left = `${walkableMask.currentX}px`;
+            paintCursor.style.top = `${walkableMask.currentY}px`;
+            
+            // If dragging, paint or erase point
+            if (walkableMask.isDragging) {
+                if (walkableMask.mode === 'draw') {
+                    addWalkablePoint(walkableMask.currentX, walkableMask.currentY, walkableMask.brushSize);
+                } else {
+                    eraseWalkablePoints(walkableMask.currentX, walkableMask.currentY, walkableMask.brushSize);
+                }
+            }
+        }
+        
+        // Start painting on mouse down
+        function startPainting(event) {
+            walkableMask.isDragging = true;
+            
+            // Add or erase a point on initial click
+            if (walkableMask.mode === 'draw') {
+                addWalkablePoint(walkableMask.currentX, walkableMask.currentY, walkableMask.brushSize);
+            } else {
+                eraseWalkablePoints(walkableMask.currentX, walkableMask.currentY, walkableMask.brushSize);
+            }
+        }
+        
+        // Stop painting on mouse up
+        function stopPainting() {
+            walkableMask.isDragging = false;
+        }
+        
+        // Update the brush size from slider
+        function updateBrushSize() {
+            const brushSizeSlider = document.getElementById('brush-size');
+            walkableMask.brushSize = parseInt(brushSizeSlider.value);
+            
+            // Update cursor size
+            const paintCursor = document.getElementById('paint-cursor');
+            paintCursor.style.width = `${walkableMask.brushSize}px`;
+            paintCursor.style.height = `${walkableMask.brushSize}px`;
+            paintCursor.style.marginLeft = `-${walkableMask.brushSize / 2}px`;
+            paintCursor.style.marginTop = `-${walkableMask.brushSize / 2}px`;
+        }
+        
+        // Update the brush size display
+        function updateBrushSizeDisplay() {
+            document.getElementById('brush-size-value').textContent = walkableMask.brushSize;
+        }
+        
+        // Update mask opacity from slider
+        function updateMaskOpacity() {
+            const opacitySlider = document.getElementById('mask-opacity');
+            walkableMask.opacity = parseInt(opacitySlider.value) / 100;
+            
+            // Update existing walkable points
+            const walkablePoints = document.querySelectorAll('.walkable-area');
+            walkablePoints.forEach(point => {
+                point.style.backgroundColor = `rgba(0, 255, 0, ${walkableMask.opacity})`;
+            });
+        }
+        
+        // Update the opacity display
+        function updateOpacityDisplay() {
+            document.getElementById('opacity-value').textContent = `${parseInt(document.getElementById('mask-opacity').value)}%`;
+        }
+        
+        // Update paint mode (draw/erase)
+        function updatePaintMode() {
+            const paintModeSelect = document.getElementById('paint-mode');
+            walkableMask.mode = paintModeSelect.value;
+            
+            // Update cursor appearance based on mode
+            const paintCursor = document.getElementById('paint-cursor');
+            if (walkableMask.mode === 'draw') {
+                paintCursor.style.backgroundColor = `rgba(0, 255, 0, 0.3)`;
+                paintCursor.style.borderColor = '#00FF00';
+            } else {
+                paintCursor.style.backgroundColor = `rgba(255, 0, 0, 0.3)`;
+                paintCursor.style.borderColor = '#FF0000';
+            }
+        }
+        
+        // Add a walkable point at the specified position
+        function addWalkablePoint(x, y, size) {
+            // Check for proximity to existing points to avoid too many close points
+            const tooClose = walkableMask.points.some(point => {
+                const dx = point.x - x;
+                const dy = point.y - y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                return distance < size / 2;
+            });
+            
+            if (tooClose) return;
+            
+            // Add to points array
+            walkableMask.points.push({ x, y, size });
+            
+            // Create visual element
+            const walkableMaskContainer = document.getElementById('walkable-mask');
+            const pointElement = document.createElement('div');
+            pointElement.className = 'walkable-area';
+            pointElement.style.left = `${x - size/2}px`;
+            pointElement.style.top = `${y - size/2}px`;
+            pointElement.style.width = `${size}px`;
+            pointElement.style.height = `${size}px`;
+            pointElement.style.backgroundColor = `rgba(0, 255, 0, ${walkableMask.opacity})`;
+            pointElement.dataset.x = x;
+            pointElement.dataset.y = y;
+            pointElement.dataset.size = size;
+            
+            walkableMaskContainer.appendChild(pointElement);
+        }
+        
+        // Erase walkable points near the specified position
+        function eraseWalkablePoints(x, y, size) {
+            // Find points to remove
+            const toRemove = [];
+            walkableMask.points = walkableMask.points.filter((point, index) => {
+                const dx = point.x - x;
+                const dy = point.y - y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < size) {
+                    toRemove.push(index);
+                    return false;
+                }
+                return true;
+            });
+            
+            // Remove visual elements
+            const walkablePoints = document.querySelectorAll('.walkable-area');
+            walkablePoints.forEach((element, index) => {
+                const pointX = parseFloat(element.dataset.x);
+                const pointY = parseFloat(element.dataset.y);
+                const dx = pointX - x;
+                const dy = pointY - y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < size) {
+                    element.remove();
+                }
+            });
+        }
+        
+        // Clear the entire walkable mask
+        function clearWalkableMask() {
+            if (confirm('Weet je zeker dat je de hele walkable area wilt wissen?')) {
+                walkableMask.points = [];
+                const walkableMaskContainer = document.getElementById('walkable-mask');
+                walkableMaskContainer.innerHTML = '';
+            }
+        }
+        
+        // Save walkable area data to server
+        function saveWalkableAreaData() {
+            // Prepare data for saving
+            const walkableData = {
+                points: walkableMask.points
+            };
+            
+            // Save to server using fetch API
+            fetch('/api/walkable-area', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(walkableData),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('Walkable area succesvol opgeslagen!');
+                } else {
+                    alert('Fout bij het opslaan van walkable area: ' + data.error);
+                }
+            })
+            .catch(error => {
+                // If server endpoint doesn't exist yet, save to localStorage as fallback
+                localStorage.setItem('walkableAreaData', JSON.stringify(walkableData));
+                showNotification('Walkable area opgeslagen in localStorage (server endpoint nog niet beschikbaar)');
+            });
+        }
+        
+        // Load walkable area data from server
+        function loadWalkableAreaData() {
+            // First try to load from server
+            fetch('/api/walkable-area')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.walkableData) {
+                        renderWalkableAreaFromData(data.walkableData);
+                    }
+                })
+                .catch(error => {
+                    // If server endpoint doesn't exist, try localStorage
+                    const localData = localStorage.getItem('walkableAreaData');
+                    if (localData) {
+                        try {
+                            const walkableData = JSON.parse(localData);
+                            renderWalkableAreaFromData(walkableData);
+                        } catch (e) {
+                            console.error('Error parsing walkable area data from localStorage:', e);
+                        }
+                    }
+                });
+        }
+        
+        // Render walkable area based on loaded data
+        function renderWalkableAreaFromData(data) {
+            // Clear existing walkable area
+            const walkableMaskContainer = document.getElementById('walkable-mask');
+            walkableMaskContainer.innerHTML = '';
+            walkableMask.points = [];
+            
+            // Add points from data
+            if (data.points && Array.isArray(data.points)) {
+                data.points.forEach(point => {
+                    walkableMask.points.push(point);
+                    
+                    const pointElement = document.createElement('div');
+                    pointElement.className = 'walkable-area';
+                    pointElement.style.left = `${point.x - point.size/2}px`;
+                    pointElement.style.top = `${point.y - point.size/2}px`;
+                    pointElement.style.width = `${point.size}px`;
+                    pointElement.style.height = `${point.size}px`;
+                    pointElement.style.backgroundColor = `rgba(0, 255, 0, ${walkableMask.opacity})`;
+                    pointElement.dataset.x = point.x;
+                    pointElement.dataset.y = point.y;
+                    pointElement.dataset.size = point.size;
+                    
+                    walkableMaskContainer.appendChild(pointElement);
+                });
+            }
+        }
+        
+        // Show a notification message
+        function showNotification(message) {
+            // Create notification element if it doesn't exist
+            let notification = document.getElementById('notification');
+            
+            if (!notification) {
+                notification = document.createElement('div');
+                notification.id = 'notification';
+                notification.style.position = 'fixed';
+                notification.style.bottom = '20px';
+                notification.style.left = '50%';
+                notification.style.transform = 'translateX(-50%)';
+                notification.style.backgroundColor = '#4CAF50';
+                notification.style.color = 'white';
+                notification.style.padding = '15px 25px';
+                notification.style.borderRadius = '8px';
+                notification.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+                notification.style.zIndex = '1000';
+                notification.style.fontWeight = 'bold';
+                document.body.appendChild(notification);
+            }
+            
+            // Set message and show notification
+            notification.textContent = message;
+            notification.style.display = 'block';
+            
+            // Hide after 3 seconds
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
