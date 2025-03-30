@@ -763,6 +763,17 @@ function setupEventListeners() {
         playCurrentLevel();
     });
     
+    // Math problem velden
+    document.getElementById('math-problem').addEventListener('input', function(e) {
+        editorState.editingLevel.mathProblem.equation = e.target.value;
+        markUnsavedChanges();
+    });
+    
+    document.getElementById('math-answer').addEventListener('input', function(e) {
+        editorState.editingLevel.mathProblem.answer = e.target.value;
+        markUnsavedChanges();
+    });
+    
     // Helper functies voor de bevestigingsdialog
     function showDeleteConfirmation() {
         const dialog = document.getElementById('delete-confirmation-dialog');
@@ -1263,9 +1274,7 @@ function setupEventListeners() {
         }
     });
     
-    document.getElementById('start-pos-btn').addEventListener('click', function() {
-        setActiveObjectType('startPosition');
-    });
+    // Start-pos-btn verwijderd uit de editor
     
     document.getElementById('trap-btn').addEventListener('click', function() {
         setActiveObjectType('trap');
@@ -1292,7 +1301,6 @@ function setupEventListeners() {
         document.getElementById('enemy-btn').classList.remove('selected');
         document.getElementById('puppy-btn').classList.remove('selected');
         document.getElementById('collectible-btn').classList.remove('selected');
-        document.getElementById('start-pos-btn').classList.remove('selected');
         document.getElementById('trap-btn').classList.remove('selected');
         
         // Verwijder eventuele instructies
@@ -1426,12 +1434,11 @@ function setActiveObjectType(type) {
     document.getElementById('enemy-btn').classList.remove('selected');
     document.getElementById('puppy-btn').classList.remove('selected');
     document.getElementById('collectible-btn').classList.remove('selected');
-    document.getElementById('start-pos-btn').classList.remove('selected');
     document.getElementById('trap-btn').classList.remove('selected');
     
     if (type) {
-        // Handle special cases for collectibles and start positions
-        let buttonId = type.replace('startPosition', 'start-pos') + '-btn';
+        // Voeg de juiste CSS klasse toe aan de geselecteerde knop
+        let buttonId = type + '-btn';
         document.getElementById(buttonId).classList.add('selected');
         
         // We zijn al in plaatsingsmodus (panel is geopend)
@@ -1550,12 +1557,7 @@ function createPlacementPreview(type) {
             };
             break;
             
-        case 'startPosition':
-            editorState.placementPreview = {
-                type: 'startPosition',
-                radius: 15
-            };
-            break;
+        // Startposities kunnen niet meer geplaatst worden
             
         case 'trap':
             const trapWidth = parseInt(document.getElementById('trap-width').value);
@@ -2528,11 +2530,7 @@ function drawPlacementPreview() {
             drawCollectible(collectiblePreview);
             break;
             
-        case 'startPosition':
-            // Maak een tijdelijk startpositie object voor de preview
-            const startPosIndex = editorState.editingLevel.startPositions.length;
-            drawStartPosition({x: x, y: y}, startPosIndex);
-            break;
+        // startPosition verwijderd - kan niet meer geplaatst worden
             
         case 'trap':
             // Maak een tijdelijk trap object voor de preview
