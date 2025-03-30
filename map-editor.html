@@ -699,6 +699,9 @@
                     return;
                 }
                 
+                // Store the previous selection index
+                const previousSelection = editorState.selectedNodeIndex;
+                
                 // Update the node
                 window.mapData.LEVEL_POSITIONS[editorState.selectedNodeIndex] = [x, y, level, type];
                 
@@ -712,6 +715,9 @@
                 
                 // Recreate the map
                 createMapNodes();
+                
+                // Show success notification
+                showNotification(`Level ${level} bijgewerkt!`);
                 
                 // Reset selection
                 editorState.selectedNodeIndex = -1;
@@ -999,25 +1005,8 @@
                 // Update JSON preview
                 updateJSONPreview();
                 
-                // Show a brief notification
-                const notification = document.createElement('div');
-                notification.style.position = 'fixed';
-                notification.style.top = '50%';
-                notification.style.left = '50%';
-                notification.style.transform = 'translate(-50%, -50%)';
-                notification.style.padding = '15px 30px';
-                notification.style.backgroundColor = 'rgba(0, 150, 0, 0.8)';
-                notification.style.color = 'white';
-                notification.style.borderRadius = '5px';
-                notification.style.fontWeight = 'bold';
-                notification.style.zIndex = '1000';
-                notification.textContent = `Level ${nextLevel} toegevoegd!`;
-                document.body.appendChild(notification);
-                
-                // Remove the notification after 1.5 seconds
-                setTimeout(() => {
-                    document.body.removeChild(notification);
-                }, 1500);
+                // Show success notification
+                showNotification(`Level ${nextLevel} toegevoegd!`);
             });
         }
         
@@ -1045,6 +1034,38 @@
             } else {
                 popup.style.display = 'flex';
             }
+        }
+        
+        // Helper function to show a notification
+        function showNotification(message) {
+            // Remove any existing notification
+            const existingNotification = document.getElementById('editor-notification');
+            if (existingNotification) {
+                document.body.removeChild(existingNotification);
+            }
+            
+            // Create a new notification
+            const notification = document.createElement('div');
+            notification.id = 'editor-notification';
+            notification.style.position = 'fixed';
+            notification.style.top = '50%';
+            notification.style.left = '50%';
+            notification.style.transform = 'translate(-50%, -50%)';
+            notification.style.padding = '15px 30px';
+            notification.style.backgroundColor = 'rgba(0, 150, 0, 0.8)';
+            notification.style.color = 'white';
+            notification.style.borderRadius = '5px';
+            notification.style.fontWeight = 'bold';
+            notification.style.zIndex = '1000';
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            // Remove the notification after 1.5 seconds
+            setTimeout(() => {
+                if (document.body.contains(notification)) {
+                    document.body.removeChild(notification);
+                }
+            }, 1500);
         }
         
         // Initialize the editor when the DOM is loaded
