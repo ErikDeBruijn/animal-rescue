@@ -12,8 +12,8 @@ body {
 
 .nav-link {
     position: fixed;
-    top: 10px;
-    right: 50px;
+    top: 60px; /* Moved below the other buttons */
+    right: 10px;
     background-color: #45882f;
     color: white;
     padding: 8px 15px;
@@ -21,6 +21,9 @@ body {
     text-decoration: none;
     font-weight: bold;
     z-index: 101;
+    display: flex;
+    align-items: center;
+    gap: 5px;
 }
 
 .nav-link:hover {
@@ -203,7 +206,7 @@ button:hover {
 /* Admin panel styles */
 .admin-panel {
     position: fixed;
-    top: 10px;
+    top: 100px; /* Moved lower to avoid overlapping with other elements */
     right: 10px;
     background-color: rgba(255, 255, 255, 0.8);
     border: 2px solid #333;
@@ -233,8 +236,8 @@ button:hover {
 
 .admin-toggle {
     position: fixed;
-    top: 10px;
-    right: 10px;
+    top: 105px; /* Adjusted to be next to the level editor link */
+    right: 170px; /* Positioned to the left of the level editor link */
     background-color: #ff9800;
     border: none;
     color: white;

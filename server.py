@@ -85,7 +85,7 @@ def index():
     if app.config['DEV_MODE']:
         # In development mode: toon de editor-link en admin toggle
         app.logger.info("Adding editor link and admin toggle to HTML (DEV MODE)")
-        replacement = '<a href="editor" class="nav-link" id="editor-link">Level Editor</a>\n    <div class="admin-toggle" id="adminToggle">⚙️</div>'
+        replacement = '<a href="editor" class="nav-link" id="editor-link">🛠️ Level Editor</a>\n    <div class="admin-toggle" id="adminToggle">⚙️</div>'
         html_content = html_content.replace('<!-- DEV_MODE_PLACEHOLDER -->', replacement)
         
         # Debug check of de vervanging is gelukt
