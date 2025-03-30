@@ -1,4 +1,4 @@
-// Dieren Redders - Een samenwerkingsspel met dieren
+// Huisdieren Redders - Een samenwerkingsspel met dieren
 // Gemaakt voor een ouder en kind om samen te spelen
 
 // Canvas en context worden in gameCore gezet

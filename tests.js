@@ -1,4 +1,4 @@
-// Tests voor Dieren Redders
+// Tests voor Huisdieren Redders
 // Dit bestand bevat geautomatiseerde tests om de functionaliteit van het spel te verifiëren
 
 // Automatische testuitvoering is uitgeschakeld 
@@ -13,7 +13,7 @@ window.addEventListener('load', function() {
 
 // Hoofdtestfunctie
 function runTests() {
-    console.log('%c--- DIEREN REDDERS TESTS ---', 'font-weight: bold; font-size: 14px; color: blue;');
+    console.log('%c--- HUISDIEREN REDDERS TESTS ---', 'font-weight: bold; font-size: 14px; color: blue;');
     
     // Test het wisselen van dieren
     testAnimalSwitching();

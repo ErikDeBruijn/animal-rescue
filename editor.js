@@ -1,4 +1,4 @@
-// Dieren Redders - Level Editor
+// Huisdieren Redders - Level Editor
 // Een editor voor het maken van nieuwe levels
 // Zie LEVELS.md voor documentatie over de level structuur
 

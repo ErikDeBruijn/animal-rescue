@@ -1,4 +1,4 @@
-# Dieren Redders 🐿️🐢🦄🐱
+# Huisdieren Redders 🐿️🐢🦄🐱
 
 Een leuk platform-puzzelspel voor een ouder en kind om samen te spelen! In dit spel werken verschillende dieren samen om puzzels op te lossen, een puppy te redden en uitdagingen te overwinnen.
 
@@ -8,7 +8,7 @@ Je kunt het spel online spelen via [GitHub Pages](https://erikdebruijn.github.io
 
 ## Het Spel
 
-In Dieren Redders bestuur je samen met je kind verschillende dieren om levels te voltooien. Elk dier heeft zijn eigen vaardigheden:
+In Huisdieren Redders bestuur je samen met je kind verschillende dieren om levels te voltooien. Elk dier heeft zijn eigen vaardigheden:
 
 - **Eekhoorn** 🐿️: Kan hoog springen en in bomen klimmen
 - **Schildpad** 🐢: Kan zwemmen door water (let op het zuurstofniveau!)

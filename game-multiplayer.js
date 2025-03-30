@@ -587,7 +587,7 @@ const gameMultiplayer = {
         
         // Maak de titel
         const lobbyTitle = document.createElement('h1');
-        lobbyTitle.textContent = 'Dieren Redders - Multiplayer';
+        lobbyTitle.textContent = 'Huisdieren Redders - Multiplayer';
         lobbyTitle.style.textAlign = 'center';
         lobbyTitle.style.color = '#45882f';
         this.ui.lobbyContainer.appendChild(lobbyTitle);

@@ -1,5 +1,5 @@
 // game-audio.js
-// Bevat het audio systeem voor Dieren Redders
+// Bevat het audio systeem voor Huisdieren Redders
 
 // Audio systeem
 const sounds = {};

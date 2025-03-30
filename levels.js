@@ -1,4 +1,4 @@
-// Dieren Redders - Level definities
+// Huisdieren Redders - Level definities
 // Dit bestand bevat alle level ontwerpen voor het spel
 // Test update: 1
 

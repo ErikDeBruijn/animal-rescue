@@ -1,4 +1,4 @@
-// Geautomatiseerde test suite voor Dieren Redders
+// Geautomatiseerde test suite voor Huisdieren Redders
 // Deze tests kunnen vanuit de console worden uitgevoerd en geven een duidelijk rapport terug
 
 // Testresultaten opslag

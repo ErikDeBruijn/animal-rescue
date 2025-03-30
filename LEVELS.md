@@ -1,6 +1,6 @@
-# Dieren Redders Level Structuur
+# Huisdieren Redders Level Structuur
 
-Dit document beschrijft de structuur van de levels in Dieren Redders, bedoeld voor ontwikkelaars en gebruikers van de level editor.
+Dit document beschrijft de structuur van de levels in Huisdieren Redders, bedoeld voor ontwikkelaars en gebruikers van de level editor.
 
 ## Level Object Structuur
 
