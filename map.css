@@ -153,6 +153,28 @@
     animation: pulse 1.5s infinite;
 }
 
+/* Special styling for Level 1 */
+#level-1 {
+    background-color: #f44336 !important;
+    color: white;
+    border: 3px solid white;
+    font-weight: bold;
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.7), 0 3px 8px rgba(0, 0, 0, 0.3);
+    z-index: 4; /* Above other nodes */
+}
+
+#level-1::before {
+    content: "START";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .memory-level {
     background: linear-gradient(135deg, #673AB7 50%, #9C27B0 50%);
     color: white;

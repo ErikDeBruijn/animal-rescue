@@ -214,6 +214,10 @@ function createMapNodes() {
             }
             
             mapContainer.appendChild(cardStack);
+        } else if (level === 1) {
+            // Special handling for Level 1 (START)
+            node.textContent = ''; // Will be replaced by ::before content in CSS
+            node.title = `Start het spel`;
         } else {
             node.textContent = level;
             node.title = `Level ${level}`;
