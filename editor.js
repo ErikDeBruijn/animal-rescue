@@ -1829,8 +1829,15 @@ function handleCanvasMouseMove(e) {
         editorState.selectedObject.y = mouseY - editorState.dragOffset.y;
         
         // Zorg dat objecten niet buiten het canvas komen
-        editorState.selectedObject.x = Math.max(0, Math.min(canvas.width - editorState.selectedObject.width, editorState.selectedObject.x));
-        editorState.selectedObject.y = Math.max(0, Math.min(canvas.height - editorState.selectedObject.height, editorState.selectedObject.y));
+        if (editorState.selectedObjectType === 'startPosition') {
+            // StartPositions hebben geen width/height properties, gebruik andere boundary checking
+            editorState.selectedObject.x = Math.max(0, Math.min(canvas.width, editorState.selectedObject.x));
+            editorState.selectedObject.y = Math.max(0, Math.min(canvas.height, editorState.selectedObject.y));
+        } else {
+            // Normale boundary checking voor objecten met width/height
+            editorState.selectedObject.x = Math.max(0, Math.min(canvas.width - (editorState.selectedObject.width || 0), editorState.selectedObject.x));
+            editorState.selectedObject.y = Math.max(0, Math.min(canvas.height - (editorState.selectedObject.height || 0), editorState.selectedObject.y));
+        }
         
         // Markeer als onopgeslagen als positie veranderd is
         if (oldX !== editorState.selectedObject.x || oldY !== editorState.selectedObject.y) {
