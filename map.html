@@ -23,6 +23,7 @@
         <button id="help-button" title="Help / Instructies"><span>❓</span></button>
         <button id="fullscreen-button" title="Volledig scherm"><span>⛶</span></button>
         <button id="return-button" title="Terug naar laatst gespeelde level"><span>↩️</span></button>
+        <button id="editor-button" title="Wereldkaart Editor"><span>🖉</span></button>
     </div>
     
     <!-- Instructions popup -->
@@ -50,6 +51,7 @@
     <!-- Core game scripts -->
     <script src="game-core.js"></script>
     <script src="levels.js"></script>
+    <script src="map-data.js"></script>
     <script src="map.js"></script>
     
     <script>
@@ -85,6 +87,11 @@
             } else {
                 window.location.href = 'index.html';
             }
+        });
+        
+        // Open map editor
+        document.getElementById('editor-button').addEventListener('click', function() {
+            window.location.href = 'map-editor.html';
         });
         
         // Fullscreen functionality - reusing code from index.html

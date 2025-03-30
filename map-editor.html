@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Huisdieren Redders - Wereldkaart Editor</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="map.css">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <style>
+        .editor-panel {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            width: 300px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border: 1px solid #333;
+            border-radius: 5px;
+            padding: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .editor-panel h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 5px;
+        }
+        
+        .level-form {
+            margin-bottom: 15px;
+        }
+        
+        .level-form input {
+            width: 50px;
+            margin-right: 5px;
+            text-align: center;
+        }
+        
+        .level-form select {
+            margin-right: 5px;
+        }
+        
+        .buttons-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+        
+        .node-list {
+            margin-top: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 5px;
+        }
+        
+        .node-item {
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+        }
+        
+        .node-item:hover {
+            background-color: #f5f5f5;
+        }
+        
+        .node-item.selected {
+            background-color: #e0f0ff;
+        }
+        
+        .path-list {
+            margin-top: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 5px;
+        }
+        
+        .path-item {
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+        }
+        
+        .path-item:hover {
+            background-color: #f5f5f5;
+        }
+        
+        .path-item.selected {
+            background-color: #e0f0ff;
+        }
+        
+        .draggable-node {
+            cursor: move;
+        }
+        
+        .edit-mode-indicator {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        
+        .active-tab {
+            background-color: #ddd;
+        }
+        
+        .tab-buttons {
+            display: flex;
+            margin-bottom: 10px;
+        }
+        
+        .tab-button {
+            flex: 1;
+            padding: 5px;
+            text-align: center;
+            cursor: pointer;
+            border: 1px solid #ccc;
+        }
+        
+        .tab-button.active {
+            background-color: #eee;
+            font-weight: bold;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .json-preview {
+            width: 100%;
+            height: 200px;
+            font-family: monospace;
+            margin-top: 10px;
+            resize: vertical;
+        }
+    </style>
+</head>
+<body>
+    <h1>Huisdieren Redders - Wereldkaart Editor</h1>
+    
+    <div class="edit-mode-indicator" id="edit-mode">Modus: Verplaatsen</div>
+    
+    <div class="map-container" id="map-container">
+        <!-- Level nodes and paths will be added here dynamically -->
+    </div>
+    
+    <div class="editor-panel">
+        <div class="tab-buttons">
+            <div class="tab-button active" data-tab="nodes">Level Nodes</div>
+            <div class="tab-button" data-tab="paths">Paden</div>
+            <div class="tab-button" data-tab="json">JSON Data</div>
+        </div>
+        
+        <div class="tab-content active" id="nodes-tab">
+            <h3>Level Nodes</h3>
+            
+            <div class="level-form">
+                <label>X: <input type="number" id="node-x" min="0" max="800"></label>
+                <label>Y: <input type="number" id="node-y" min="0" max="450"></label>
+                <label>Level: <input type="number" id="node-level" min="1"></label>
+                <label>Type: 
+                    <select id="node-type">
+                        <option value="animalRescue">Animal Rescue</option>
+                        <option value="memoryGame">Memory Game</option>
+                    </select>
+                </label>
+                <div class="buttons-container">
+                    <button id="add-node">Toevoegen</button>
+                    <button id="update-node" disabled>Bijwerken</button>
+                    <button id="delete-node" disabled>Verwijderen</button>
+                </div>
+            </div>
+            
+            <div class="node-list" id="node-list">
+                <!-- Nodes will be listed here -->
+            </div>
+        </div>
+        
+        <div class="tab-content" id="paths-tab">
+            <h3>Paden</h3>
+            
+            <div class="level-form">
+                <label>Van Level: <input type="number" id="path-start" min="1"></label>
+                <label>Naar Level: <input type="number" id="path-end" min="1"></label>
+                <label>Vereist Level: <input type="number" id="path-required" min="1"></label>
+                <div class="buttons-container">
+                    <button id="add-path">Toevoegen</button>
+                    <button id="update-path" disabled>Bijwerken</button>
+                    <button id="delete-path" disabled>Verwijderen</button>
+                </div>
+            </div>
+            
+            <div class="path-list" id="path-list">
+                <!-- Paths will be listed here -->
+            </div>
+        </div>
+        
+        <div class="tab-content" id="json-tab">
+            <h3>JSON Data</h3>
+            <textarea id="json-preview" class="json-preview" readonly></textarea>
+            <div class="buttons-container">
+                <button id="copy-json">Kopiëren</button>
+                <button id="save-json">Opslaan</button>
+                <button id="load-json">Laden</button>
+            </div>
+        </div>
+        
+        <div class="buttons-container" style="margin-top: 20px;">
+            <button id="toggle-mode">Wissel Modus</button>
+            <button id="return-button">Terug naar Spel</button>
+            <button id="help-button">Help</button>
+        </div>
+    </div>
+    
+    <!-- Instructions popup -->
+    <div id="instructions-popup" class="popup-dialog">
+        <div class="popup-content">
+            <div class="popup-header">
+                <h3>Wereldkaart Editor Instructies</h3>
+                <span class="close-popup">&times;</span>
+            </div>
+            <div class="popup-body">
+                <p><strong>Welkom bij de Wereldkaart Editor!</strong></p>
+                <p>Hier kun je level nodes en paden voor de wereldkaart aanpassen:</p>
+                <p><strong>Modus:</strong></p>
+                <p>- <strong>Verplaatsen:</strong> Sleep level nodes naar nieuwe posities</p>
+                <p>- <strong>Selecteren:</strong> Klik op nodes om ze te selecteren voor bewerken</p>
+                <p><strong>Level Nodes:</strong></p>
+                <p>- <strong>Toevoegen:</strong> Vul X, Y, Level, en Type in en klik 'Toevoegen'</p>
+                <p>- <strong>Bijwerken:</strong> Selecteer een node, wijzig waarden, klik 'Bijwerken'</p>
+                <p>- <strong>Verwijderen:</strong> Selecteer een node en klik 'Verwijderen'</p>
+                <p><strong>Paden:</strong></p>
+                <p>- <strong>Toevoegen:</strong> Geef start- en eindpunt en het niveau dat nodig is om het pad te ontgrendelen</p>
+                <p>- <strong>Bijwerken/Verwijderen:</strong> Selecteer een pad in de lijst en bewerk of verwijder het</p>
+                <p><strong>JSON Data:</strong></p>
+                <p>- <strong>Kopiëren:</strong> Kopieer de JSON data naar het klembord</p>
+                <p>- <strong>Opslaan:</strong> Sla de wijzigingen op in lokale opslag</p>
+                <p>- <strong>Laden:</strong> Laad eerder opgeslagen data uit lokale opslag</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Core scripts -->
+    <script src="game-core.js"></script>
+    <script src="levels.js"></script>
+    <script src="map-data.js"></script>
+    
+    <script>
+        // Editor state
+        let editorState = {
+            mode: 'move', // 'move' or 'select'
+            selectedNodeIndex: -1,
+            selectedPathIndex: -1,
+            draggedNode: null,
+            offsetX: 0,
+            offsetY: 0
+        };
+        
+        // Initialize the editor
+        function initEditor() {
+            // Try to load map data first
+            window.mapData.loadMapData();
+            
+            // Create the map elements
+            createMapNodes();
+            
+            // Set up event listeners
+            setupEditorControls();
+            
+            // Update the JSON preview
+            updateJSONPreview();
+        }
+        
+        // Create level nodes and paths on the map
+        function createMapNodes() {
+            const mapContainer = document.getElementById('map-container');
+            
+            // Clear existing nodes
+            mapContainer.innerHTML = '';
+            
+            // Create a nodemap for quick lookup
+            const nodeMap = {};
+            window.mapData.LEVEL_POSITIONS.forEach(([x, y, level, gameType]) => {
+                nodeMap[level] = { x, y, level, gameType };
+            });
+            
+            // First, create paths between connected nodes based on PATH_CONNECTIONS
+            window.mapData.PATH_CONNECTIONS.forEach(([startLevelNum, endLevelNum, requiredLevel], index) => {
+                const startNode = nodeMap[startLevelNum];
+                const endNode = nodeMap[endLevelNum];
+                
+                if (!startNode || !endNode) {
+                    console.warn(`Missing nodes for path: ${startLevelNum} -> ${endLevelNum}`);
+                    return;
+                }
+                
+                // Calculate path properties
+                const x1 = startNode.x;
+                const y1 = startNode.y;
+                const x2 = endNode.x;
+                const y2 = endNode.y;
+                
+                const length = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+                const angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+                
+                // Create path element
+                const path = document.createElement('div');
+                path.className = 'level-path path-available';
+                path.dataset.index = index;
+                
+                // Position and rotate the path
+                path.style.width = `${length}px`;
+                path.style.left = `${x1}px`;
+                path.style.top = `${y1}px`;
+                path.style.transformOrigin = 'center left';
+                path.style.transform = `rotate(${angle}deg)`;
+                
+                // Store the path data
+                path.dataset.startLevel = startLevelNum;
+                path.dataset.endLevel = endLevelNum;
+                path.dataset.requiredLevel = requiredLevel;
+                
+                mapContainer.appendChild(path);
+                
+                // Add click handler for selection in edit mode
+                path.addEventListener('click', function() {
+                    if (editorState.mode === 'select') {
+                        selectPath(index);
+                    }
+                });
+            });
+            
+            // Then, create level nodes
+            window.mapData.LEVEL_POSITIONS.forEach(([x, y, level, gameType], index) => {
+                // Create node element
+                const node = document.createElement('div');
+                node.className = 'level-node level-unlocked draggable-node';
+                
+                // Set text content based on game type
+                if (gameType === 'memoryGame') {
+                    node.textContent = 'M';
+                    node.classList.add('memory-level');
+                    node.title = `Memory Level ${level}`;
+                } else {
+                    node.textContent = level;
+                    node.title = `Level ${level}`;
+                }
+                
+                node.id = `level-${level}`;
+                node.dataset.level = level;
+                node.dataset.gameType = gameType;
+                node.dataset.index = index;
+                
+                // Position the node
+                node.style.left = `${x - 25}px`; // Center horizontally
+                node.style.top = `${y - 25}px`;  // Center vertically
+                
+                mapContainer.appendChild(node);
+                
+                // Add event listeners for dragging in move mode
+                node.addEventListener('mousedown', function(e) {
+                    if (editorState.mode === 'move') {
+                        startDrag(e, index);
+                    } else if (editorState.mode === 'select') {
+                        selectNode(index);
+                    }
+                });
+            });
+            
+            // Update node list in the editor panel
+            updateNodeList();
+            updatePathList();
+        }
+        
+        // Start dragging a node
+        function startDrag(e, nodeIndex) {
+            const node = document.querySelector(`.level-node[data-index="${nodeIndex}"]`);
+            if (!node) return;
+            
+            editorState.draggedNode = nodeIndex;
+            
+            // Calculate offset from the node's top-left corner
+            const rect = node.getBoundingClientRect();
+            editorState.offsetX = e.clientX - rect.left;
+            editorState.offsetY = e.clientY - rect.top;
+            
+            // Add event listeners for dragging
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', stopDrag);
+            
+            // Prevent default behavior
+            e.preventDefault();
+        }
+        
+        // Drag a node
+        function drag(e) {
+            if (editorState.draggedNode === null) return;
+            
+            const node = document.querySelector(`.level-node[data-index="${editorState.draggedNode}"]`);
+            if (!node) return;
+            
+            // Calculate new position relative to map container
+            const mapContainer = document.getElementById('map-container');
+            const mapRect = mapContainer.getBoundingClientRect();
+            
+            let x = e.clientX - mapRect.left - editorState.offsetX + 25; // Add 25 to center
+            let y = e.clientY - mapRect.top - editorState.offsetY + 25; // Add 25 to center
+            
+            // Constrain to map boundaries
+            x = Math.max(25, Math.min(x, mapRect.width - 25));
+            y = Math.max(25, Math.min(y, mapRect.height - 25));
+            
+            // Update node position
+            node.style.left = `${x - 25}px`; // Subtract 25 to center
+            node.style.top = `${y - 25}px`; // Subtract 25 to center
+            
+            // Update the data
+            const nodeData = window.mapData.LEVEL_POSITIONS[editorState.draggedNode];
+            nodeData[0] = x;
+            nodeData[1] = y;
+            
+            // Update paths connected to this node
+            updateConnectedPaths(nodeData[2]); // nodeData[2] is the level number
+        }
+        
+        // Stop dragging a node
+        function stopDrag() {
+            editorState.draggedNode = null;
+            
+            // Remove event listeners
+            document.removeEventListener('mousemove', drag);
+            document.removeEventListener('mouseup', stopDrag);
+            
+            // Update JSON preview
+            updateJSONPreview();
+        }
+        
+        // Update paths connected to a node
+        function updateConnectedPaths(levelNum) {
+            const nodeMap = {};
+            window.mapData.LEVEL_POSITIONS.forEach(([x, y, level, gameType]) => {
+                nodeMap[level] = { x, y };
+            });
+            
+            window.mapData.PATH_CONNECTIONS.forEach(([startLevel, endLevel], index) => {
+                if (startLevel === levelNum || endLevel === levelNum) {
+                    const startNode = nodeMap[startLevel];
+                    const endNode = nodeMap[endLevel];
+                    
+                    if (!startNode || !endNode) return;
+                    
+                    const path = document.querySelector(`.level-path[data-index="${index}"]`);
+                    if (!path) return;
+                    
+                    // Calculate path properties
+                    const x1 = startNode.x;
+                    const y1 = startNode.y;
+                    const x2 = endNode.x;
+                    const y2 = endNode.y;
+                    
+                    const length = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+                    const angle = Math.atan2(y2 - y1, x2 - x1) * 180 / Math.PI;
+                    
+                    // Update path position and rotation
+                    path.style.width = `${length}px`;
+                    path.style.left = `${x1}px`;
+                    path.style.top = `${y1}px`;
+                    path.style.transform = `rotate(${angle}deg)`;
+                }
+            });
+        }
+        
+        // Select a node for editing
+        function selectNode(index) {
+            editorState.selectedNodeIndex = index;
+            editorState.selectedPathIndex = -1;
+            
+            // Highlight the selected node
+            document.querySelectorAll('.level-node').forEach(node => {
+                node.classList.remove('selected');
+            });
+            
+            const selectedNode = document.querySelector(`.level-node[data-index="${index}"]`);
+            if (selectedNode) {
+                selectedNode.classList.add('selected');
+            }
+            
+            // Update form fields
+            const nodeData = window.mapData.LEVEL_POSITIONS[index];
+            document.getElementById('node-x').value = nodeData[0];
+            document.getElementById('node-y').value = nodeData[1];
+            document.getElementById('node-level').value = nodeData[2];
+            document.getElementById('node-type').value = nodeData[3];
+            
+            // Enable update/delete buttons
+            document.getElementById('update-node').disabled = false;
+            document.getElementById('delete-node').disabled = false;
+            
+            // Disable path buttons
+            document.getElementById('update-path').disabled = true;
+            document.getElementById('delete-path').disabled = true;
+            
+            // Update node list selection
+            updateNodeList();
+        }
+        
+        // Select a path for editing
+        function selectPath(index) {
+            editorState.selectedPathIndex = index;
+            editorState.selectedNodeIndex = -1;
+            
+            // Remove node selection
+            document.querySelectorAll('.level-node').forEach(node => {
+                node.classList.remove('selected');
+            });
+            
+            // Highlight the selected path
+            document.querySelectorAll('.level-path').forEach(path => {
+                path.classList.remove('selected');
+            });
+            
+            const selectedPath = document.querySelector(`.level-path[data-index="${index}"]`);
+            if (selectedPath) {
+                selectedPath.classList.add('selected');
+            }
+            
+            // Update form fields
+            const pathData = window.mapData.PATH_CONNECTIONS[index];
+            document.getElementById('path-start').value = pathData[0];
+            document.getElementById('path-end').value = pathData[1];
+            document.getElementById('path-required').value = pathData[2];
+            
+            // Enable update/delete buttons for paths
+            document.getElementById('update-path').disabled = false;
+            document.getElementById('delete-path').disabled = false;
+            
+            // Disable node buttons
+            document.getElementById('update-node').disabled = true;
+            document.getElementById('delete-node').disabled = true;
+            
+            // Update path list selection
+            updatePathList();
+            
+            // Switch to paths tab
+            selectTab('paths');
+        }
+        
+        // Update the node list in the editor panel
+        function updateNodeList() {
+            const nodeList = document.getElementById('node-list');
+            nodeList.innerHTML = '';
+            
+            window.mapData.LEVEL_POSITIONS.forEach(([x, y, level, gameType], index) => {
+                const nodeItem = document.createElement('div');
+                nodeItem.className = 'node-item';
+                nodeItem.dataset.index = index;
+                nodeItem.textContent = `Level ${level} (${gameType}) - [${x}, ${y}]`;
+                
+                if (index === editorState.selectedNodeIndex) {
+                    nodeItem.classList.add('selected');
+                }
+                
+                nodeItem.addEventListener('click', function() {
+                    selectNode(index);
+                });
+                
+                nodeList.appendChild(nodeItem);
+            });
+        }
+        
+        // Update the path list in the editor panel
+        function updatePathList() {
+            const pathList = document.getElementById('path-list');
+            pathList.innerHTML = '';
+            
+            window.mapData.PATH_CONNECTIONS.forEach(([startLevel, endLevel, requiredLevel], index) => {
+                const pathItem = document.createElement('div');
+                pathItem.className = 'path-item';
+                pathItem.dataset.index = index;
+                pathItem.textContent = `${startLevel} → ${endLevel} (Vereist: ${requiredLevel})`;
+                
+                if (index === editorState.selectedPathIndex) {
+                    pathItem.classList.add('selected');
+                }
+                
+                pathItem.addEventListener('click', function() {
+                    selectPath(index);
+                });
+                
+                pathList.appendChild(pathItem);
+            });
+        }
+        
+        // Update the JSON preview
+        function updateJSONPreview() {
+            const jsonPreview = document.getElementById('json-preview');
+            const mapDataJSON = JSON.stringify({
+                LEVEL_POSITIONS: window.mapData.LEVEL_POSITIONS,
+                PATH_CONNECTIONS: window.mapData.PATH_CONNECTIONS
+            }, null, 2);
+            
+            jsonPreview.value = mapDataJSON;
+        }
+        
+        // Set up editor controls
+        function setupEditorControls() {
+            // Toggle editor mode
+            document.getElementById('toggle-mode').addEventListener('click', function() {
+                editorState.mode = editorState.mode === 'move' ? 'select' : 'move';
+                document.getElementById('edit-mode').textContent = `Modus: ${editorState.mode === 'move' ? 'Verplaatsen' : 'Selecteren'}`;
+            });
+            
+            // Add a new node
+            document.getElementById('add-node').addEventListener('click', function() {
+                const x = parseInt(document.getElementById('node-x').value) || 100;
+                const y = parseInt(document.getElementById('node-y').value) || 100;
+                const level = parseInt(document.getElementById('node-level').value) || 1;
+                const type = document.getElementById('node-type').value;
+                
+                // Check if the level already exists
+                const existingIndex = window.mapData.LEVEL_POSITIONS.findIndex(node => node[2] === level);
+                if (existingIndex >= 0) {
+                    alert(`Level ${level} bestaat al!`);
+                    return;
+                }
+                
+                // Add the new node
+                window.mapData.LEVEL_POSITIONS.push([x, y, level, type]);
+                
+                // Recreate the map
+                createMapNodes();
+                
+                // Update JSON preview
+                updateJSONPreview();
+            });
+            
+            // Update a node
+            document.getElementById('update-node').addEventListener('click', function() {
+                if (editorState.selectedNodeIndex < 0) return;
+                
+                const x = parseInt(document.getElementById('node-x').value) || 100;
+                const y = parseInt(document.getElementById('node-y').value) || 100;
+                const level = parseInt(document.getElementById('node-level').value) || 1;
+                const type = document.getElementById('node-type').value;
+                
+                // Check if the level already exists in another node
+                const currentLevel = window.mapData.LEVEL_POSITIONS[editorState.selectedNodeIndex][2];
+                const existingIndex = window.mapData.LEVEL_POSITIONS.findIndex(node => node[2] === level && node[2] !== currentLevel);
+                if (existingIndex >= 0) {
+                    alert(`Level ${level} bestaat al!`);
+                    return;
+                }
+                
+                // Update the node
+                window.mapData.LEVEL_POSITIONS[editorState.selectedNodeIndex] = [x, y, level, type];
+                
+                // Update the connected paths if the level number changed
+                if (currentLevel !== level) {
+                    window.mapData.PATH_CONNECTIONS.forEach(path => {
+                        if (path[0] === currentLevel) path[0] = level;
+                        if (path[1] === currentLevel) path[1] = level;
+                    });
+                }
+                
+                // Recreate the map
+                createMapNodes();
+                
+                // Reset selection
+                editorState.selectedNodeIndex = -1;
+                document.getElementById('update-node').disabled = true;
+                document.getElementById('delete-node').disabled = true;
+                
+                // Update JSON preview
+                updateJSONPreview();
+            });
+            
+            // Delete a node
+            document.getElementById('delete-node').addEventListener('click', function() {
+                if (editorState.selectedNodeIndex < 0) return;
+                
+                const level = window.mapData.LEVEL_POSITIONS[editorState.selectedNodeIndex][2];
+                
+                // Ask for confirmation
+                if (!confirm(`Weet je zeker dat je level ${level} wilt verwijderen?`)) {
+                    return;
+                }
+                
+                // Remove connected paths
+                const newPaths = window.mapData.PATH_CONNECTIONS.filter(([start, end]) => {
+                    return start !== level && end !== level;
+                });
+                window.mapData.PATH_CONNECTIONS = newPaths;
+                
+                // Remove the node
+                window.mapData.LEVEL_POSITIONS.splice(editorState.selectedNodeIndex, 1);
+                
+                // Recreate the map
+                createMapNodes();
+                
+                // Reset selection
+                editorState.selectedNodeIndex = -1;
+                document.getElementById('update-node').disabled = true;
+                document.getElementById('delete-node').disabled = true;
+                
+                // Update JSON preview
+                updateJSONPreview();
+            });
+            
+            // Add a new path
+            document.getElementById('add-path').addEventListener('click', function() {
+                const startLevel = parseInt(document.getElementById('path-start').value) || 1;
+                const endLevel = parseInt(document.getElementById('path-end').value) || 2;
+                const requiredLevel = parseInt(document.getElementById('path-required').value) || 1;
+                
+                // Check if the nodes exist
+                const startNodeExists = window.mapData.LEVEL_POSITIONS.some(node => node[2] === startLevel);
+                const endNodeExists = window.mapData.LEVEL_POSITIONS.some(node => node[2] === endLevel);
+                
+                if (!startNodeExists) {
+                    alert(`Level ${startLevel} bestaat niet!`);
+                    return;
+                }
+                
+                if (!endNodeExists) {
+                    alert(`Level ${endLevel} bestaat niet!`);
+                    return;
+                }
+                
+                // Check if the path already exists
+                const existingPath = window.mapData.PATH_CONNECTIONS.some(
+                    ([start, end]) => start === startLevel && end === endLevel
+                );
+                
+                if (existingPath) {
+                    alert(`Pad van ${startLevel} naar ${endLevel} bestaat al!`);
+                    return;
+                }
+                
+                // Add the new path
+                window.mapData.PATH_CONNECTIONS.push([startLevel, endLevel, requiredLevel]);
+                
+                // Recreate the map
+                createMapNodes();
+                
+                // Update JSON preview
+                updateJSONPreview();
+            });
+            
+            // Update a path
+            document.getElementById('update-path').addEventListener('click', function() {
+                if (editorState.selectedPathIndex < 0) return;
+                
+                const startLevel = parseInt(document.getElementById('path-start').value) || 1;
+                const endLevel = parseInt(document.getElementById('path-end').value) || 2;
+                const requiredLevel = parseInt(document.getElementById('path-required').value) || 1;
+                
+                // Check if the nodes exist
+                const startNodeExists = window.mapData.LEVEL_POSITIONS.some(node => node[2] === startLevel);
+                const endNodeExists = window.mapData.LEVEL_POSITIONS.some(node => node[2] === endLevel);
+                
+                if (!startNodeExists) {
+                    alert(`Level ${startLevel} bestaat niet!`);
+                    return;
+                }
+                
+                if (!endNodeExists) {
+                    alert(`Level ${endLevel} bestaat niet!`);
+                    return;
+                }
+                
+                // Update the path
+                window.mapData.PATH_CONNECTIONS[editorState.selectedPathIndex] = [startLevel, endLevel, requiredLevel];
+                
+                // Recreate the map
+                createMapNodes();
+                
+                // Reset selection
+                editorState.selectedPathIndex = -1;
+                document.getElementById('update-path').disabled = true;
+                document.getElementById('delete-path').disabled = true;
+                
+                // Update JSON preview
+                updateJSONPreview();
+            });
+            
+            // Delete a path
+            document.getElementById('delete-path').addEventListener('click', function() {
+                if (editorState.selectedPathIndex < 0) return;
+                
+                const pathData = window.mapData.PATH_CONNECTIONS[editorState.selectedPathIndex];
+                
+                // Ask for confirmation
+                if (!confirm(`Weet je zeker dat je het pad van ${pathData[0]} naar ${pathData[1]} wilt verwijderen?`)) {
+                    return;
+                }
+                
+                // Remove the path
+                window.mapData.PATH_CONNECTIONS.splice(editorState.selectedPathIndex, 1);
+                
+                // Recreate the map
+                createMapNodes();
+                
+                // Reset selection
+                editorState.selectedPathIndex = -1;
+                document.getElementById('update-path').disabled = true;
+                document.getElementById('delete-path').disabled = true;
+                
+                // Update JSON preview
+                updateJSONPreview();
+            });
+            
+            // Copy JSON to clipboard
+            document.getElementById('copy-json').addEventListener('click', function() {
+                const jsonPreview = document.getElementById('json-preview');
+                jsonPreview.select();
+                document.execCommand('copy');
+                alert('JSON gekopieerd naar klembord!');
+            });
+            
+            // Save JSON to localStorage
+            document.getElementById('save-json').addEventListener('click', function() {
+                window.mapData.saveMapData();
+                alert('Kaartdata opgeslagen in lokale opslag!');
+            });
+            
+            // Load JSON from localStorage
+            document.getElementById('load-json').addEventListener('click', function() {
+                if (window.mapData.loadMapData()) {
+                    createMapNodes();
+                    updateJSONPreview();
+                    alert('Kaartdata geladen uit lokale opslag!');
+                } else {
+                    alert('Geen opgeslagen kaartdata gevonden.');
+                }
+            });
+            
+            // Return to game
+            document.getElementById('return-button').addEventListener('click', function() {
+                window.location.href = 'map.html';
+            });
+            
+            // Tab switching
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    const tab = this.dataset.tab;
+                    selectTab(tab);
+                });
+            });
+            
+            // Help button
+            document.getElementById('help-button').addEventListener('click', toggleInstructionsPopup);
+            
+            // Close popup when X is clicked
+            document.querySelector('.close-popup').addEventListener('click', toggleInstructionsPopup);
+            
+            // Close popup when clicking outside of it
+            document.getElementById('instructions-popup').addEventListener('click', function(event) {
+                if (event.target === this) {
+                    toggleInstructionsPopup();
+                }
+            });
+        }
+        
+        // Select a tab
+        function selectTab(tab) {
+            // Update tab buttons
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.classList.remove('active');
+            });
+            document.querySelector(`.tab-button[data-tab="${tab}"]`).classList.add('active');
+            
+            // Update tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`${tab}-tab`).classList.add('active');
+        }
+        
+        // Instructions popup functionality
+        function toggleInstructionsPopup() {
+            const popup = document.getElementById('instructions-popup');
+            
+            if (popup.style.display === 'flex') {
+                popup.style.display = 'none';
+            } else {
+                popup.style.display = 'flex';
+            }
+        }
+        
+        // Initialize the editor when the DOM is loaded
+        document.addEventListener('DOMContentLoaded', initEditor);
+    </script>
+</body>
+</html>

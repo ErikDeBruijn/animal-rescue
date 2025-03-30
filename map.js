@@ -24,41 +24,12 @@ let mapState = {
     levelNodes: []
 };
 
-// Level node positions on the map
-const LEVEL_POSITIONS = [
-    // [x, y, level, gameType]
-    [100, 100, 1, 'animalRescue'],
-    [200, 150, 2, 'animalRescue'],
-    [150, 250, 101, 'memoryGame'], // Memory game after level 2
-    [300, 100, 3, 'animalRescue'],
-    [400, 150, 4, 'animalRescue'],
-    [350, 250, 102, 'memoryGame'], // Memory game after level 4
-    [500, 100, 5, 'animalRescue'],
-    [600, 150, 6, 'animalRescue'],
-    [550, 250, 103, 'memoryGame'], // Memory game after level 6
-    [700, 100, 7, 'animalRescue']
-];
-
-// Define path connections - which nodes are connected by paths
-// Format: [startNode, endNode, required level to unlock]
-const PATH_CONNECTIONS = [
-    // Main path
-    [1, 2, 1],
-    [2, 3, 2],
-    [3, 4, 3],
-    [4, 5, 4],
-    [5, 6, 5],
-    [6, 7, 6],
-    
-    // Memory game branches
-    [2, 101, 2], // Branch to memory game after level 2
-    [4, 102, 4], // Branch to memory game after level 4
-    [6, 103, 6]  // Branch to memory game after level 6
-];
-
 // Initialize the map
 function initMap() {
-    // Load data from localStorage
+    // Try to load map data if it exists
+    window.mapData.loadMapData();
+    
+    // Load game progress from localStorage
     loadGameProgress();
     
     // Create the map elements
@@ -111,7 +82,7 @@ function loadGameProgress() {
         changed = false;
         
         // For each path connection, check if the start level is unlocked or completed
-        PATH_CONNECTIONS.forEach(([startLevel, endLevel, requiredLevel]) => {
+        window.mapData.PATH_CONNECTIONS.forEach(([startLevel, endLevel, requiredLevel]) => {
             // To unlock a level:
             // 1. The start level must be unlocked or completed
             // 2. The required level must be completed
@@ -141,12 +112,12 @@ function createMapNodes() {
     
     // Create a nodemap for quick lookup
     const nodeMap = {};
-    LEVEL_POSITIONS.forEach(([x, y, level, gameType]) => {
+    window.mapData.LEVEL_POSITIONS.forEach(([x, y, level, gameType]) => {
         nodeMap[level] = { x, y, level, gameType };
     });
     
     // First, create paths between connected nodes based on PATH_CONNECTIONS
-    PATH_CONNECTIONS.forEach(([startLevelNum, endLevelNum, requiredLevel]) => {
+    window.mapData.PATH_CONNECTIONS.forEach(([startLevelNum, endLevelNum, requiredLevel]) => {
         const startNode = nodeMap[startLevelNum];
         const endNode = nodeMap[endLevelNum];
         
@@ -196,7 +167,7 @@ function createMapNodes() {
     });
     
     // Then, create level nodes
-    LEVEL_POSITIONS.forEach(([x, y, level, gameType]) => {
+    window.mapData.LEVEL_POSITIONS.forEach(([x, y, level, gameType]) => {
         // Create node element
         const node = document.createElement('div');
         node.className = 'level-node';
@@ -251,7 +222,7 @@ function createMapNodes() {
                 selectLevel(level, gameType);
             } else {
                 // If level is locked, inform the player
-                const requiredPath = PATH_CONNECTIONS.find(([start, end]) => end === level);
+                const requiredPath = window.mapData.PATH_CONNECTIONS.find(([start, end]) => end === level);
                 if (requiredPath) {
                     const requiredLevel = requiredPath[2];
                     alert(`Je moet eerst level ${requiredLevel} voltooien om dit level te ontgrendelen.`);
@@ -433,7 +404,7 @@ function checkLevelActivation() {
             selectLevel(closestNode.level, closestNode.gameType);
         } else {
             // If level is locked, inform the player
-            const requiredPath = PATH_CONNECTIONS.find(([start, end]) => end === closestNode.level);
+            const requiredPath = window.mapData.PATH_CONNECTIONS.find(([start, end]) => end === closestNode.level);
             if (requiredPath) {
                 const requiredLevel = requiredPath[2];
                 alert(`Je moet eerst level ${requiredLevel} voltooien om dit level te ontgrendelen.`);
@@ -454,9 +425,8 @@ function selectLevel(level, gameType) {
         window.location.href = `index.html#level=${level}`;
     } else if (gameType === 'memoryGame') {
         if (confirm('Memory spel is optioneel. Wil je dit spelen?')) {
-            // Will be updated when memory game is implemented
-            alert('Memory spel wordt binnenkort toegevoegd!');
-            // window.location.href = `memory.html#level=${level}`;
+            // Redirect to memory game with level parameter
+            window.location.href = `memory.html#level=${level}`;
         }
     }
 }
@@ -466,9 +436,6 @@ function updateScoreDisplay() {
     const scoreElement = document.getElementById('total-score');
     scoreElement.textContent = `Totaal Score: ${mapState.totalScore}`;
 }
-
-// Initialize the map when the DOM is loaded
-document.addEventListener('DOMContentLoaded', initMap);
 
 // Create a popup to show level details when hovering over a node
 function createLevelInfoPopup() {
@@ -504,6 +471,9 @@ function createLevelInfoPopup() {
         });
     });
 }
+
+// Initialize the map when the DOM is loaded
+document.addEventListener('DOMContentLoaded', initMap);
 
 // Expose utilities for adding game completion in other files
 window.mapUtils = {
