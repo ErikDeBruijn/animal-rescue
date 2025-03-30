@@ -65,6 +65,12 @@ function init() {
     gameAudio.addSoundControl();
     gameAudio.addMusicControl();
     
+    // Laad de opgeslagen score uit localStorage als deze bestaat
+    const savedScore = localStorage.getItem('gameScore');
+    if (savedScore !== null) {
+        gameCore.gameState.score = parseInt(savedScore, 10);
+    }
+    
     // Als het de eerste keer is dat we het spel starten (level 0 of 1), 
     // toon dan eerst het intro scherm
     if (gameCore.getStartLevel() <= 1 && !sessionStorage.getItem('introShown')) {
@@ -316,6 +322,9 @@ function updateScoreDisplay() {
     if (scoreElement) {
         scoreElement.textContent = `Score: ${gameCore.gameState.score}`;
     }
+    
+    // Sla de score op in localStorage
+    localStorage.setItem('gameScore', gameCore.gameState.score.toString());
 }
 
 // Maak updateScoreDisplay globaal beschikbaar zodat andere modules het kunnen gebruiken
