@@ -1263,11 +1263,9 @@ function setupEventListeners() {
             editorState.selectedObjectType === 'platform' && 
             editorState.selectedObject.type === 'NUMBER') {
             
-            // Parse the number value
-            const numberValue = parseInt(this.value);
-            
             // Update the number value in the platform
-            editorState.selectedObject.numberValue = numberValue;
+            // Sla het waarde altijd op als string!
+            editorState.selectedObject.numberValue = this.value;
             
             renderEditor();
             markUnsavedChanges();
