@@ -927,7 +927,7 @@ function gameLoop() {
                 const answerLength = expectedAnswer ? expectedAnswer.length : 0;
                 
                 // Y positie voor de huidige som - net onder de vorige som als die getoond wordt
-                const currentYPos = lastCompletedIndex >= 0 ? 30 + (boxHeight + boxSpacing) : 30;
+                const currentYPos = problemToShow && problemToShow.isCorrect ? 30 + (boxHeight + boxSpacing) : 30;
                 
                 // Bereken breedte op basis van vergelijking en mogelijke antwoord
                 gameCore.ctx.font = 'bold 22px Comic Sans MS';

@@ -421,6 +421,9 @@ function drawPlatform(platform) {
                     // Final phase (return to normal)
                     gameCore.ctx.fillStyle = '#ffc060'; 
                 }
+            } else if (platform.correctAnswer) {
+                // Green color for correct answer
+                gameCore.ctx.fillStyle = '#4CAF50'; // Use a medium green color
             } else {
                 // Normal color
                 gameCore.ctx.fillStyle = '#ffb733';
