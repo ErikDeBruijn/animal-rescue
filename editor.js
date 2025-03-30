@@ -76,24 +76,14 @@ const objectColors = {
         VERTICAL: '#cc7722',  // Oranjebruin voor verticale muren
         TREADMILL: '#444444' // Donkergrijs voor loopbanden
     },
-    enemy: {
-        LION: '#ff9800',    // Oranje voor leeuwen
-        DRAGON: '#ff0000',   // Rood voor draken
-        PIRANHA: '#0077be'  // Blauw voor piranha's
-    },
     trap: {
         SPIKES: '#8c8c8c',   // Grijs voor spikes
         FIRE: '#ff4500'      // Oranje-rood voor vuur
     },
-    puppy: '#BE9B7B',       // Lichtbruin voor puppy
-    collectible: {
-        STAR: '#ffff00',     // Geel voor ster
-        PEPPER: '#d70000',   // Rood voor peper
-        DOGFOOD: '#D2B48C',  // Lichtbruin voor hondenvoer
-        HOURGLASS: '#87CEFA' // Lichtblauw voor zandloper
-    },
     startPos: '#00ff00'     // Groen voor startposities
 };
+
+// Character colors are now defined in editor-character.js
 
 // Functie voor de "Terug naar Game" link
 function handleBackToGame() {
@@ -2683,80 +2673,9 @@ function drawPlatform(platform) {
     ctx.strokeRect(platform.x, platform.y, platform.width, platform.height);
 }
 
-// Teken een vijand
+// Teken een vijand - gebruikt functie uit editor-character.js
 function drawEnemy(enemy) {
-    ctx.fillStyle = objectColors.enemy[enemy.type];
-    
-    // Teken het lichaam
-    ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
-    
-    // Teken details afhankelijk van vijand type
-    if (enemy.type === 'LION') {
-        // Leeuw details (ogen en neus)
-        ctx.fillStyle = 'white';
-        ctx.fillRect(enemy.x + enemy.width * 0.7, enemy.y + enemy.height * 0.2, enemy.width * 0.15, enemy.height * 0.15);
-        ctx.fillRect(enemy.x + enemy.width * 0.7, enemy.y + enemy.height * 0.5, enemy.width * 0.15, enemy.height * 0.15);
-        
-        ctx.fillStyle = 'black';
-        ctx.fillRect(enemy.x + enemy.width * 0.73, enemy.y + enemy.height * 0.23, enemy.width * 0.09, enemy.height * 0.09);
-        ctx.fillRect(enemy.x + enemy.width * 0.73, enemy.y + enemy.height * 0.53, enemy.width * 0.09, enemy.height * 0.09);
-        
-        // Neus
-        ctx.fillStyle = 'black';
-        ctx.beginPath();
-        ctx.arc(enemy.x + enemy.width * 0.9, enemy.y + enemy.height * 0.35, enemy.width * 0.1, 0, Math.PI * 2);
-        ctx.fill();
-    } else if (enemy.type === 'DRAGON') {
-        // Draak details (ogen en vuur)
-        ctx.fillStyle = 'white';
-        ctx.fillRect(enemy.x + enemy.width * 0.8, enemy.y + enemy.height * 0.2, enemy.width * 0.15, enemy.height * 0.1);
-        
-        ctx.fillStyle = 'black';
-        ctx.fillRect(enemy.x + enemy.width * 0.85, enemy.y + enemy.height * 0.22, enemy.width * 0.05, enemy.height * 0.06);
-        
-        // Vuurpatroon
-        ctx.fillStyle = 'orange';
-        ctx.beginPath();
-        ctx.moveTo(enemy.x + enemy.width, enemy.y + enemy.height * 0.3);
-        ctx.lineTo(enemy.x + enemy.width + 20, enemy.y + enemy.height * 0.1);
-        ctx.lineTo(enemy.x + enemy.width + 25, enemy.y + enemy.height * 0.4);
-        ctx.lineTo(enemy.x + enemy.width + 15, enemy.y + enemy.height * 0.2);
-        ctx.lineTo(enemy.x + enemy.width, enemy.y + enemy.height * 0.35);
-        ctx.fill();
-    }
-    
-    // Teken de patrouilleafstand als een lijn
-    if (enemy.patrolDistance > 0) {
-        ctx.strokeStyle = 'rgba(255, 0, 0, 0.5)';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(enemy.x, enemy.y + enemy.height + 5);
-        ctx.lineTo(enemy.x + enemy.patrolDistance, enemy.y + enemy.height + 5);
-        ctx.stroke();
-        
-        // Pijlen om richting aan te geven
-        ctx.beginPath();
-        ctx.moveTo(enemy.x, enemy.y + enemy.height + 5);
-        ctx.lineTo(enemy.x + 5, enemy.y + enemy.height + 2);
-        ctx.lineTo(enemy.x + 5, enemy.y + enemy.height + 8);
-        ctx.fill();
-        
-        ctx.beginPath();
-        ctx.moveTo(enemy.x + enemy.patrolDistance, enemy.y + enemy.height + 5);
-        ctx.lineTo(enemy.x + enemy.patrolDistance - 5, enemy.y + enemy.height + 2);
-        ctx.lineTo(enemy.x + enemy.patrolDistance - 5, enemy.y + enemy.height + 8);
-        ctx.fill();
-    }
-    
-    // Label met snelheid
-    ctx.font = '10px Arial';
-    ctx.fillStyle = 'black';
-    ctx.fillText(`Speed: ${enemy.speed}`, enemy.x, enemy.y - 5);
-    
-    // Omtrek
-    ctx.strokeStyle = 'rgba(0, 0, 0, 0.7)';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(enemy.x, enemy.y, enemy.width, enemy.height);
+    window.editorCharacters.drawEnemy(ctx, enemy);
 }
 
 // Teken een val
@@ -2787,272 +2706,14 @@ function drawTrap(trap) {
     ctx.strokeRect(trap.x, trap.y, trap.width, trap.height);
 }
 
-// Teken de puppy
+// Teken de puppy - gebruikt functie uit editor-character.js
 function drawPuppy(puppy) {
-    // Basisfiguur
-    ctx.fillStyle = objectColors.puppy;
-    ctx.fillRect(puppy.x, puppy.y, puppy.width, puppy.height);
-    
-    // Ogen
-    ctx.fillStyle = 'white';
-    ctx.fillRect(puppy.x + puppy.width * 0.6, puppy.y + puppy.height * 0.25, puppy.width * 0.2, puppy.height * 0.15);
-    ctx.fillRect(puppy.x + puppy.width * 0.6, puppy.y + puppy.height * 0.55, puppy.width * 0.2, puppy.height * 0.15);
-    
-    ctx.fillStyle = 'black';
-    ctx.fillRect(puppy.x + puppy.width * 0.65, puppy.y + puppy.height * 0.28, puppy.width * 0.1, puppy.height * 0.1);
-    ctx.fillRect(puppy.x + puppy.width * 0.65, puppy.y + puppy.height * 0.58, puppy.width * 0.1, puppy.height * 0.1);
-    
-    // Neus
-    ctx.fillStyle = 'black';
-    ctx.beginPath();
-    ctx.arc(puppy.x + puppy.width * 0.85, puppy.y + puppy.height * 0.4, puppy.width * 0.1, 0, Math.PI * 2);
-    ctx.fill();
-    
-    // Hulpballon wanneer gestart maar niet gered
-    if (!puppy.saved) {
-        // Help tekstballon
-        ctx.fillStyle = 'white';
-        ctx.beginPath();
-        ctx.roundRect(puppy.x - 5, puppy.y - 20, 30, 15, 5);
-        ctx.fill();
-        
-        ctx.fillStyle = 'black';
-        ctx.font = '10px Arial';
-        ctx.fillText('Help!', puppy.x, puppy.y - 8);
-        
-        // Pijl
-        ctx.beginPath();
-        ctx.moveTo(puppy.x + 10, puppy.y - 5);
-        ctx.lineTo(puppy.x + 15, puppy.y);
-        ctx.lineTo(puppy.x + 20, puppy.y - 5);
-        ctx.fill();
-    }
-    
-    // Omtrek
-    ctx.strokeStyle = 'rgba(0, 0, 0, 0.7)';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(puppy.x, puppy.y, puppy.width, puppy.height);
+    window.editorCharacters.drawPuppy(ctx, puppy);
 }
 
-// Teken een collectible (ster, peper, hondenvoer of zandloper)
+// Teken een collectible (ster, peper, hondenvoer of zandloper) - gebruikt functie uit editor-character.js
 function drawCollectible(collectible) {
-    const type = collectible.type || 'STAR'; // Default type is STAR if not specified
-    
-    if (type === 'DOGFOOD') {
-        // Teken hondenvoer (bot vorm)
-        ctx.fillStyle = objectColors.collectible.DOGFOOD; // Tan/light brown color
-        
-        const centerX = collectible.x + collectible.width / 2;
-        const centerY = collectible.y + collectible.height / 2;
-        
-        // Voeg rotatie toe (10 graden in radialen)
-        const rotationAngle = 10 * Math.PI / 180;
-        ctx.save();
-        ctx.translate(centerX, centerY);
-        ctx.rotate(rotationAngle);
-        
-        // Teken het bot - eerst de rechthoek in het midden (meer langwerpig)
-        const bodyWidth = collectible.width * 0.7;
-        const bodyHeight = collectible.height * 0.2;
-        ctx.fillRect(-bodyWidth/2, -bodyHeight/2, bodyWidth, bodyHeight);
-        
-        // Teken de bot uiteinden (kleinere radius)
-        ctx.beginPath();
-        ctx.arc(-bodyWidth/2, -bodyHeight/1.3, bodyHeight/0.9, 0, Math.PI * 2);
-        ctx.arc(-bodyWidth/2, bodyHeight/1.3, bodyHeight/0.9, 0, Math.PI * 2);
-        ctx.fill();
-        
-        ctx.beginPath();
-        ctx.arc(bodyWidth/2, -bodyHeight/1.3, bodyHeight/0.9, 0, Math.PI * 2);
-        ctx.arc(bodyWidth/2, bodyHeight/1.3, bodyHeight/0.9, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Omtrek van het bot
-        ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(-bodyWidth/2, -bodyHeight/2, bodyWidth, bodyHeight);
-        
-        // Herstel de canvas transformatie
-        ctx.restore();
-    } else if (type === 'PEPPER') {
-        // Teken een peper
-        ctx.fillStyle = objectColors.collectible.PEPPER;
-        
-        const centerX = collectible.x + collectible.width / 2;
-        const centerY = collectible.y + collectible.height / 2;
-        
-        // Voeg rotatie toe (15 graden in radialen)
-        const rotationAngle = 15 * Math.PI / 180;
-        ctx.save();
-        ctx.translate(centerX, centerY);
-        ctx.rotate(rotationAngle);
-        
-        // Teken het peperlichaam (meer langwerpig en puntig)
-        ctx.beginPath();
-        // Maak de peper meer langwerpig door de breedte te verkleinen
-        // en maak hem puntig aan de onderkant
-        ctx.moveTo(0, -collectible.height / 1.8); // Bovenkant (steeltje)
-        ctx.bezierCurveTo(
-            collectible.width / 4, -collectible.height / 2,  // Controle punt 1
-            collectible.width / 3, collectible.height / 3,   // Controle punt 2
-            0, collectible.height / 1.8                     // Onderste punt (spits)
-        );
-        ctx.bezierCurveTo(
-            -collectible.width / 3, collectible.height / 3,  // Controle punt 3
-            -collectible.width / 4, -collectible.height / 2, // Controle punt 4
-            0, -collectible.height / 1.8                    // Terug naar bovenkant
-        );
-        ctx.fill();
-        
-        // Teken het pepersteeltje
-        ctx.fillStyle = '#006400'; // Donkergroen voor steeltje
-        ctx.beginPath();
-        ctx.ellipse(0, -collectible.height / 1.8, collectible.width / 8, collectible.height / 12, 0, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Omtrek van de peper
-        ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(0, -collectible.height / 1.8); // Bovenkant (steeltje)
-        ctx.bezierCurveTo(
-            collectible.width / 4, -collectible.height / 2,  // Controle punt 1
-            collectible.width / 3, collectible.height / 3,   // Controle punt 2
-            0, collectible.height / 1.8                     // Onderste punt (spits)
-        );
-        ctx.bezierCurveTo(
-            -collectible.width / 3, collectible.height / 3,  // Controle punt 3
-            -collectible.width / 4, -collectible.height / 2, // Controle punt 4
-            0, -collectible.height / 1.8                    // Terug naar bovenkant
-        );
-        ctx.stroke();
-        
-        // Herstel de canvas transformatie
-        ctx.restore();
-    } else if (type === 'HOURGLASS') {
-        // Teken een zandloper
-        const centerX = collectible.x + collectible.width/2;
-        const centerY = collectible.y + collectible.height/2;
-        
-        // Pulsing effect voor de zandloper
-        const pulseTime = Date.now() / 500;
-        const pulseScale = 1.0 + Math.sin(pulseTime) * 0.05;
-        
-        ctx.save();
-        ctx.translate(centerX, centerY);
-        ctx.scale(pulseScale, pulseScale);
-        
-        // Teken zandloper frame (licht blauw met gouden rand)
-        ctx.fillStyle = objectColors.collectible.HOURGLASS; // Lichtblauw
-        
-        // Bovenste helft trapezium
-        const width = collectible.width * 0.7;
-        const height = collectible.height * 0.35;
-        
-        ctx.beginPath();
-        ctx.moveTo(-width/2, -height);
-        ctx.lineTo(width/2, -height);
-        ctx.lineTo(width/4, 0);
-        ctx.lineTo(-width/4, 0);
-        ctx.closePath();
-        ctx.fill();
-        
-        // Onderste helft trapezium
-        ctx.beginPath();
-        ctx.moveTo(-width/4, 0);
-        ctx.lineTo(width/4, 0);
-        ctx.lineTo(width/2, height);
-        ctx.lineTo(-width/2, height);
-        ctx.closePath();
-        ctx.fill();
-        
-        // Gouden rand
-        ctx.strokeStyle = '#DAA520'; // Gouden rand
-        ctx.lineWidth = 2;
-        
-        // Bovenrand
-        ctx.beginPath();
-        ctx.moveTo(-width/2, -height);
-        ctx.lineTo(width/2, -height);
-        ctx.lineTo(width/4, 0);
-        ctx.lineTo(-width/4, 0);
-        ctx.closePath();
-        ctx.stroke();
-        
-        // Onderrand
-        ctx.beginPath();
-        ctx.moveTo(-width/4, 0);
-        ctx.lineTo(width/4, 0);
-        ctx.lineTo(width/2, height);
-        ctx.lineTo(-width/2, height);
-        ctx.closePath();
-        ctx.stroke();
-        
-        // Teken zandkorrels met animatie
-        ctx.fillStyle = '#FFD700'; // Goudkleur voor zand
-        
-        // Animatie voor vallend zand effect
-        const sandLevel = Math.abs(Math.sin(pulseTime * 0.5)); // 0 tot 1 waarde voor zandniveau
-        
-        // Bovenste kamer (afnemend zand)
-        const upperSandHeight = height * (1 - sandLevel) * 0.8;
-        ctx.beginPath();
-        ctx.moveTo(-width/2.2, -height + 2);
-        ctx.lineTo(width/2.2, -height + 2);
-        ctx.lineTo(width/4.4, -height + 2 + upperSandHeight);
-        ctx.lineTo(-width/4.4, -height + 2 + upperSandHeight);
-        ctx.closePath();
-        ctx.fill();
-        
-        // Onderste kamer (toenemend zand)
-        const lowerSandHeight = height * sandLevel * 0.8;
-        ctx.beginPath();
-        ctx.moveTo(-width/4.4, height - 2 - lowerSandHeight);
-        ctx.lineTo(width/4.4, height - 2 - lowerSandHeight);
-        ctx.lineTo(width/2.2, height - 2);
-        ctx.lineTo(-width/2.2, height - 2);
-        ctx.closePath();
-        ctx.fill();
-        
-        // Teken vallende zandkorrels
-        const particleSize = 1.5;
-        ctx.beginPath();
-        ctx.rect(-particleSize/2, -particleSize/2 - 5 + sandLevel * 10, particleSize, particleSize);
-        ctx.rect(-particleSize - 1, particleSize/2 + sandLevel * 8, particleSize, particleSize);
-        ctx.rect(particleSize/2, 2 + sandLevel * 6, particleSize, particleSize);
-        ctx.fill();
-        
-        ctx.restore();
-    } else {
-        // Teken een ster (default type)
-        ctx.fillStyle = objectColors.collectible.STAR;
-        
-        // Teken een 5-puntige ster
-        const centerX = collectible.x + collectible.width / 2;
-        const centerY = collectible.y + collectible.height / 2;
-        const outerRadius = collectible.width / 2;
-        const innerRadius = collectible.width / 4;
-        
-        ctx.beginPath();
-        for (let i = 0; i < 10; i++) {
-            const radius = i % 2 === 0 ? outerRadius : innerRadius;
-            const angle = Math.PI * 2 * i / 10 - Math.PI / 2;
-            const x = centerX + radius * Math.cos(angle);
-            const y = centerY + radius * Math.sin(angle);
-            
-            if (i === 0) {
-                ctx.moveTo(x, y);
-            } else {
-                ctx.lineTo(x, y);
-            }
-        }
-        ctx.closePath();
-        ctx.fill();
-        
-        ctx.strokeStyle = 'rgba(0, 0, 0, 0.5)';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-    }
+    window.editorCharacters.drawCollectible(ctx, collectible);
 }
 
 // Teken een startpositie
