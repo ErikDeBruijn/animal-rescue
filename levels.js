@@ -36,7 +36,7 @@ function getLevels(GROUND_LEVEL) {    return [
         saved: false
     },
     collectibles: [
-        {x: 453, y: 266, width: 30, height: 30},
+        {x: 453, y: 266, width: 30, height: 30, type: "STAR"},
         {x: 210, y: 217, width: 30, height: 30, type: "PEPPER"},
         {x: 445, y: 189, width: 30, height: 30, type: "DOGFOOD"},
         {x: 597, y: 36, width: 30, height: 30, type: "DOGFOOD"},
@@ -514,6 +514,7 @@ function getLevels(GROUND_LEVEL) {    return [
 },
         {
     name: "Spring maar naar boven!!!",
+    theme: "night",
     allowedAnimals: ["TURTLE","CAT"],
     startPositions: [
         {x: 50, y: 350},
@@ -521,7 +522,10 @@ function getLevels(GROUND_LEVEL) {    return [
     ],
     platforms: [
         {x: 309, y: 369, width: 100, height: 20, type: "TRAMPOLINE"},
-        {x: 309, y: 157, width: 100, height: 20, type: "LASER"}
+        {x: 309, y: 157, width: 100, height: 20, type: "LASER"},
+        {x: 162, y: 300, width: 44, height: 30, type: "NUMBER", numberValue: 9},
+        {x: 205, y: 300, width: 44, height: 30, type: "NUMBER", numberValue: 5},
+        {x: 115, y: 300, width: 44, height: 30, type: "NUMBER", numberValue: 2}
     ],
     traps: [
 
@@ -537,7 +541,24 @@ function getLevels(GROUND_LEVEL) {    return [
         saved: false
     },
     collectibles: [
-        {x: 343, y: 184, width: 30, height: 30}
+        {x: 343, y: 184, width: 30, height: 30, type: "STAR"}
+    ],
+    mathProblems: [
+        {
+            equation: "5 x 5 =",
+            answer: "25",
+            userAnswer: ""
+        },
+        {
+            equation: "80 + 12 =",
+            answer: "92",
+            userAnswer: ""
+        },
+        {
+            equation: "11 x 5 =",
+            answer: "55",
+            userAnswer: ""
+        }
     ]
 },
         {
@@ -657,17 +678,18 @@ function getLevels(GROUND_LEVEL) {    return [
     name: "Trampoline park",
     music: "best-game-console-301284.mp3",
     theme: "day",
-    allowedAnimals: ["TURTLE","UNICORN","CAT","MOLE"],
+    allowedAnimals: ["SQUIRREL","TURTLE"],
     startPositions: [
-        {x: 50, y: 350},
-        {x: 100, y: 350}
+        {x: 35, y: 372},
+        {x: 97, y: 372}
     ],
     platforms: [
         {x: 207, y: 177, width: 121, height: 221, type: "CLIMB"},
         {x: 212, y: 157, width: 100, height: 20, type: "TRAMPOLINE"},
         {x: 128, y: 369, width: 100, height: 20, type: "TRAMPOLINE"},
         {x: 464, y: 133, width: 219, height: 101, type: "WATER"},
-        {x: 542, y: 56, width: 100, height: 20, type: "CLOUD"}
+        {x: 87, y: 327, width: 25, height: 20, type: "NUMBER", numberValue: 81},
+        {x: 32, y: 329, width: 25, height: 20, type: "NUMBER", numberValue: 70}
     ],
     traps: [
 
@@ -684,6 +706,228 @@ function getLevels(GROUND_LEVEL) {    return [
     },
     collectibles: [
         {x: 650, y: 150, width: 30, height: 30, type: "STAR"}
+    ],
+    mathProblems: [
+        {
+            equation: "9x9=",
+            answer: "81",
+            userAnswer: ""
+        },
+        {
+            equation: "10x7=",
+            answer: "70",
+            userAnswer: ""
+        }
+    ]
+},
+        {
+    name: "Fireball!!!",
+    music: "level-vii-short-258782.mp3",
+    theme: "night",
+    allowedAnimals: ["SQUIRREL","TURTLE","UNICORN","CAT","MOLE"],
+    startPositions: [
+        {x: 50, y: 350},
+        {x: 100, y: 350}
+    ],
+    platforms: [
+        {x: 694, y: 104, width: 100, height: 20, type: "CLOUD"},
+        {x: 430, y: 300, width: 20, height: 100, type: "TREE"},
+        {x: 431, y: 196, width: 20, height: 100, type: "TREE"},
+        {x: 723, y: 298, width: 20, height: 100, type: "TREE"},
+        {x: 729, y: 192, width: 20, height: 100, type: "TREE"},
+        {x: 205, y: 187, width: 20, height: 100, type: "TREE"},
+        {x: 228, y: 198, width: 200, height: 200, type: "WATER"},
+        {x: 205, y: 294, width: 20, height: 100, type: "TREE"}
+    ],
+    traps: [
+        {x: 679, y: 374, width: 40, height: 20, type: "FIRE"},
+        {x: 635, y: 374, width: 40, height: 20, type: "FIRE"},
+        {x: 745, y: 375, width: 40, height: 20, type: "FIRE"},
+        {x: 681, y: 351, width: 40, height: 20, type: "SPIKES"},
+        {x: 637, y: 357, width: 40, height: 20, type: "SPIKES"},
+        {x: 744, y: 350, width: 40, height: 20, type: "SPIKES"}
+    ],
+    enemies: [
+        {x: 308, y: 356, width: 40, height: 35, type: "PIRANHA", patrolDistance: 100, speed: 1},
+        {x: 453, y: 355, width: 50, height: 40, type: "LION", patrolDistance: 100, speed: 1}
+    ],
+    puppy: {
+        x: 696, 
+        y: 79, 
+        width: 100, 
+        height: 20, 
+        saved: false
+    },
+    collectibles: [
+        {x: 767, y: 42, width: 30, height: 30, type: "STAR"},
+        {x: 724, y: 43, width: 30, height: 30, type: "STAR"},
+        {x: 689, y: 42, width: 30, height: 30, type: "STAR"},
+        {x: 15, y: 20, width: 30, height: 30, type: "STAR"},
+        {x: 722, y: 157, width: 30, height: 30, type: "HOURGLASS"},
+        {x: 427, y: 144, width: 30, height: 30, type: "PEPPER"},
+        {x: 205, y: 138, width: 30, height: 30, type: "DOGFOOD"},
+        {x: 329, y: 335, width: 30, height: 30, type: "STAR"},
+        {x: 751, y: 306, width: 30, height: 30, type: "STAR"}
+    ]
+},
+        {
+    name: "Gellukkig!!!",
+    music: "retro-8bit-happy-videogame-music-243997.mp3",
+    theme: "night",
+    allowedAnimals: ["SQUIRREL","TURTLE","MOLE"],
+    startPositions: [
+        {x: 50, y: 350},
+        {x: 100, y: 350}
+    ],
+    platforms: [
+        {x: 402, y: 370, width: 100, height: 20, type: "TRAMPOLINE"},
+        {x: 570, y: 313, width: 25, height: 20, type: "NUMBER", numberValue: 1},
+        {x: 601, y: 313, width: 25, height: 20, type: "NUMBER", numberValue: 2},
+        {x: 632, y: 313, width: 25, height: 20, type: "NUMBER", numberValue: 8}
+    ],
+    traps: [
+
+    ],
+    enemies: [
+        {x: 201, y: 360, width: 50, height: 40, type: "LION", patrolDistance: 100, speed: 1}
+    ],
+    puppy: {
+        x: 770, 
+        y: 374, 
+        width: 30, 
+        height: 25, 
+        saved: false
+    },
+    collectibles: [
+        {x: 33, y: 365, width: 30, height: 30, type: "PEPPER"},
+        {x: 78, y: 365, width: 30, height: 30, type: "PEPPER"},
+        {x: 439, y: 215, width: 30, height: 30, type: "STAR"}
+    ],
+    mathProblems: [
+        {
+            equation: "2x14=",
+            answer: "28",
+            userAnswer: ""
+        },
+        {
+            equation: "4+14=",
+            answer: "18",
+            userAnswer: ""
+        }
+    ]
+},
+        {
+    name: "Reken uit...",
+    music: "default.mp3",
+    theme: "night",
+    allowedAnimals: ["UNICORN","CAT"],
+    startPositions: [
+        {x: 50, y: 350},
+        {x: 100, y: 350}
+    ],
+    platforms: [
+        {x: 38, y: 305, width: 25, height: 20, type: "NUMBER", numberValue: 4},
+        {x: 97, y: 306, width: 25, height: 20, type: "NUMBER", numberValue: 8}
+    ],
+    traps: [
+
+    ],
+    enemies: [
+        {x: 512, y: 345, width: 60, height: 50, type: "DRAGON", patrolDistance: 100, speed: 1}
+    ],
+    puppy: {
+        x: 765, 
+        y: 372, 
+        width: 30, 
+        height: 25, 
+        saved: false
+    },
+    collectibles: [
+        {x: 650, y: 150, width: 30, height: 30, type: "STAR"}
+    ]
+},
+        {
+    name: "Druk op spatie!!!",
+    music: "level-vii-short-258782.mp3",
+    theme: "night",
+    allowedAnimals: ["SQUIRREL","TURTLE","UNICORN","CAT","MOLE"],
+    startPositions: [
+        {x: 50, y: 350},
+        {x: 100, y: 350}
+    ],
+    platforms: [
+        {x: 337, y: 144, width: 100, height: 20, type: "CLOUD"},
+        {x: 91, y: 305, width: 25, height: 20, type: "NUMBER", numberValue: 12},
+        {x: 39, y: 305, width: 25, height: 20, type: "NUMBER", numberValue: 10}
+    ],
+    traps: [
+
+    ],
+    enemies: [
+        {x: 643, y: 354, width: 50, height: 40, type: "LION", patrolDistance: 100, speed: 1},
+        {x: 478, y: 352, width: 50, height: 40, type: "LION", patrolDistance: 100, speed: 1},
+        {x: 247, y: 357, width: 50, height: 40, type: "LION", patrolDistance: 100, speed: 1},
+        {x: 340, y: 353, width: 60, height: 50, type: "DRAGON", patrolDistance: 100, speed: 1},
+        {x: 546, y: 350, width: 60, height: 50, type: "DRAGON", patrolDistance: 100, speed: 1},
+        {x: 145, y: 349, width: 60, height: 50, type: "DRAGON", patrolDistance: 100, speed: 1}
+    ],
+    puppy: {
+        x: 729, 
+        y: 374, 
+        width: 30, 
+        height: 25, 
+        saved: false
+    },
+    collectibles: [
+        {x: 82, y: 368, width: 30, height: 30, type: "PEPPER"},
+        {x: 29, y: 368, width: 30, height: 30, type: "PEPPER"},
+        {x: 376, y: 98, width: 30, height: 30, type: "STAR"}
+    ],
+    mathProblem: {
+        equation: "6+6=",
+        answer: "12",
+        userAnswer: ""
+    }
+},
+        {
+    name: "Nieuw Level",
+    music: "default.mp3",
+    theme: "night",
+    allowedAnimals: ["CAT","MOLE"],
+    startPositions: [
+        {x: 50, y: 350},
+        {x: 100, y: 350}
+    ],
+    platforms: [
+        {x: 355, y: 370, width: 100, height: 20, type: "TRAMPOLINE"},
+        {x: 281, y: 198, width: 25, height: 200, type: "VERTICAL"},
+        {x: 421, y: 236, width: 25, height: 20, type: "NUMBER", numberValue: 3},
+        {x: 355, y: 235, width: 25, height: 20, type: "NUMBER", numberValue: 2},
+        {x: 452, y: 236, width: 25, height: 20, type: "NUMBER", numberValue: 7},
+        {x: 323, y: 235, width: 25, height: 20, type: "NUMBER", numberValue: 1}
+    ],
+    traps: [
+
+    ],
+    enemies: [
+        {x: 500, y: 353, width: 50, height: 40, type: "LION", patrolDistance: 100, speed: 1}
+    ],
+    puppy: {
+        x: 766, 
+        y: 368, 
+        width: 30, 
+        height: 25, 
+        saved: false
+    },
+    collectibles: [
+        {x: 391, y: 188, width: 30, height: 30, type: "STAR"}
+    ],
+    mathProblems: [
+        {
+            equation: "3x9=",
+            answer: "27",
+            userAnswer: ""
+        }
     ]
 }
     ];

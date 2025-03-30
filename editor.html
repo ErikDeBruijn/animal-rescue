@@ -63,16 +63,24 @@
                     </select>
                 </div>
                 <div class="math-problem-section">
-                    <h4>Rekenprobleem</h4>
-                    <div class="prop-row">
-                        <label for="math-problem">Som:</label>
-                        <input type="text" id="math-problem" placeholder="Bijv. 2+3=">
+                    <h4>Rekenproblemen</h4>
+                    <div id="math-problems-container">
+                        <div class="math-problem">
+                            <div class="prop-row">
+                                <label for="math-problem-0">Som 1:</label>
+                                <input type="text" id="math-problem-0" class="math-problem-input" placeholder="Bijv. 2+3=">
+                            </div>
+                            <div class="prop-row">
+                                <label for="math-answer-0">Antwoord:</label>
+                                <input type="number" id="math-answer-0" class="math-answer-input" min="0" max="999">
+                            </div>
+                        </div>
                     </div>
-                    <div class="prop-row">
-                        <label for="math-answer">Antwoord:</label>
-                        <input type="number" id="math-answer" min="0" max="999">
+                    <div class="prop-row" style="margin-top: 10px;">
+                        <button id="add-math-problem" style="width: auto; margin-right: 5px;">+ Rekensom toevoegen</button>
+                        <button id="remove-math-problem" style="width: auto; background-color: #d9534f;">- Rekensom verwijderen</button>
                     </div>
-                    <p><small>Gebruik getallen-platforms om het antwoord in te voeren</small></p>
+                    <p><small>Gebruik getallen-platforms om de antwoorden in te voeren</small></p>
                 </div>
             </div>
             
