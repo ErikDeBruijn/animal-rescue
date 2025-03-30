@@ -725,12 +725,64 @@ function resetCurrentLevel() {
     }
 }
 
-// Houd frame telling bij voor debug doeleinden
-let frameCount = 0;
+// Gebruik de frameCount van gameControls
+// Geen lokale frameCount meer nodig, deze wordt beheerd in game-controls.js
 
 // Game loop
 function gameLoop() {
     if (gameCore.gameState.running) {
+        // Update gamepad status if available
+        if (window.gameControls && typeof window.gameControls.updateGamepads === 'function') {
+            window.gameControls.updateGamepads();
+            
+            // Check voor gamepad spatie-knop voor level completion of restart
+            // We gebruiken een debounce techniek om te voorkomen dat meerdere acties worden getriggerd
+            if (typeof window.gameControls.isGamepadSpacePressed === 'function') {
+                const spacePressed = window.gameControls.isGamepadSpacePressed();
+                
+                // Spatiebalk functionaliteit afhandelen voor gamepad
+                if (spacePressed && !window.lastGamepadSpaceState) {
+                    if (gameCore.levelCompleted) {
+                        // Sla het voltooide level op in localStorage
+                        const completedLevel = gameCore.currentLevelIndex + 1;
+                        let completedLevels = [];
+                        
+                        // Haal bestaande voltooide levels op
+                        const savedLevels = localStorage.getItem('completedLevels');
+                        if (savedLevels) {
+                            completedLevels = JSON.parse(savedLevels);
+                        }
+                        
+                        // Voeg het huidige level toe als het nog niet in de lijst staat
+                        if (!completedLevels.includes(completedLevel)) {
+                            completedLevels.push(completedLevel);
+                            localStorage.setItem('completedLevels', JSON.stringify(completedLevels));
+                        }
+                        
+                        // Sla de totale score op
+                        localStorage.setItem('totalScore', gameCore.gameState.score.toString());
+                        
+                        // Sla het laatste gespeelde level op
+                        localStorage.setItem('lastPlayedLevel', completedLevel.toString());
+                        
+                        // Update de map als mapUtils beschikbaar is
+                        if (window.mapUtils && typeof window.mapUtils.markLevelCompleted === 'function') {
+                            window.mapUtils.markLevelCompleted(completedLevel, gameCore.gameState.score);
+                        }
+                        
+                        // Ga naar de wereldkaart in plaats van het volgende level
+                        window.location.href = 'map.html';
+                    } else if (gameCore.gameState.gameOver) {
+                        // Reset het huidige level
+                        window.gameCore.resetCurrentLevel();
+                    }
+                }
+                
+                // Houd de laatste gamepad space status bij voor debouncing
+                window.lastGamepadSpaceState = spacePressed;
+            }
+        }
+        
         // Canvas leegmaken
         gameCore.ctx.clearRect(0, 0, gameCore.canvas.width, gameCore.canvas.height);
         
@@ -976,15 +1028,20 @@ function gameLoop() {
             gameCore.ctx.fillStyle = isNightTheme ? '#80ff80' : 'green'; // Lichtere groene kleur in de nachtmodus
             gameCore.ctx.textAlign = 'center';
             
-            // Teken de tekst met keySpan styling
+            // Teken de tekst met keySpan styling inclusief gamepad informatie
             const message = "Druk op";
             const messageWidth = gameCore.ctx.measureText(message).width;
             const spaceWidth = gameCore.ctx.measureText(" ").width;
-            const nextMessage = "om naar de kaart te gaan";
+            const nextMessage = "of";
+            const gamepadMessage = "A-knop";
             const nextWidth = gameCore.ctx.measureText(nextMessage).width;
+            const gamepadWidth = gameCore.ctx.measureText(gamepadMessage).width;
+            const finalMessage = "om naar de kaart te gaan";
+            const finalWidth = gameCore.ctx.measureText(finalMessage).width;
             
             // Bereken de startposities voor de verschillende delen
-            const totalWidth = messageWidth + spaceWidth + 60 + spaceWidth + nextWidth; // 60px voor de key breedte
+            const totalWidth = messageWidth + spaceWidth + 60 + spaceWidth + nextWidth + 
+                              spaceWidth + gamepadWidth + spaceWidth + finalWidth; // 60px voor de key breedte
             const startX = gameCore.canvas.width/2 - totalWidth/2;
             
             // Teken de tekst "Druk op"
@@ -1005,10 +1062,20 @@ function gameLoop() {
             gameCore.ctx.font = 'bold 16px monospace';
             gameCore.ctx.fillText("Spatie", keyX + 30, 140);
             
-            // Teken het vervolg van de tekst
-            gameCore.ctx.fillStyle = isNightTheme ? '#80ff80' : 'green'; // Lichtere groene kleur in de nachtmodus
+            // Teken het "of" gedeelte
+            gameCore.ctx.fillStyle = isNightTheme ? '#80ff80' : 'green';
             gameCore.ctx.font = 'bold 20px Comic Sans MS';
-            gameCore.ctx.fillText(nextMessage, keyX + 60 + spaceWidth + nextWidth/2, 140);
+            const ofX = keyX + 60 + spaceWidth + nextWidth/2;
+            gameCore.ctx.fillText(nextMessage, ofX, 140);
+            
+            // Teken de gamepad A-knop
+            const gamepadX = ofX + nextWidth/2 + spaceWidth + gamepadWidth/2;
+            gameCore.ctx.fillStyle = isNightTheme ? '#80ff80' : 'green';
+            gameCore.ctx.fillText(gamepadMessage, gamepadX, 140);
+            
+            // Teken het vervolg van de tekst
+            const finalX = gamepadX + gamepadWidth/2 + spaceWidth + finalWidth/2;
+            gameCore.ctx.fillText(finalMessage, finalX, 140);
         }
         
         // Teken puntenpopups als die er zijn
@@ -1039,7 +1106,7 @@ function gameLoop() {
         gameCore.ctx.fillText("DEBUG MODE " + gameCore.gameState.debugLevel, gameCore.canvas.width - 10, 20);
         
         // Toon melding over debugging alleen de eerste keer, niet steeds opnieuw
-        if (frameCount === 60) { // Ongeveer 1 seconde na start (bij 60fps)
+        if (window.gameControls && window.gameControls.frameCount === 60) { // Ongeveer 1 seconde na start (bij 60fps)
             console.log("Debug mode actief (niveau " + gameCore.gameState.debugLevel + "). Activeer graven met G (speler 1) of Control (speler 2)");
         }
     }

@@ -22,7 +22,8 @@ let gameState = {
     gameOver: false,   // Game over als de puppy wordt gevangen door een vijand
     score: 0,          // Score voor sterren (50 punten) en geredde puppy's (1000 punten)
     debugLevel: 0,     // Debug niveau: 0=uit, 1=basis, 2=uitgebreid
-    treeHintShown: false // Bijhouden of hint voor boom klimmen al getoond is
+    treeHintShown: false, // Bijhouden of hint voor boom klimmen al getoond is
+    allowBothPlayersSpace: false // Standaard kan alleen Player 1 de spatiebalk gebruiken
 };
 
 // Dieren definities met speciale krachten
