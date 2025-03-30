@@ -1137,7 +1137,7 @@ class Player {
                     // Controleer of alle collectibles verzameld zijn
                     if (collectibles.length === 0) {
                         gameCore.levelCompleted = true;
-                        gameCore.gameState.message = "Level voltooid!";
+                        gameCore.gameState.message = "Level voltooid! Druk op spatie om naar de kaart te gaan.";
                         // De "Druk op spatie" prompt wordt nu apart getekend in de game loop
                     }
                     

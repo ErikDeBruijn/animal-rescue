@@ -163,6 +163,9 @@ function loadLevel(levelIndex) {
     
     // Update de editor link
     gameCore.updateEditorLink();
+    
+    // Sla het huidige level op als het laatst gespeelde level (1-based)
+    localStorage.setItem('lastPlayedLevel', (levelIndex + 1).toString());
     const startPositions = level.startPositions;
     const allowedAnimals = level.allowedAnimals || ["SQUIRREL", "TURTLE", "UNICORN"];
 
@@ -574,7 +577,7 @@ function gameLoop() {
             const message = "Druk op";
             const messageWidth = gameCore.ctx.measureText(message).width;
             const spaceWidth = gameCore.ctx.measureText(" ").width;
-            const nextMessage = "voor het volgende level";
+            const nextMessage = "om naar de kaart te gaan";
             const nextWidth = gameCore.ctx.measureText(nextMessage).width;
             
             // Bereken de startposities voor de verschillende delen

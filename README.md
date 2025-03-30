@@ -8,7 +8,21 @@ Je kunt het spel online spelen via [GitHub Pages](https://erikdebruijn.github.io
 
 ## Het Spel
 
-In Huisdieren Redders bestuur je samen met je kind verschillende dieren om levels te voltooien. Elk dier heeft zijn eigen vaardigheden:
+In Huisdieren Redders bestuur je samen met je kind verschillende dieren om levels te voltooien. De game beschikt over een wereldkaart waarop je verschillende levels kunt selecteren.
+
+### Wereldkaart
+
+Via de wereldkaart kun je navigeren tussen verschillende speltypes en levels:
+- Voltooide levels worden blauw weergegeven
+- Beschikbare levels zijn groen
+- Het huidige level is oranje
+- Vergrendelde levels zijn grijs
+
+Je kunt naar de wereldkaart gaan door op het kaart-icoontje (🗺️) te klikken in het hoofdspel. De kaart houdt je voortgang automatisch bij in de browser.
+
+### Speelbare Dieren
+
+Elk dier heeft zijn eigen vaardigheden:
 
 - **Eekhoorn** 🐿️: Kan hoog springen en in bomen klimmen
 - **Schildpad** 🐢: Kan zwemmen door water (let op het zuurstofniveau!)
@@ -109,8 +123,10 @@ Het spel bevat meerdere levels met toenemende moeilijkheidsgraad:
 - **Draken**: Vuurspuwende vijanden! Pas op voor hun vlammen.
 - **Piranha's**: Gevaarlijke vissen die in water zwemmen. Ze achtervolgen je agressief zodra je in het water komt, dus probeer ze te vermijden! Piranha's die uit het water raken floppen hulpeloos op hun rug en kunnen geen schade meer aanrichten.
 - **Pepers**: Verzamel deze om tijdelijk vuur te kunnen spuwen en vijanden te verslaan.
+- **Zandlopers**: Activeren slow-motion voor alle vijanden en andere spelers, behalve jou!
 - **Puppy**: Red de puppy voordat je de ster verzamelt!
 - **Sterren**: Verzamel de ster om het level te voltooien (nadat je de puppy hebt gered) en scoor 50 punten per ster.
+- **Wereldkaart**: Navigeer tussen verschillende levels en speltypen via de kaart (🗺️ icoon).
 
 ## Geluidseffecten
 
@@ -132,11 +148,14 @@ Je kunt het geluid aan/uit zetten met de knop rechtsboven in het spel.
 
 Dit spel is ontworpen om samen te spelen en samenwerking te stimuleren. Praat met je kind over strategieën en wissel tussen de verschillende dieren om puzzels op te lossen. Bespreek welk dier geschikt is voor welke uitdaging en waarom!
 
+Via de wereldkaart kun je ook verschillende speltypen kiezen, zodat het kind kan variëren tussen verschillende speelstijlen.
+
 ## Codestructuur
 
 De codebase is als volgt georganiseerd:
 
 - `index.html` - Hoofdpagina van het spel
+- `map.html` / `map.js` - Wereldkaart voor level selectie
 - `game.js` - Hoofdlogica van het spel
 - `game-core.js` - Kernfunctionaliteit van het spel
 - `game-entities.js` - Speler, vijanden en andere game-entiteiten (gedrag)

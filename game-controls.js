@@ -132,9 +132,35 @@ function setupInputListeners() {
         // Deze check mag niet de normale spatiebalk functionaliteit blokkeren
         if (e.key === ' ') {
             if (gameCore.levelCompleted) {
-                // De melding "Druk op spatie" blijft staan
-                // We gaan naar het volgende level zonder de melding te verwijderen
-                window.gameCore.nextLevel();
+                // Sla het voltooide level op in localStorage
+                const completedLevel = gameCore.currentLevelIndex + 1;
+                let completedLevels = [];
+                
+                // Haal bestaande voltooide levels op
+                const savedLevels = localStorage.getItem('completedLevels');
+                if (savedLevels) {
+                    completedLevels = JSON.parse(savedLevels);
+                }
+                
+                // Voeg het huidige level toe als het nog niet in de lijst staat
+                if (!completedLevels.includes(completedLevel)) {
+                    completedLevels.push(completedLevel);
+                    localStorage.setItem('completedLevels', JSON.stringify(completedLevels));
+                }
+                
+                // Sla de totale score op
+                localStorage.setItem('totalScore', gameCore.gameState.score.toString());
+                
+                // Sla het laatste gespeelde level op
+                localStorage.setItem('lastPlayedLevel', completedLevel.toString());
+                
+                // Update de map als mapUtils beschikbaar is
+                if (window.mapUtils && typeof window.mapUtils.markLevelCompleted === 'function') {
+                    window.mapUtils.markLevelCompleted(completedLevel, gameCore.gameState.score);
+                }
+                
+                // Ga naar de wereldkaart in plaats van het volgende level
+                window.location.href = 'map.html';
             } else if (gameCore.gameState.gameOver) {
                 // Reset het huidige level
                 window.gameCore.resetCurrentLevel();

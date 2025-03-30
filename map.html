@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Huisdieren Redders - Wereldkaart</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <style>
+        /* Map-specific styles */
+        .map-container {
+            position: relative;
+            width: 800px;
+            height: 450px;
+            margin: 0 auto;
+            background-color: #a7d7f9;
+            overflow: hidden;
+            border: 2px solid #333;
+            border-radius: 5px;
+        }
+        .level-node {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 50px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        .level-node:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+        .level-locked {
+            background-color: #999;
+            color: #555;
+            cursor: not-allowed;
+        }
+        .level-unlocked {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .level-completed {
+            background-color: #2196F3;
+            color: white;
+        }
+        .level-current {
+            background-color: #FF9800;
+            color: white;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        .level-path {
+            position: absolute;
+            height: 5px;
+            background-color: #666;
+            z-index: 1;
+        }
+        .path-completed {
+            background-color: #2196F3;
+        }
+        #player-character {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: #B36B00;
+            z-index: 10;
+            transition: left 0.5s, top 0.5s;
+        }
+        .score-display {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+        .controls-help {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Huisdieren Redders - Wereldkaart</h1>
+    
+    <div class="map-container" id="map-container">
+        <div class="score-display" id="total-score">Totaal Score: 0</div>
+        <div class="controls-help">WASD of Pijltjestoetsen om te bewegen</div>
+        <div id="player-character"></div>
+        <!-- Level nodes and paths will be added here dynamically -->
+    </div>
+    
+    <div class="control-buttons">
+        <button id="help-button" title="Help / Instructies"><span>❓</span></button>
+        <button id="fullscreen-button" title="Volledig scherm"><span>⛶</span></button>
+        <button id="return-button" title="Terug naar laatst gespeelde level"><span>↩️</span></button>
+    </div>
+    
+    <!-- Instructions popup -->
+    <div id="instructions-popup" class="popup-dialog">
+        <div class="popup-content">
+            <div class="popup-header">
+                <h3>Wereldkaart Instructies</h3>
+                <span class="close-popup">&times;</span>
+            </div>
+            <div class="popup-body">
+                <p><strong>Welkom bij de Wereldkaart!</strong></p>
+                <p>Hier kun je verschillende spelwerelden verkennen:</p>
+                <p>🟢 Groene cirkels: Beschikbare levels</p>
+                <p>🔵 Blauwe cirkels: Voltooide levels</p>
+                <p>🟠 Oranje cirkel: Huidige level</p>
+                <p>⚪ Grijze cirkels: Vergrendelde levels</p>
+                <p>Besturing: <span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span> of <span class="key">↑</span><span class="key">←</span><span class="key">↓</span><span class="key">→</span> om te bewegen</p>
+                <p>Klik op een groene cirkel om een level te spelen.</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Core game scripts -->
+    <script src="game-core.js"></script>
+    <script src="levels.js"></script>
+    <script src="map.js"></script>
+    
+    <script>
+        // Instructions popup functionality
+        function toggleInstructionsPopup() {
+            const popup = document.getElementById('instructions-popup');
+            
+            if (popup.style.display === 'flex') {
+                popup.style.display = 'none';
+            } else {
+                popup.style.display = 'flex';
+            }
+        }
+        
+        // Open instructions when help button is clicked
+        document.getElementById('help-button').addEventListener('click', toggleInstructionsPopup);
+        
+        // Close popup when X is clicked
+        document.querySelector('.close-popup').addEventListener('click', toggleInstructionsPopup);
+        
+        // Close popup when clicking outside of it
+        document.getElementById('instructions-popup').addEventListener('click', function(event) {
+            if (event.target === this) {
+                toggleInstructionsPopup();
+            }
+        });
+        
+        // Return to last played level
+        document.getElementById('return-button').addEventListener('click', function() {
+            const lastLevel = localStorage.getItem('lastPlayedLevel');
+            if (lastLevel) {
+                window.location.href = `index.html#level=${lastLevel}`;
+            } else {
+                window.location.href = 'index.html';
+            }
+        });
+        
+        // Fullscreen functionality - reusing code from index.html
+        document.addEventListener('DOMContentLoaded', function() {
+            const fullscreenButton = document.getElementById('fullscreen-button');
+            const mapContainer = document.getElementById('map-container');
+            
+            // Check if fullscreen API is available
+            const fullscreenAvailable = !!(
+                document.fullscreenEnabled || 
+                document.webkitFullscreenEnabled || 
+                document.mozFullScreenEnabled ||
+                document.msFullscreenEnabled
+            );
+            
+            // If fullscreen is not available, hide the button
+            if (!fullscreenAvailable) {
+                fullscreenButton.style.display = 'none';
+            }
+            
+            // Fullscreen toggle
+            fullscreenButton.addEventListener('click', function() {
+                if (!document.fullscreenElement && 
+                    !document.webkitFullscreenElement && 
+                    !document.mozFullScreenElement && 
+                    !document.msFullscreenElement) {
+                    
+                    // Enter fullscreen mode
+                    if (mapContainer.requestFullscreen) {
+                        mapContainer.requestFullscreen();
+                    } else if (mapContainer.webkitRequestFullscreen) {
+                        mapContainer.webkitRequestFullscreen();
+                    } else if (mapContainer.mozRequestFullScreen) {
+                        mapContainer.mozRequestFullScreen();
+                    } else if (mapContainer.msRequestFullscreen) {
+                        mapContainer.msRequestFullscreen();
+                    }
+                    
+                    // Update button icon
+                    fullscreenButton.innerHTML = '<span>⮻</span>';
+                    
+                    // Remove focus from the button
+                    fullscreenButton.blur();
+                } else {
+                    // Exit fullscreen mode
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    } else if (document.webkitExitFullscreen) {
+                        document.webkitExitFullscreen();
+                    } else if (document.mozCancelFullScreen) {
+                        document.mozCancelFullScreen();
+                    } else if (document.msExitFullscreen) {
+                        document.msExitFullscreen();
+                    }
+                    
+                    // Update button icon
+                    fullscreenButton.innerHTML = '<span>⛶</span>';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
