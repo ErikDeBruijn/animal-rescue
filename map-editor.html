@@ -156,6 +156,12 @@
         Klik ergens op de kaart om een nieuw level toe te voegen
     </div>
     
+    <div class="control-buttons">
+        <button id="help-button" title="Help / Instructies"><span>❓</span></button>
+        <button id="return-button" title="Terug naar Spel"><span>↩️</span></button>
+        <button id="save-top" title="Opslaan op Server"><span>💾</span></button>
+    </div>
+    
     <div class="map-container" id="map-container">
         <!-- Level nodes and paths will be added here dynamically -->
     </div>
@@ -224,15 +230,6 @@
         
         <div class="buttons-container" style="margin-top: 20px;">
             <button id="toggle-mode">Wissel Modus (Verplaatsen → Selecteren → Toevoegen)</button>
-            <button id="return-button">Terug naar Spel</button>
-            <button id="help-button">Help</button>
-        </div>
-        
-        <!-- Prominente opslaan knop die altijd zichtbaar is -->
-        <div style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
-            <button id="save-prominent" style="background-color: #4CAF50; color: white; font-size: 18px; padding: 15px 30px; border-radius: 8px; border: none; box-shadow: 0 4px 8px rgba(0,0,0,0.3); cursor: pointer;">
-                💾 Opslaan op Server
-            </button>
         </div>
     </div>
     
@@ -937,9 +934,11 @@
                     });
             });
             
-            // Return to game
-            document.getElementById('return-button').addEventListener('click', function() {
-                window.location.href = 'map.html';
+            // Return to game (both buttons)
+            document.querySelectorAll('#return-button').forEach(button => {
+                button.addEventListener('click', function() {
+                    window.location.href = 'map.html';
+                });
             });
             
             // Tab switching
@@ -950,13 +949,15 @@
                 });
             });
             
-            // Prominent save button - always visible
-            document.getElementById('save-prominent').addEventListener('click', function() {
+            // Top save button
+            document.getElementById('save-top').addEventListener('click', function() {
                 saveToServer();
             });
             
             // Help button
-            document.getElementById('help-button').addEventListener('click', toggleInstructionsPopup);
+            document.querySelectorAll('#help-button').forEach(button => {
+                button.addEventListener('click', toggleInstructionsPopup);
+            });
             
             // Close popup when X is clicked
             document.querySelector('.close-popup').addEventListener('click', toggleInstructionsPopup);
