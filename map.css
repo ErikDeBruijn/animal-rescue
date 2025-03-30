@@ -60,15 +60,16 @@
 
 .level-node {
     position: absolute;
-    width: 50px;
-    height: 50px;
+    width: 35px;
+    height: 35px;
     border-radius: 50%;
     text-align: center;
-    line-height: 50px;
+    line-height: 35px;
+    font-size: 14px;
     font-weight: bold;
     cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
     z-index: 2; /* Above paths */
 }
 
@@ -103,9 +104,10 @@
 #level-1 {
     background-color: #f44336 !important;
     color: white;
-    border: 3px solid white;
+    border: 2px solid white;
     font-weight: bold;
-    box-shadow: 0 0 12px rgba(255, 255, 255, 0.7), 0 3px 8px rgba(0, 0, 0, 0.3);
+    font-size: 10px;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.7), 0 2px 6px rgba(0, 0, 0, 0.3);
     z-index: 4; /* Above other nodes */
 }
 
@@ -152,6 +154,12 @@
     background-color: #666;
     z-index: 0; /* Behind nodes */
     transform-origin: center left; /* For proper rotation */
+    display: none; /* Hide paths in the game map */
+}
+
+/* Only show paths in editor mode */
+.editor-mode .level-path {
+    display: block;
 }
 
 .path-completed {
@@ -182,10 +190,12 @@
     width: 30px;
     height: 30px;
     border-radius: 50%;
-    background-color: #B36B00;
-    z-index: 10; /* Above everything */
-    transition: left 0.5s, top 0.5s;
-    box-shadow: 0 0 15px rgba(255, 165, 0, 0.7); /* Glow effect */
+    background-color: #FF4500; /* Brighter orange */
+    z-index: 1000; /* Above everything */
+    transition: left 0.3s, top 0.3s;
+    box-shadow: 0 0 20px #FF4500, 0 0 10px #FFF, 0 0 30px rgba(255, 69, 0, 0.8); /* Enhanced glow effect */
+    border: 2px solid white;
+    pointer-events: none; /* So clicks go through to map */
 }
 
 .score-display {

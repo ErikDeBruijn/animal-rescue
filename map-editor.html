@@ -100,15 +100,15 @@
         
         .ghost-node {
             position: absolute;
-            width: 50px;
-            height: 50px;
+            width: 35px;
+            height: 35px;
             border-radius: 50%;
             background-color: rgba(100, 100, 255, 0.7);
             color: white;
             text-align: center;
-            line-height: 50px;
+            line-height: 35px;
             font-weight: bold;
-            font-size: 24px;
+            font-size: 14px;
             z-index: 50;
             cursor: pointer;
             border: 2px dashed white;
@@ -191,7 +191,7 @@
         <button id="save-top" title="Opslaan op Server"><span>💾</span></button>
     </div>
     
-    <div class="map-container" id="map-container">
+    <div class="map-container editor-mode" id="map-container">
         <!-- Using background image instead of CSS islands -->
         <div class="map-background"></div>
         <!-- Level nodes and paths will be added here dynamically -->
@@ -447,9 +447,9 @@
                 node.dataset.gameType = gameType;
                 node.dataset.index = index;
                 
-                // Position the node
-                node.style.left = `${x - 25}px`; // Center horizontally
-                node.style.top = `${y - 25}px`;  // Center vertically
+                // Position the node - adjusted for smaller size (35px instead of 50px)
+                node.style.left = `${x - 17.5}px`; // Center horizontally
+                node.style.top = `${y - 17.5}px`;  // Center vertically
                 
                 mapContainer.appendChild(node);
                 
@@ -1275,8 +1275,8 @@
             }
             
             ghostNode.id = 'ghost-node';
-            ghostNode.style.left = `${x - 25}px`; // Center horizontally
-            ghostNode.style.top = `${y - 25}px`;  // Center vertically
+            ghostNode.style.left = `${x - 17.5}px`; // Center horizontally
+            ghostNode.style.top = `${y - 17.5}px`;  // Center vertically
             ghostNode.style.opacity = '0.7';
             ghostNode.style.border = '2px dashed #fff';
             ghostNode.style.cursor = 'pointer';

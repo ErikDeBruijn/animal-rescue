@@ -21,8 +21,29 @@ let mapState = {
     currentLevel: 1, // Default to level 1
     unlockedLevels: [1], // Level 1 is always unlocked
     lastPlayedLevel: 1,
-    levelNodes: []
+    levelNodes: [],
+    walkableMask: {
+        points: [],  // Will be loaded from server
+        loaded: false
+    }
 };
+
+// Initialize the world map when the DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("DOM loaded, initializing world map...");
+    
+    // Check for player character element
+    const playerChar = document.getElementById('player-character');
+    if (!playerChar) {
+        console.log("Creating player character element...");
+        const newPlayerChar = document.createElement('div');
+        newPlayerChar.id = 'player-character';
+        document.getElementById('map-container').appendChild(newPlayerChar);
+    }
+    
+    // Initialize map
+    initMap();
+});
 
 // Initialize the map
 function initMap() {
@@ -35,6 +56,22 @@ function initMap() {
     // Try to load map data if it exists
     Promise.resolve(window.mapData.loadMapData())
         .then(() => {
+            // Load walkable area data
+            loadWalkableAreaData()
+                .then(() => {
+                    console.log("Walkable area data loaded successfully");
+                    
+                    // Check for debug parameter to visualize walkable areas
+                    if (window.location.hash.includes('debug=walkable')) {
+                        console.log("Debug mode: Visualizing walkable areas");
+                        setTimeout(() => visualizeWalkableArea(), 1000);
+                    }
+                })
+                .catch(error => {
+                    console.warn("Error loading walkable area data:", error);
+                    console.log("Movement will not be restricted to walkable areas");
+                });
+            
             // Load game progress from localStorage
             loadGameProgress();
             
@@ -58,6 +95,49 @@ function initMap() {
             setupPlayerCharacter();
             setupControls();
             startMapLoop();
+        });
+}
+
+// Load walkable area data from the server
+function loadWalkableAreaData() {
+    return fetch('/api/walkable-area')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.walkableData && data.walkableData.points) {
+                // Store the walkable mask points in mapState
+                mapState.walkableMask.points = data.walkableData.points;
+                mapState.walkableMask.loaded = true;
+                console.log(`Loaded ${mapState.walkableMask.points.length} walkable area points`);
+                
+                // Optionally visualize the walkable area (commented out for now)
+                // visualizeWalkableArea();
+                
+                return true;
+            } else {
+                console.warn("No walkable area data found or invalid format");
+                return false;
+            }
+        })
+        .catch(error => {
+            console.error("Error fetching walkable area data:", error);
+            
+            // Try to load from localStorage as fallback
+            const localData = localStorage.getItem('walkableAreaData');
+            if (localData) {
+                try {
+                    const walkableData = JSON.parse(localData);
+                    if (walkableData && walkableData.points) {
+                        mapState.walkableMask.points = walkableData.points;
+                        mapState.walkableMask.loaded = true;
+                        console.log(`Loaded ${mapState.walkableMask.points.length} walkable area points from localStorage`);
+                        return true;
+                    }
+                } catch (e) {
+                    console.error('Error parsing walkable area data from localStorage:', e);
+                }
+            }
+            
+            return false;
         });
 }
 
@@ -94,25 +174,36 @@ function loadGameProgress() {
     
     // Only unlock connected levels through proper progression
     let changed = true;
-    while (changed) {
-        changed = false;
-        
-        // For each path connection, check if the start level is unlocked or completed
-        window.mapData.PATH_CONNECTIONS.forEach(([startLevel, endLevel, requiredLevel]) => {
-            // To unlock a level:
-            // 1. The start level must be unlocked or completed
-            // 2. The required level must be completed
-            if (mapState.unlockedLevels.includes(startLevel) && 
-                mapState.completedLevels.includes(requiredLevel)) {
+    
+    // Make sure mapData.PATH_CONNECTIONS exists
+    if (window.mapData && window.mapData.PATH_CONNECTIONS && Array.isArray(window.mapData.PATH_CONNECTIONS)) {
+        while (changed) {
+            changed = false;
+            
+            // For each path connection, check if the start level is unlocked or completed
+            window.mapData.PATH_CONNECTIONS.forEach(connection => {
+                // Make sure connection is valid
+                if (!Array.isArray(connection) || connection.length < 3) return;
                 
-                // If endLevel isn't already unlocked, add it and mark as changed
-                if (!mapState.unlockedLevels.includes(endLevel)) {
-                    mapState.unlockedLevels.push(endLevel);
-                    changed = true;
-                    console.log(`Unlocked level ${endLevel} via path from ${startLevel}`);
+                const [startLevel, endLevel, requiredLevel] = connection;
+                
+                // To unlock a level:
+                // 1. The start level must be unlocked or completed
+                // 2. The required level must be completed
+                if (mapState.unlockedLevels.includes(startLevel) && 
+                    mapState.completedLevels.includes(requiredLevel)) {
+                    
+                    // If endLevel isn't already unlocked, add it and mark as changed
+                    if (!mapState.unlockedLevels.includes(endLevel)) {
+                        mapState.unlockedLevels.push(endLevel);
+                        changed = true;
+                        console.log(`Unlocked level ${endLevel} via path from ${startLevel}`);
+                    }
                 }
-            }
-        });
+            });
+        }
+    } else {
+        console.warn("PATH_CONNECTIONS not available, cannot process level unlocks");
     }
     
     // Update score display
@@ -198,11 +289,11 @@ function createMapNodes() {
             node.classList.add('memory-level');
             node.title = `Memory Level ${level} (Optioneel)`;
             
-            // Add card deck visuals for memory games
+            // Add card deck visuals for memory games - adjusted for smaller level nodes
             const cardStack = document.createElement('div');
             cardStack.className = 'memory-card-stack';
-            cardStack.style.left = `${x + 20}px`;
-            cardStack.style.top = `${y - 35}px`;
+            cardStack.style.left = `${x + 15}px`;
+            cardStack.style.top = `${y - 25}px`;
             
             // Create 3 stacked cards
             for (let i = 0; i < 3; i++) {
@@ -227,9 +318,9 @@ function createMapNodes() {
         node.dataset.level = level;
         node.dataset.gameType = gameType;
         
-        // Position the node
-        node.style.left = `${x - 25}px`; // Center horizontally
-        node.style.top = `${y - 25}px`;  // Center vertically
+        // Position the node - adjusted for smaller size (35px instead of 50px)
+        node.style.left = `${x - 17.5}px`; // Center horizontally
+        node.style.top = `${y - 17.5}px`;  // Center vertically
         
         // Set appearance based on state
         if (mapState.completedLevels.includes(level)) {
@@ -280,7 +371,34 @@ function createMapNodes() {
 
 // Set up the player character on the map
 function setupPlayerCharacter() {
-    const playerChar = document.getElementById('player-character');
+    // Make sure player character element exists
+    let playerChar = document.getElementById('player-character');
+    const mapContainer = document.getElementById('map-container');
+    
+    if (!mapContainer) {
+        console.error("Map container not found during player character setup!");
+        return;
+    }
+    
+    // If it doesn't exist, create it
+    if (!playerChar) {
+        playerChar = document.createElement('div');
+        playerChar.id = 'player-character';
+        mapContainer.appendChild(playerChar);
+        console.log("Created player character element");
+    }
+    
+    // Ensure the player character has proper styling
+    playerChar.style.display = 'block';
+    playerChar.style.backgroundColor = '#FF4500'; // Bright orange
+    playerChar.style.width = '30px';
+    playerChar.style.height = '30px';
+    playerChar.style.borderRadius = '50%';
+    playerChar.style.position = 'absolute';
+    playerChar.style.zIndex = '1000';
+    playerChar.style.boxShadow = '0 0 20px #FF4500, 0 0 10px #FFF, 0 0 30px rgba(255, 69, 0, 0.8)';
+    playerChar.style.border = '2px solid white';
+    playerChar.style.pointerEvents = 'none';
     
     // Find the node matching the current/last played level
     const currentNode = mapState.levelNodes.find(node => node.level === mapState.currentLevel);
@@ -292,7 +410,32 @@ function setupPlayerCharacter() {
         mapState.targetX = currentNode.x;
         mapState.targetY = currentNode.y;
         
+        console.log(`Positioning player at level ${mapState.currentLevel}: (${currentNode.x}, ${currentNode.y})`);
+        
+        // Check if this position is within a walkable area
+        if (mapState.walkableMask.loaded && !isPointInWalkableArea(currentNode.x, currentNode.y)) {
+            console.warn("Warning: Current level node is not in a walkable area!");
+        }
+        
         // Update player position
+        updatePlayerPosition();
+    } else {
+        // If no current node found, set default position
+        console.log("No current node found, using default position");
+        
+        // Try to find a valid walkable area if possible
+        if (mapState.walkableMask.loaded && mapState.walkableMask.points.length > 0) {
+            // Use the first walkable point as a fallback
+            const firstPoint = mapState.walkableMask.points[0];
+            mapState.playerX = firstPoint.x;
+            mapState.playerY = firstPoint.y;
+            console.log(`Using first walkable point as fallback: (${firstPoint.x}, ${firstPoint.y})`);
+        } else {
+            // Default fallback position
+            mapState.playerX = 100;
+            mapState.playerY = 100;
+        }
+        
         updatePlayerPosition();
     }
 }
@@ -358,32 +501,95 @@ function setupControls() {
 
 // Start the map update loop
 function startMapLoop() {
-    setInterval(updateMap, MAP_UPDATE_INTERVAL);
+    console.log("Starting map update loop...");
+    if (window.mapUpdateInterval) {
+        clearInterval(window.mapUpdateInterval);
+    }
+    window.mapUpdateInterval = setInterval(updateMap, MAP_UPDATE_INTERVAL);
+    console.log("Map update loop started with interval:", MAP_UPDATE_INTERVAL);
+    
+    // Force an immediate update
+    updateMap();
+}
+
+// Check if a point is within the walkable area
+function isPointInWalkableArea(x, y) {
+    // If walkable mask isn't loaded, allow movement everywhere
+    if (!mapState.walkableMask.loaded || mapState.walkableMask.points.length === 0) {
+        return true;
+    }
+    
+    // Check if the point is inside any of the walkable area circles
+    return mapState.walkableMask.points.some(point => {
+        const dx = point.x - x;
+        const dy = point.y - y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        return distance <= point.size / 2;
+    });
 }
 
 // Update the map state
 function updateMap() {
-    // Update player position based on key input
+    // Check if player character exists
+    const playerChar = document.getElementById('player-character');
+    if (!playerChar) {
+        console.warn("Player character not found in update loop, creating...");
+        const newPlayerChar = document.createElement('div');
+        newPlayerChar.id = 'player-character';
+        const mapContainer = document.getElementById('map-container');
+        if (mapContainer) {
+            mapContainer.appendChild(newPlayerChar);
+        } else {
+            console.error("Map container not found!");
+            return;
+        }
+    }
+    
+    // Store current position to restore if movement is invalid
+    const oldX = mapState.playerX;
+    const oldY = mapState.playerY;
+    
+    // Calculate new position based on key input
+    let newX = oldX;
+    let newY = oldY;
+    
     if (mapState.keys.up) {
-        mapState.playerY -= PLAYER_SPEED;
+        newY -= PLAYER_SPEED;
     }
     if (mapState.keys.down) {
-        mapState.playerY += PLAYER_SPEED;
+        newY += PLAYER_SPEED;
     }
     if (mapState.keys.left) {
-        mapState.playerX -= PLAYER_SPEED;
+        newX -= PLAYER_SPEED;
     }
     if (mapState.keys.right) {
-        mapState.playerX += PLAYER_SPEED;
+        newX += PLAYER_SPEED;
     }
     
     // Keep player within map bounds
     const mapContainer = document.getElementById('map-container');
-    const mapWidth = mapContainer.clientWidth;
-    const mapHeight = mapContainer.clientHeight;
+    if (mapContainer) {
+        const mapWidth = mapContainer.clientWidth;
+        const mapHeight = mapContainer.clientHeight;
+        
+        newX = Math.max(15, Math.min(newX, mapWidth - 15));
+        newY = Math.max(15, Math.min(newY, mapHeight - 15));
+    }
     
-    mapState.playerX = Math.max(15, Math.min(mapState.playerX, mapWidth - 15));
-    mapState.playerY = Math.max(15, Math.min(mapState.playerY, mapHeight - 15));
+    // Check if the new position is valid (within walkable area)
+    if (isPointInWalkableArea(newX, newY)) {
+        // Update position if valid
+        mapState.playerX = newX;
+        mapState.playerY = newY;
+    } else {
+        // Try horizontal and vertical movements separately
+        if (isPointInWalkableArea(newX, oldY)) {
+            mapState.playerX = newX;
+        } else if (isPointInWalkableArea(oldX, newY)) {
+            mapState.playerY = newY;
+        }
+        // Otherwise, stay at the old position
+    }
     
     // Update player position on screen
     updatePlayerPosition();
@@ -395,6 +601,38 @@ function updateMap() {
 // Update player position on screen
 function updatePlayerPosition() {
     const playerChar = document.getElementById('player-character');
+    if (!playerChar) {
+        console.warn("Player character element not found in updatePlayerPosition");
+        
+        // Try to recreate the player character
+        const mapContainer = document.getElementById('map-container');
+        if (mapContainer) {
+            const newPlayerChar = document.createElement('div');
+            newPlayerChar.id = 'player-character';
+            newPlayerChar.style.display = 'block';
+            newPlayerChar.style.backgroundColor = '#FF4500'; // Bright orange
+            newPlayerChar.style.width = '30px';
+            newPlayerChar.style.height = '30px';
+            newPlayerChar.style.borderRadius = '50%';
+            newPlayerChar.style.position = 'absolute';
+            newPlayerChar.style.zIndex = '1000';
+            newPlayerChar.style.boxShadow = '0 0 20px #FF4500, 0 0 10px #FFF, 0 0 30px rgba(255, 69, 0, 0.8)';
+            newPlayerChar.style.border = '2px solid white';
+            newPlayerChar.style.pointerEvents = 'none';
+            mapContainer.appendChild(newPlayerChar);
+            
+            // Update position on the newly created element
+            newPlayerChar.style.left = `${mapState.playerX - 15}px`; // Center horizontally
+            newPlayerChar.style.top = `${mapState.playerY - 15}px`;  // Center vertically
+            
+            console.log("Recreated player character during position update");
+        } else {
+            console.error("Map container not found, cannot recreate player character");
+        }
+        return;
+    }
+    
+    // Update the position of the existing player character
     playerChar.style.left = `${mapState.playerX - 15}px`; // Center horizontally
     playerChar.style.top = `${mapState.playerY - 15}px`;  // Center vertically
 }
@@ -403,56 +641,131 @@ function updatePlayerPosition() {
 function checkLevelProximity() {
     const ACTIVATION_DISTANCE = 30; // Distance in pixels to activate a node
     
+    if (!mapState.levelNodes || !Array.isArray(mapState.levelNodes)) {
+        console.warn("Level nodes array is not available");
+        return;
+    }
+    
     // Check each level node
     mapState.levelNodes.forEach(node => {
-        const distance = Math.sqrt(
-            Math.pow(mapState.playerX - node.x, 2) + 
-            Math.pow(mapState.playerY - node.y, 2)
-        );
+        if (!node || !node.element) return;
         
-        // If player is close to a node and it's unlocked, highlight it
-        if (distance < ACTIVATION_DISTANCE && mapState.unlockedLevels.includes(node.level)) {
-            node.element.style.transform = 'scale(1.2)';
-        } else {
-            node.element.style.transform = 'scale(1)';
+        try {
+            const distance = Math.sqrt(
+                Math.pow(mapState.playerX - node.x, 2) + 
+                Math.pow(mapState.playerY - node.y, 2)
+            );
+            
+            // If player is close to a node and it's unlocked, highlight it
+            if (distance < ACTIVATION_DISTANCE && mapState.unlockedLevels.includes(node.level)) {
+                node.element.style.transform = 'scale(1.2)';
+            } else {
+                node.element.style.transform = 'scale(1)';
+            }
+        } catch (error) {
+            console.error(`Error processing node ${node.level}:`, error);
         }
     });
+}
+
+// Function to visualize the walkable area (for debugging)
+function visualizeWalkableArea() {
+    // Only visualize if walkable mask is loaded
+    if (!mapState.walkableMask.loaded || mapState.walkableMask.points.length === 0) {
+        console.log("No walkable area to visualize");
+        return;
+    }
+
+    // Check if we already have a visualization container
+    let visualContainer = document.getElementById('walkable-area-visualization');
+    if (visualContainer) {
+        // Clear existing visualization
+        visualContainer.innerHTML = '';
+    } else {
+        // Create new visualization container
+        visualContainer = document.createElement('div');
+        visualContainer.id = 'walkable-area-visualization';
+        visualContainer.style.position = 'absolute';
+        visualContainer.style.top = '0';
+        visualContainer.style.left = '0';
+        visualContainer.style.width = '100%';
+        visualContainer.style.height = '100%';
+        visualContainer.style.pointerEvents = 'none';
+        visualContainer.style.zIndex = '5'; // Below player but above most other elements
+        const mapContainer = document.getElementById('map-container');
+        if (mapContainer) {
+            mapContainer.appendChild(visualContainer);
+        }
+    }
+
+    // Add visual elements for each walkable point
+    mapState.walkableMask.points.forEach(point => {
+        const pointElement = document.createElement('div');
+        pointElement.className = 'walkable-area-visual';
+        pointElement.style.position = 'absolute';
+        pointElement.style.left = `${point.x - point.size/2}px`;
+        pointElement.style.top = `${point.y - point.size/2}px`;
+        pointElement.style.width = `${point.size}px`;
+        pointElement.style.height = `${point.size}px`;
+        pointElement.style.backgroundColor = 'rgba(0, 255, 0, 0.1)'; // Very light green
+        pointElement.style.borderRadius = '50%';
+        pointElement.style.pointerEvents = 'none';
+        visualContainer.appendChild(pointElement);
+    });
+
+    console.log(`Visualized ${mapState.walkableMask.points.length} walkable area points`);
 }
 
 // Check if player should activate a level
 function checkLevelActivation() {
     const ACTIVATION_DISTANCE = 30; // Distance in pixels to activate a node
     
+    // Make sure level nodes exist
+    if (!mapState.levelNodes || !Array.isArray(mapState.levelNodes) || mapState.levelNodes.length === 0) {
+        console.warn("No level nodes available for activation check");
+        return;
+    }
+    
     // Find closest level node
     let closestNode = null;
     let closestDistance = Infinity;
     
-    mapState.levelNodes.forEach(node => {
-        const distance = Math.sqrt(
-            Math.pow(mapState.playerX - node.x, 2) + 
-            Math.pow(mapState.playerY - node.y, 2)
-        );
+    try {
+        mapState.levelNodes.forEach(node => {
+            if (!node) return;
+            
+            const distance = Math.sqrt(
+                Math.pow(mapState.playerX - node.x, 2) + 
+                Math.pow(mapState.playerY - node.y, 2)
+            );
+            
+            if (distance < closestDistance) {
+                closestDistance = distance;
+                closestNode = node;
+            }
+        });
         
-        if (distance < closestDistance) {
-            closestDistance = distance;
-            closestNode = node;
-        }
-    });
-    
-    // If player is close enough to a node, check if it's unlocked
-    if (closestNode && closestDistance < ACTIVATION_DISTANCE) {
-        if (mapState.unlockedLevels.includes(closestNode.level)) {
-            selectLevel(closestNode.level, closestNode.gameType);
-        } else {
-            // If level is locked, inform the player
-            const requiredPath = window.mapData.PATH_CONNECTIONS.find(([start, end]) => end === closestNode.level);
-            if (requiredPath) {
-                const requiredLevel = requiredPath[2];
-                alert(`Je moet eerst level ${requiredLevel} voltooien om dit level te ontgrendelen.`);
+        // If player is close enough to a node, check if it's unlocked
+        if (closestNode && closestDistance < ACTIVATION_DISTANCE) {
+            if (mapState.unlockedLevels.includes(closestNode.level)) {
+                selectLevel(closestNode.level, closestNode.gameType);
             } else {
-                alert('Dit level is nog niet beschikbaar.');
+                // If level is locked, inform the player
+                if (window.mapData && window.mapData.PATH_CONNECTIONS) {
+                    const requiredPath = window.mapData.PATH_CONNECTIONS.find(([start, end]) => end === closestNode.level);
+                    if (requiredPath) {
+                        const requiredLevel = requiredPath[2];
+                        alert(`Je moet eerst level ${requiredLevel} voltooien om dit level te ontgrendelen.`);
+                    } else {
+                        alert('Dit level is nog niet beschikbaar.');
+                    }
+                } else {
+                    alert('Dit level is nog niet beschikbaar.');
+                }
             }
         }
+    } catch (error) {
+        console.error("Error in checkLevelActivation:", error);
     }
 }
 
@@ -473,7 +786,37 @@ function selectLevel(level, gameType) {
 // Update the score display
 function updateScoreDisplay() {
     const scoreElement = document.getElementById('total-score');
-    scoreElement.textContent = `Totaal Score: ${mapState.totalScore}`;
+    if (scoreElement) {
+        scoreElement.textContent = `Totaal Score: ${mapState.totalScore}`;
+    } else {
+        console.warn("Score element not found, creating...");
+        
+        // Try to create the score element if it doesn't exist
+        const mapContainer = document.getElementById('map-container');
+        if (mapContainer) {
+            const newScoreElement = document.createElement('div');
+            newScoreElement.id = 'total-score';
+            newScoreElement.className = 'score-display';
+            newScoreElement.textContent = `Totaal Score: ${mapState.totalScore}`;
+            
+            // Style it properly
+            newScoreElement.style.position = 'fixed';
+            newScoreElement.style.top = '70px';
+            newScoreElement.style.right = '10px';
+            newScoreElement.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+            newScoreElement.style.color = 'white';
+            newScoreElement.style.padding = '5px 15px';
+            newScoreElement.style.borderRadius = '20px';
+            newScoreElement.style.fontWeight = 'bold';
+            newScoreElement.style.zIndex = '1000';
+            
+            // Add to map container
+            mapContainer.appendChild(newScoreElement);
+            console.log("Created score display element");
+        } else {
+            console.error("Map container not found, cannot create score element");
+        }
+    }
 }
 
 // Create a popup to show level details when hovering over a node
