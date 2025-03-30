@@ -30,6 +30,7 @@
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 2; /* Above paths */
         }
         .level-node:hover {
             transform: scale(1.1);
@@ -41,17 +42,33 @@
             cursor: not-allowed;
         }
         .level-unlocked {
-            background-color: #4CAF50;
+            background-color: #2196F3; /* Blue for unlocked but not completed */
             color: white;
         }
         .level-completed {
-            background-color: #2196F3;
+            background-color: #4CAF50; /* Green for completed levels */
             color: white;
         }
         .level-current {
             background-color: #FF9800;
             color: white;
             animation: pulse 1.5s infinite;
+        }
+        .memory-level {
+            background: linear-gradient(135deg, #673AB7 50%, #9C27B0 50%);
+            color: white;
+            font-weight: bold;
+            border: 2px dashed #FFC107;
+            font-size: 1.2em;
+            box-shadow: 0 0 10px rgba(255, 193, 7, 0.5);
+        }
+        .memory-level.level-completed {
+            background: linear-gradient(135deg, #4CAF50 50%, #673AB7 50%);
+            border: 2px dashed #FFC107;
+        }
+        .memory-level.level-unlocked {
+            background: linear-gradient(135deg, #2196F3 50%, #673AB7 50%);
+            border: 2px dashed #FFC107;
         }
         @keyframes pulse {
             0% { transform: scale(1); }
@@ -62,10 +79,11 @@
             position: absolute;
             height: 5px;
             background-color: #666;
-            z-index: 1;
+            z-index: 0; /* Behind nodes */
+            transform-origin: center left; /* For proper rotation */
         }
         .path-completed {
-            background-color: #2196F3;
+            background-color: #4CAF50; /* Green for completed paths */
         }
         #player-character {
             position: absolute;
@@ -73,8 +91,9 @@
             height: 30px;
             border-radius: 50%;
             background-color: #B36B00;
-            z-index: 10;
+            z-index: 10; /* Above everything */
             transition: left 0.5s, top 0.5s;
+            box-shadow: 0 0 15px rgba(255, 165, 0, 0.7); /* Glow effect */
         }
         .score-display {
             position: absolute;
@@ -123,12 +142,14 @@
             <div class="popup-body">
                 <p><strong>Welkom bij de Wereldkaart!</strong></p>
                 <p>Hier kun je verschillende spelwerelden verkennen:</p>
-                <p>🟢 Groene cirkels: Beschikbare levels</p>
-                <p>🔵 Blauwe cirkels: Voltooide levels</p>
+                <p>🟢 Groene cirkels: Voltooide levels</p>
+                <p>🔵 Blauwe cirkels: Beschikbare maar nog niet voltooide levels</p>
                 <p>🟠 Oranje cirkel: Huidige level</p>
                 <p>⚪ Grijze cirkels: Vergrendelde levels</p>
+                <p>🟣 <strong>M</strong>: Memory spel levels (optioneel)</p>
+                <p>Je ontgrendelt memory spellen na het voltooien van elk 2 normale levels.</p>
                 <p>Besturing: <span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span> of <span class="key">↑</span><span class="key">←</span><span class="key">↓</span><span class="key">→</span> om te bewegen</p>
-                <p>Klik op een groene cirkel om een level te spelen.</p>
+                <p>Klik op een level om het te spelen, of loop ernaartoe en druk op spatie.</p>
             </div>
         </div>
     </div>
