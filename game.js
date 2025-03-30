@@ -638,5 +638,7 @@ function gameLoop() {
         }
     }
     
+    // Normal speed - we don't need to throttle the frame rate
+    // We'll just slow down the game physics instead
     requestAnimationFrame(gameLoop);
 }

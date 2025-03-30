@@ -269,6 +269,21 @@ class Player {
             return;
         }
         
+        // Check if slow motion is active and apply the appropriate timeScaleFactor
+        let timeScaleFactor = 1.0;
+        
+        if (gameCore.gameState.slowMotion) {
+            const slowMotionFactor = gameCore.gameState.slowMotionFactor || 0.3;
+            
+            if (gameCore.gameState.slowMotionPlayer === this) {
+                // This is the player who collected the hourglass - move at normal speed
+                timeScaleFactor = 1.0;
+            } else {
+                // Other players move at slow motion speed
+                timeScaleFactor = slowMotionFactor;
+            }
+        }
+        
         // Reset underwater status aan het begin van elke update
         // Wordt weer op true gezet als speler in water is
         this.isUnderwater = false;
@@ -309,8 +324,8 @@ class Player {
         
         // Horizontale beweging op basis van input
         if (isPressingLeft) {
-            // Geleidelijke versnelling naar links (negatieve x)
-            this.velX -= acceleration;
+            // Geleidelijke versnelling naar links (negatieve x) met timeScaleFactor
+            this.velX -= acceleration * timeScaleFactor;
             // Begrens de maximale snelheid
             if (this.velX < -maxSpeed) {
                 this.velX = -maxSpeed;
@@ -322,8 +337,8 @@ class Player {
                 this.movingDirectionChanged = true; // Markeer dat richting is veranderd
             }
         } else if (isPressingRight) {
-            // Geleidelijke versnelling naar rechts (positieve x)
-            this.velX += acceleration;
+            // Geleidelijke versnelling naar rechts (positieve x) met timeScaleFactor
+            this.velX += acceleration * timeScaleFactor;
             // Begrens de maximale snelheid
             if (this.velX > maxSpeed) {
                 this.velX = maxSpeed;
@@ -358,7 +373,7 @@ class Player {
         
         // Springen als op de grond
         if ((gameControls.keys[this.controls.up] || gameControls.keys[this.controls.up.toLowerCase()]) && this.onGround) {
-            this.velY = this.jumpPower;
+            this.velY = this.jumpPower * timeScaleFactor;
             this.onGround = false;
             
             // Speel springgeluid
@@ -370,10 +385,10 @@ class Player {
         // Snel naar beneden gaan met pijl-omlaag (handig om in water te komen)
         if (gameControls.keys[this.controls.down] || gameControls.keys[this.controls.down.toLowerCase()]) {
             if (!this.onGround) {
-                this.velY += 0.8; // Sneller vallen
+                this.velY += 0.8 * timeScaleFactor; // Sneller vallen met timeScaleFactor
             } else if (this.checkIfWaterBelow(platforms)) {
                 // Spring bewust in water onder de speler
-                this.velY = 5;
+                this.velY = 5 * timeScaleFactor;
                 this.onGround = false;
             }
         }
@@ -441,7 +456,7 @@ class Player {
             
             // Eenhoorn kan vliegen (omhoog bewegen) wanneer de omhoog-toets wordt ingedrukt
             // en er voldoende vliegkracht is
-            this.velY = -3;
+            this.velY = -3 * timeScaleFactor;
             // Glitter-effect voor vliegen (wordt getekend in draw)
             this.flying = true;
             
@@ -457,7 +472,7 @@ class Player {
         } else {
             // Normale zwaartekracht, maar minder sterk voor eenhoorn (langzamer vallen)
             const gravityFactor = this.animalType === "UNICORN" ? 0.3 : 1.0;
-            this.velY += gameCore.GRAVITY * gravityFactor;
+            this.velY += gameCore.GRAVITY * gravityFactor * timeScaleFactor;
             
             // Als de eenhoorn stopt met vliegen, stop het wind geluid
             if (this.flying && typeof gameAudio !== 'undefined') {
@@ -491,7 +506,8 @@ class Player {
             // Update vliegmeter
             if (this.flying) {
                 // Verminder vliegkracht als de eenhoorn vliegt
-                this.flyingPower -= 0.7;
+                // Apply timeScaleFactor to flying power consumption - slower when time is slowed
+                this.flyingPower -= 0.7 * timeScaleFactor;
                 if (this.flyingPower <= 0) {
                     this.flyingPower = 0;
                     this.flyingExhausted = true;
@@ -531,9 +547,9 @@ class Player {
         const oldX = this.x;
         const oldY = this.y;
         
-        // Positie bijwerken
-        this.x += this.velX;
-        this.y += this.velY;
+        // Positie bijwerken met timeScaleFactor
+        this.x += this.velX * timeScaleFactor;
+        this.y += this.velY * timeScaleFactor;
         
         // Kant van canvas checken
         if (this.x < 0) this.x = 0;
@@ -1968,9 +1984,15 @@ function updatePuppy() {
         // Animation: give the puppy a small movement (shaking) to make it noticeable
         // This is used by the renderer to position the puppy
         // Pas slowmotion toe op het beven van de puppy als nodig
-        const shouldApplySlowMotion = isSlowMotion;
-        const shakeSpeed = shouldApplySlowMotion ? 300 / slowMotionFactor : 300;
-        puppy.offsetX = Math.sin(Date.now() / shakeSpeed) * 2; // Slow shaking
+        if (isSlowMotion) {
+            // Slower shaking when slowmotion is active
+            const shakeSpeed = 300 / slowMotionFactor;
+            puppy.offsetX = Math.sin(Date.now() / shakeSpeed) * 2; // Slower shaking
+        } else {
+            // Normal animation speed
+            const shakeSpeed = 300;
+            puppy.offsetX = Math.sin(Date.now() / shakeSpeed) * 2; // Normal shaking
+        }
         
         // Check if a player touches (rescues) the puppy
         const hasMultiplePlayers = currentLevelData.allowedAnimals && currentLevelData.allowedAnimals.length > 1;
@@ -2217,14 +2239,8 @@ function updateEnemies(players) {
             }
             
             // Voer horizontale beweging uit met slowmotion factor
-            // Als slowmotion actief is, controleer of deze vijand langzamer moet bewegen
-            // (alle wezens behalve de speler die de zandloper pakte)
-            const shouldApplySlowMotion = isSlowMotion && (!gameCore.gameState.slowMotionPlayer || 
-                (gameCore.gameState.slowMotionPlayer !== window.player1 && 
-                 gameCore.gameState.slowMotionPlayer !== window.player2));
-            
-            // Pas slowmotion toe op de beweging
-            if (shouldApplySlowMotion) {
+            if (isSlowMotion) {
+                // Apply slow motion factor to enemies - they move slower
                 enemy.x += moveX * slowMotionFactor;
             } else {
                 enemy.x += moveX;
@@ -2271,7 +2287,8 @@ function updateEnemies(players) {
             }
             
             // Zwaartekracht toepassen met slowmotion factor
-            if (shouldApplySlowMotion) {
+            if (isSlowMotion) {
+                // Apply slow motion factor to gravity - slower falling
                 enemy.velY += gameCore.GRAVITY * slowMotionFactor;
             } else {
                 enemy.velY += gameCore.GRAVITY;
@@ -2283,7 +2300,8 @@ function updateEnemies(players) {
             }
             
             // Verticale beweging toepassen met slowmotion factor
-            if (shouldApplySlowMotion) {
+            if (isSlowMotion) {
+                // Apply slow motion factor to vertical movement
                 enemy.y += enemy.velY * slowMotionFactor;
             } else {
                 enemy.y += enemy.velY;
