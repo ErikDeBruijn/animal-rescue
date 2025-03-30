@@ -440,10 +440,8 @@ function selectLevel(level, gameType) {
     if (gameType === 'animalRescue') {
         window.location.href = `index.html#level=${level}`;
     } else if (gameType === 'memoryGame') {
-        if (confirm('Memory spel is optioneel. Wil je dit spelen?')) {
-            // Redirect to memory game with level parameter
-            window.location.href = `memory.html#level=${level}`;
-        }
+        // Direct redirect to memory game without confirmation
+        window.location.href = `memory.html#level=${level}`;
     }
 }
 
