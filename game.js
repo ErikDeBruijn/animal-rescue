@@ -33,7 +33,12 @@ function initializeGameWhenReady() {
             running: true,
             gameOver: false,
             puppySaved: false,
-            message: ""
+            message: "",
+            mathProblem: {
+                equation: "",
+                userAnswer: "",
+                isCorrect: false
+            }
         };
     }
     
@@ -52,6 +57,9 @@ function initializeGameWhenReady() {
     
     // Besturing opzetten
     gameControls.setupInputListeners();
+    
+    // Setup event listener voor numberPlatformHit event
+    window.addEventListener('numberPlatformHit', handleNumberPlatformHit);
     
     // Initialiseer het spel
     init();
@@ -111,6 +119,92 @@ function showIntroScreen() {
     });
 }
 
+// Handler voor numberPlatformHit events
+function handleNumberPlatformHit(event) {
+    // Haal de huidige level data op
+    console.log("Game core current level:", gameCore.currentLevel);
+    console.log("Game core current level index:", gameCore.currentLevelIndex);
+    
+    // We moeten het juiste level gebruiken op basis van de index, niet het level object
+    const currentLevel = window.levels[gameCore.currentLevelIndex];
+    console.log("Found current level:", currentLevel ? "yes" : "no");
+    
+    // Controleer of het level een mathProblem heeft
+    if (!currentLevel.mathProblem || !currentLevel.mathProblem.equation || !currentLevel.mathProblem.answer) {
+        return; // Geen rekenprobleem voor dit level
+    }
+    
+    // Haal de waarde van het getroffen platform op
+    const hitValue = event.detail.value;
+    console.log(`Nummer platform geraakt: ${hitValue}, type: ${typeof hitValue}`);
+    console.log("Event details:", JSON.stringify(event.detail));
+    console.log("MathProblem status:", JSON.stringify(currentLevel.mathProblem));
+    
+    // Controleer of hitValue geldig is
+    if (hitValue === undefined || hitValue === null) {
+        console.error("Ongeldige waarde ontvangen van getroffen platform");
+        return;
+    }
+    
+    // Voeg het cijfer toe aan het gebruikersantwoord
+    currentLevel.mathProblem.userAnswer = (currentLevel.mathProblem.userAnswer || "") + hitValue;
+    
+    // Update gamestate voor rendering
+    gameCore.gameState.mathProblem.userAnswer = currentLevel.mathProblem.userAnswer;
+    
+    // Controleer of het antwoord compleet is (zelfde lengte als het verwachte antwoord)
+    const expectedAnswer = currentLevel.mathProblem.answer;
+    
+    if (currentLevel.mathProblem.userAnswer.length >= expectedAnswer.length) {
+        // Controleer of het antwoord correct is
+        if (currentLevel.mathProblem.userAnswer === expectedAnswer) {
+            // Juist antwoord
+            gameCore.gameState.message = "Goed gedaan! Juist antwoord! De ster is nu zichtbaar!";
+            gameCore.gameState.mathProblem.isCorrect = true;
+            
+            // Speel een succesgeluid
+            if (typeof gameAudio !== 'undefined' && typeof gameAudio.playSound === 'function') {
+                gameAudio.playSound('powerup', 0.5);
+            }
+            
+            // Maak sterren zichtbaar
+            currentLevel.collectibles.forEach(collectible => {
+                collectible.visible = true;
+            });
+            
+        } else {
+            // Onjuist antwoord
+            gameCore.gameState.message = "Oeps! Dat klopt niet. Probeer het opnieuw.";
+            gameCore.gameState.mathProblem.isCorrect = false;
+            
+            // Speel een foutgeluid
+            if (typeof gameAudio !== 'undefined' && typeof gameAudio.playSound === 'function') {
+                gameAudio.playSound('lose-life', 0.5);
+            }
+            
+            // Reset het gebruikersantwoord zodat de speler opnieuw kan beginnen
+            currentLevel.mathProblem.userAnswer = "";
+            gameCore.gameState.mathProblem.userAnswer = "";
+        }
+        
+        // Wis het bericht na 2 seconden
+        setTimeout(() => {
+            if (gameCore.gameState.message === "Goed gedaan! Juist antwoord! De ster is nu zichtbaar!" || 
+                gameCore.gameState.message === "Oeps! Dat klopt niet. Probeer het opnieuw.") {
+                gameCore.gameState.message = "";
+            }
+        }, 2000);
+    } else {
+        // Antwoord nog niet compleet, update wat de speler tot nu toe heeft ingevoerd
+        gameCore.gameState.mathProblem.userAnswer = currentLevel.mathProblem.userAnswer;
+        
+        // Speel een bliep geluid voor feedback
+        if (typeof gameAudio !== 'undefined' && typeof gameAudio.playSound === 'function') {
+            gameAudio.playSound('blip-8-bit', 0.3);
+        }
+    }
+}
+
 // Start het spel na het intro scherm
 function startGame() {
     // Bepaal het startlevel
@@ -160,6 +254,31 @@ function loadLevel(levelIndex) {
     }
     
     gameCore.gameState.gameOver = false;
+    
+    // Initialiseer mathProblem voor dit level
+    if (level.mathProblem) {
+        console.log("Level heeft een rekenprobleem:", level.mathProblem.equation, "Antwoord:", level.mathProblem.answer);
+        
+        // Reset userAnswer
+        level.mathProblem.userAnswer = "";
+        
+        // Update gamestate - BELANGRIJK: sla altijd alle velden op
+        gameCore.gameState.mathProblem = {
+            equation: level.mathProblem.equation,
+            answer: level.mathProblem.answer,
+            userAnswer: "",
+            isCorrect: false
+        };
+        
+        // Verberg collectibles tot het juiste antwoord is gegeven
+        if (level.collectibles) {
+            level.collectibles.forEach(collectible => {
+                collectible.visible = false;
+            });
+        }
+        
+        console.log("MathProblem in gamestate geïnitialiseerd:", JSON.stringify(gameCore.gameState.mathProblem));
+    }
     
     // We behouden de score tussen levels, dus reset niet tenzij de URL expliciet veranderd is
     // (bijvoorbeeld als de gebruiker een nieuw spel start)
@@ -256,6 +375,16 @@ function loadLevel(levelIndex) {
     
     // Update beschikbare dieren UI
     updateAvailableAnimalsUI();
+    
+    // Toon instructie als dit level een rekenprobleem heeft
+    if (level.mathProblem && level.mathProblem.equation) {
+        gameCore.gameState.message = "Los de som op door op de getallen te springen!";
+        setTimeout(() => {
+            if (gameCore.gameState.message === "Los de som op door op de getallen te springen!") {
+                gameCore.gameState.message = "";
+            }
+        }, 3000);
+    }
 }
 
 // Toon de spelerinfo
@@ -510,10 +639,12 @@ function gameLoop() {
             }
         }
         
-        // Collectibles tekenen
-        currentLevelData.collectibles.forEach(collectible => {
-            gameRendering.drawCollectible(collectible);
-        });
+        // Collectibles tekenen (alleen als er geen rekenprobleem is of als het is opgelost)
+        if (!currentLevelData.mathProblem || gameCore.gameState.mathProblem.isCorrect) {
+            currentLevelData.collectibles.forEach(collectible => {
+                gameRendering.drawCollectible(collectible);
+            });
+        }
         
         // Grond tekenen
         gameRendering.drawGround();
@@ -570,6 +701,49 @@ function gameLoop() {
             }
             gameCore.ctx.textAlign = 'center';
             gameCore.ctx.fillText(gameCore.gameState.message, gameCore.canvas.width/2, 100);
+        }
+        
+        // Toon rekenprobleem (als er een is)
+        if (gameCore.gameState.mathProblem && gameCore.gameState.mathProblem.equation) {
+            // Teken achtergrond voor rekensom
+            const padding = 20;
+            gameCore.ctx.font = 'bold 22px Comic Sans MS';
+            const problemWidth = gameCore.ctx.measureText(gameCore.gameState.mathProblem.equation).width + padding * 4;
+            const problemHeight = 40;
+            
+            gameCore.ctx.fillStyle = currentLevelData.theme === 'night' ? 'rgba(0, 0, 0, 0.7)' : 'rgba(255, 255, 255, 0.7)';
+            gameCore.ctx.beginPath();
+            gameCore.ctx.roundRect(gameCore.canvas.width/2 - problemWidth/2, 30, problemWidth, problemHeight, 5);
+            gameCore.ctx.fill();
+            
+            // Teken kader
+            gameCore.ctx.strokeStyle = currentLevelData.theme === 'night' ? '#aaa' : '#555';
+            gameCore.ctx.lineWidth = 2;
+            gameCore.ctx.stroke();
+            
+            // Bereken het aantal verwachte cijfers in het antwoord
+            const expectedAnswer = currentLevelData.mathProblem.answer;
+            const answerLength = expectedAnswer.length;
+            
+            // Maak de te tonen vergelijking met underscores voor het antwoord
+            let displayEquation = gameCore.gameState.mathProblem.equation;
+            
+            // Maak een reeks underscores voor het antwoord
+            let answerDisplay = "";
+            for (let i = 0; i < answerLength; i++) {
+                // Als er al een cijfer is ingevoerd op deze positie, toon dat cijfer
+                if (gameCore.gameState.mathProblem.userAnswer && gameCore.gameState.mathProblem.userAnswer[i]) {
+                    answerDisplay += gameCore.gameState.mathProblem.userAnswer[i];
+                } else {
+                    // Anders toon een underscore
+                    answerDisplay += "_";
+                }
+            }
+            
+            // Toon de vergelijking
+            gameCore.ctx.fillStyle = currentLevelData.theme === 'night' ? '#ffb733' : '#ff8c00';  // Oranje kleur voor de som
+            gameCore.ctx.textAlign = 'center';
+            gameCore.ctx.fillText(displayEquation + " " + answerDisplay, gameCore.canvas.width/2, 54);
         }
         
         // Toon altijd "Druk op spatie" als level is voltooid

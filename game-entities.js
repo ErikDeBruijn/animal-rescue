@@ -679,13 +679,28 @@ class Player {
                         
                         // Dispatch a custom event that can be listened to by game logic
                         // This can be used to implement the math game functionality
+                        // Zorg dat we de juiste waarde verzenden
+                        console.log("numberValue in platform:", platform.numberValue, typeof platform.numberValue);
+                        
+                        // Zet naar string als het een number is
+                        let valueToSend = platform.numberValue;
+                        if (typeof valueToSend === 'number') {
+                            valueToSend = valueToSend.toString();
+                        }
+                        
+                        // Als er nog steeds geen waarde is, gebruik '0'
+                        if (valueToSend === undefined || valueToSend === null) {
+                            valueToSend = '0';
+                        }
+                        
                         const numberEvent = new CustomEvent('numberPlatformHit', {
                             detail: {
                                 platform: platform,
-                                value: platform.numberValue || 0,
+                                value: valueToSend,
                                 player: this
                             }
                         });
+                        console.log("Dispatching numberPlatformHit event with value:", platform.numberValue || 0);
                         window.dispatchEvent(numberEvent);
                     }
                 }
@@ -1071,8 +1086,17 @@ class Player {
         
         collectibles.forEach((collectible, index) => {
             if (this.collidesWithObject(collectible)) {
-                // Alleen verzamelen als de puppy is gered in het level
+                // Haal het huidige level op
                 const currentLevelData = gameCore.currentLevel;
+                
+                // Controleer of er een rekenprobleem is dat nog niet is opgelost
+                // Verzamel niet de normale collectibles als het rekenprobleem niet is opgelost
+                if (currentLevelData.mathProblem && 
+                    !gameCore.gameState.mathProblem.isCorrect && 
+                    collectible.type === "STAR") {
+                    // Sterren kunnen pas verzameld worden als het rekenprobleem opgelost is
+                    return;
+                }
                 
                 // Check of dit een pepertje is
                 if (collectible.type === "PEPPER") {
@@ -2077,7 +2101,12 @@ function updatePuppy() {
                 gameRendering.showPointsEarned(puppy.x + puppy.width/2, puppy.y, 1000);
             }
             
-            gameCore.gameState.message = "Je hebt de puppy gered! +1000 punten! Verzamel nu de ster!";
+            // Pas het bericht aan op basis van of er een rekenprobleem is
+            if (currentLevelData.mathProblem && !gameCore.gameState.mathProblem.isCorrect) {
+                gameCore.gameState.message = "Je hebt de puppy gered! +1000 punten! Los de som op om de ster te vinden!";
+            } else {
+                gameCore.gameState.message = "Je hebt de puppy gered! +1000 punten! Verzamel nu de ster!";
+            }
             
             // Clear message after delay
             setTimeout(() => {
