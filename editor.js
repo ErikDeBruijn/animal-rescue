@@ -455,6 +455,15 @@ function loadLevel(levelIndex) {
     } else {
         // Clone het level object om het origineel niet te wijzigen
         editorState.editingLevel = JSON.parse(JSON.stringify(levels[levelIndex]));
+        
+        // Zorg ervoor dat alle collectibles een type hebben
+        if (editorState.editingLevel.collectibles) {
+            editorState.editingLevel.collectibles.forEach(collectible => {
+                if (!collectible.type) {
+                    collectible.type = 'STAR'; // Standaard type als dit ontbreekt
+                }
+            });
+        }
     }
     
     document.getElementById('level-name').value = editorState.editingLevel.name;
@@ -1437,10 +1446,10 @@ function createPlacementPreview(type) {
         case 'collectible':
             const collectibleType = document.getElementById('collectible-type').value;
             editorState.placementPreview = {
-                type: 'collectible',
+                type: 'collectible', // This 'type' indicates this is a collectible object
                 width: 30,
                 height: 30,
-                collectibleType: collectibleType
+                collectibleType: collectibleType 
             };
             break;
             
@@ -1929,13 +1938,8 @@ function findObjectAtPosition(x, y) {
         const collectible = editorState.editingLevel.collectibles[i];
         if (x >= collectible.x && x <= collectible.x + collectible.width && 
             y >= collectible.y && y <= collectible.y + collectible.height) {
-            // Determine the specific type of collectible
-            let collectibleType = 'collectible-star'; // Default to star
-            if (collectible.type === 'PEPPER') {
-                collectibleType = 'collectible-pepper';
-            }
             return {
-                type: collectibleType,
+                type: 'collectible',
                 object: collectible,
                 index: i
             };
@@ -2169,6 +2173,9 @@ function updatePropertiesPanel() {
         document.getElementById('trap-height').value = object.height;
     } else if (type === 'collectible') {
         console.log("Setting collectible properties for object type:", object.type);
+        
+        // Show the collectible properties panel
+        document.getElementById('collectible-props').style.display = 'block';
         
         // Set the value of the collectible type dropdown
         const collectibleType = document.getElementById('collectible-type');
@@ -2412,7 +2419,7 @@ function drawPlacementPreview() {
                 y: y - preview.height / 2,
                 width: preview.width,
                 height: preview.height,
-                type: preview.collectibleType || 'STAR'
+                type: preview.collectibleType || 'STAR' // Using collectibleType from the preview
             };
             drawCollectible(collectiblePreview);
             break;
@@ -2850,6 +2857,10 @@ function exportLevelCode() {
         collectible.y = Math.round(collectible.y);
         collectible.width = Math.round(collectible.width);
         collectible.height = Math.round(collectible.height);
+        // Ensure every collectible has a valid type
+        if (!collectible.type) {
+            collectible.type = 'STAR'; // Set default type if missing
+        }
     });
     
     // Formateer het level object naar leesbare JavaScript code

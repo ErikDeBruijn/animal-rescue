@@ -77,8 +77,8 @@ function getLevels(GROUND_LEVEL) {    return [
         saved: false
     },
     collectibles: [
-        {x: 32, y: 23, width: 30, height: 30, type: "HOURGLASS"},
-        {x: 54, y: 284, width: 30, height: 30, type: "PEPPER"},
+        {x: 32, y: 23, width: 30, height: 30, type: "STAR"},
+        {x: 54, y: 284, width: 30, height: 30, type: "HOURGLASS"},
         {x: 467, y: 340, width: 30, height: 30, type: "DOGFOOD"}
     ]
 },
@@ -115,7 +115,7 @@ function getLevels(GROUND_LEVEL) {    return [
         saved: false
     },
     collectibles: [
-        {x: 380, y: 8, width: 30, height: 30},
+        {x: 380, y: 8, width: 30, height: 30, type: "STAR"},
         {x: 154, y: 332, width: 30, height: 30, type: "HOURGLASS"}
     ]
 },
