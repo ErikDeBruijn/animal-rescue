@@ -279,17 +279,28 @@
         
         // Initialize the editor
         function initEditor() {
-            // Try to load map data first
-            window.mapData.loadMapData();
-            
-            // Create the map elements
-            createMapNodes();
-            
-            // Set up event listeners
-            setupEditorControls();
-            
-            // Update the JSON preview
-            updateJSONPreview();
+            // Try to load map data first and wait for it to complete
+            Promise.resolve(window.mapData.loadMapData())
+                .then(() => {
+                    // Once data is loaded, initialize the editor
+                    console.log("Map data loaded successfully");
+                    
+                    // Create the map elements
+                    createMapNodes();
+                    
+                    // Set up event listeners
+                    setupEditorControls();
+                    
+                    // Update the JSON preview
+                    updateJSONPreview();
+                })
+                .catch(error => {
+                    console.error("Error loading map data:", error);
+                    // Continue with default data if loading fails
+                    createMapNodes();
+                    setupEditorControls();
+                    updateJSONPreview();
+                });
         }
         
         // Create level nodes and paths on the map
@@ -886,21 +897,16 @@
             
             // Load JSON from server
             document.getElementById('load-json').addEventListener('click', function() {
-                // Load from server
-                fetch('/api/map-data')
-                    .then(response => response.json())
-                    .then(result => {
-                        if (result.success && result.data) {
-                            // Update map data with loaded data
-                            window.mapData.LEVEL_POSITIONS = result.data.LEVEL_POSITIONS;
-                            window.mapData.PATH_CONNECTIONS = result.data.PATH_CONNECTIONS;
-                            
-                            // Update UI
+                // Use the loadMapData function from map-data.js
+                Promise.resolve(window.mapData.loadMapData())
+                    .then(success => {
+                        if (success) {
+                            // Update UI with the newly loaded data
                             createMapNodes();
                             updateJSONPreview();
                             alert('Kaartdata succesvol geladen van de server!');
                         } else {
-                            alert('Fout bij het laden van de kaartdata: ' + (result.error || 'Onbekende fout'));
+                            alert('Fout bij het laden van de kaartdata');
                         }
                     })
                     .catch(error => {
