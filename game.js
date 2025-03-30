@@ -34,11 +34,9 @@ function initializeGameWhenReady() {
             gameOver: false,
             puppySaved: false,
             message: "",
-            mathProblem: {
-                equation: "",
-                userAnswer: "",
-                isCorrect: false
-            }
+            mathProblems: [],
+            currentMathProblemIndex: 0,
+            allMathProblemsCompleted: false
         };
     }
     
@@ -129,16 +127,23 @@ function handleNumberPlatformHit(event) {
     const currentLevel = window.levels[gameCore.currentLevelIndex];
     console.log("Found current level:", currentLevel ? "yes" : "no");
     
-    // Controleer of het level een mathProblem heeft
-    if (!currentLevel.mathProblem || !currentLevel.mathProblem.equation || !currentLevel.mathProblem.answer) {
-        return; // Geen rekenprobleem voor dit level
+    // Controleer of er rekenproblemen zijn
+    if (!gameCore.gameState.mathProblems || gameCore.gameState.mathProblems.length === 0) {
+        // Geen rekenproblemen, controleer oude format (backward compatibility)
+        if (!currentLevel.mathProblem || !currentLevel.mathProblem.equation || !currentLevel.mathProblem.answer) {
+            return; // Geen rekenprobleem voor dit level
+        }
+    }
+    
+    // Is alles al opgelost?
+    if (gameCore.gameState.allMathProblemsCompleted) {
+        console.log("Alle rekenproblemen zijn al opgelost!");
+        return;
     }
     
     // Haal de waarde van het getroffen platform op
     const hitValue = event.detail.value;
     console.log(`Nummer platform geraakt: ${hitValue}, type: ${typeof hitValue}`);
-    console.log("Event details:", JSON.stringify(event.detail));
-    console.log("MathProblem status:", JSON.stringify(currentLevel.mathProblem));
     
     // Controleer of hitValue geldig is
     if (hitValue === undefined || hitValue === null) {
@@ -146,36 +151,116 @@ function handleNumberPlatformHit(event) {
         return;
     }
     
-    // Voeg het cijfer toe aan het gebruikersantwoord
-    currentLevel.mathProblem.userAnswer = (currentLevel.mathProblem.userAnswer || "") + hitValue;
+    // Haal het huidige rekenprobleem op
+    const currentProblemIndex = gameCore.gameState.currentMathProblemIndex;
+    const currentProblem = gameCore.gameState.mathProblems[currentProblemIndex];
     
-    // Update gamestate voor rendering
-    gameCore.gameState.mathProblem.userAnswer = currentLevel.mathProblem.userAnswer;
+    if (!currentProblem) {
+        console.error("Geen huidig rekenprobleem gevonden");
+        return;
+    }
+    
+    console.log("Huidig rekenprobleem:", currentProblem);
+    
+    // Voeg het cijfer toe aan het gebruikersantwoord
+    currentProblem.userAnswer = (currentProblem.userAnswer || "") + hitValue;
     
     // Controleer of het antwoord compleet is (zelfde lengte als het verwachte antwoord)
-    const expectedAnswer = currentLevel.mathProblem.answer;
+    const expectedAnswer = currentProblem.answer;
     
-    if (currentLevel.mathProblem.userAnswer.length >= expectedAnswer.length) {
+    if (currentProblem.userAnswer.length >= expectedAnswer.length) {
         // Controleer of het antwoord correct is
-        if (currentLevel.mathProblem.userAnswer === expectedAnswer) {
+        if (currentProblem.userAnswer === expectedAnswer) {
             // Juist antwoord
-            gameCore.gameState.message = "Goed gedaan! Juist antwoord! De ster is nu zichtbaar!";
-            gameCore.gameState.mathProblem.isCorrect = true;
+            currentProblem.isCorrect = true;
             
-            // Speel een succesgeluid
-            if (typeof gameAudio !== 'undefined' && typeof gameAudio.playSound === 'function') {
-                gameAudio.playSound('powerup', 0.5);
+            // Bij de laatste som maken we de NUMBER platforms permanent groen
+            // Bij eerdere sommen doen we dit nog niet, zodat dit een speciale beloning is
+            if (currentProblemIndex >= gameCore.gameState.mathProblems.length - 1) {
+                // Dit is de laatste som! Maak alle NUMBER platforms permanent groen
+                currentLevel.platforms.forEach(platform => {
+                    if (platform.type === "NUMBER") {
+                        platform.correctAnswer = true;
+                    }
+                });
+            } else {
+                // Bij eerdere sommen geven we tijdelijk visuele feedback (via hitEffect)
+                currentLevel.platforms.forEach(platform => {
+                    if (platform.type === "NUMBER" && platform.numberValue == hitValue) {
+                        // Alleen het getroffen platform krijgt een hitEffect
+                        platform.hitEffect = { time: 30 }; // ~0.5 seconde highlight
+                    }
+                });
             }
             
-            // Maak sterren zichtbaar
-            currentLevel.collectibles.forEach(collectible => {
-                collectible.visible = true;
-            });
+            // Ga naar het volgende probleem of maak collectibles zichtbaar
+            if (currentProblemIndex < gameCore.gameState.mathProblems.length - 1) {
+                // Markeer de huidige som als correct opgelost
+                currentProblem.isCorrect = true;
+                currentProblem.completedAnswer = currentProblem.userAnswer; // Bewaar het antwoord voor weergave
+                
+                // Er zijn nog meer problemen, ga naar de volgende
+                gameCore.gameState.currentMathProblemIndex++;
+                const nextProblemIndex = gameCore.gameState.currentMathProblemIndex + 1;
+                const totalProblems = gameCore.gameState.mathProblems.length;
+                const remainingProblems = totalProblems - nextProblemIndex;
+                
+                // Pas het bericht aan op basis van het aantal resterende sommen
+                if (remainingProblems > 0) {
+                    gameCore.gameState.message = `Goed gedaan! Nog ${remainingProblems} ${remainingProblems === 1 ? 'som' : 'sommen'} te gaan.`;
+                } else {
+                    gameCore.gameState.message = "Goed gedaan! Dit is de laatste som.";
+                }
+                
+                // Speel een level-up geluidje voor meer positieve feedback
+                // Met verhoogd volume (0.9) voor betere hoorbaarheid
+                if (typeof gameAudio !== 'undefined' && typeof gameAudio.playSound === 'function') {
+                    gameAudio.playSound('level-up-8-bit', 0.9);
+                    // Speel voor de zekerheid nog een tweede geluid voor extra feedback
+                    setTimeout(() => {
+                        gameAudio.playSound('powerup', 0.7);
+                    }, 200);
+                }
+            } else {
+                // Markeer de huidige som als correct opgelost
+                currentProblem.isCorrect = true;
+                currentProblem.completedAnswer = currentProblem.userAnswer; // Bewaar het antwoord voor weergave
+                
+                // Alle problemen zijn opgelost!
+                gameCore.gameState.allMathProblemsCompleted = true;
+                
+                // Pas het bericht aan op basis van het aantal sommen dat opgelost is
+                if (gameCore.gameState.mathProblems.length > 1) {
+                    gameCore.gameState.message = "Alle sommen opgelost! De verzamelitems zijn nu zichtbaar!";
+                } else {
+                    gameCore.gameState.message = "Som opgelost! De verzamelitems zijn nu zichtbaar!";
+                }
+                
+                // Speel een nog groter feestelijk succesgeluid voor de finale
+                if (typeof gameAudio !== 'undefined' && typeof gameAudio.playSound === 'function') {
+                    // Speel meerdere geluiden met timers voor een echt feestelijk effect
+                    gameAudio.playSound('level-up-8-bit', 1.0); // Max volume
+                    
+                    // Speel een extra geluid na korte vertraging voor een "ta-daa" effect
+                    setTimeout(() => {
+                        gameAudio.playSound('tatatataa', 0.9);
+                    }, 300);
+                    
+                    // En voor extra feedback nog een geluid
+                    setTimeout(() => {
+                        gameAudio.playSound('powerup', 0.8);
+                    }, 700);
+                }
+                
+                // Maak sterren zichtbaar
+                currentLevel.collectibles.forEach(collectible => {
+                    collectible.visible = true;
+                });
+            }
             
         } else {
             // Onjuist antwoord
             gameCore.gameState.message = "Oeps! Dat klopt niet. Probeer het opnieuw.";
-            gameCore.gameState.mathProblem.isCorrect = false;
             
             // Speel een foutgeluid
             if (typeof gameAudio !== 'undefined' && typeof gameAudio.playSound === 'function') {
@@ -183,21 +268,22 @@ function handleNumberPlatformHit(event) {
             }
             
             // Reset het gebruikersantwoord zodat de speler opnieuw kan beginnen
-            currentLevel.mathProblem.userAnswer = "";
-            gameCore.gameState.mathProblem.userAnswer = "";
+            currentProblem.userAnswer = "";
         }
         
-        // Wis het bericht na 2 seconden
+        // Wis het bericht na 3 seconden (iets langer zodat spelers het goed kunnen lezen)
         setTimeout(() => {
-            if (gameCore.gameState.message === "Goed gedaan! Juist antwoord! De ster is nu zichtbaar!" || 
-                gameCore.gameState.message === "Oeps! Dat klopt niet. Probeer het opnieuw.") {
+            // Check of het nog steeds hetzelfde bericht is (en niet door iets anders is overschreven)
+            if (gameCore.gameState.message && 
+                (gameCore.gameState.message.includes("Goed gedaan!") || 
+                 gameCore.gameState.message.includes("sommen opgelost!") ||
+                 gameCore.gameState.message.includes("Som opgelost!") ||
+                 gameCore.gameState.message === "Oeps! Dat klopt niet. Probeer het opnieuw.")) {
                 gameCore.gameState.message = "";
             }
-        }, 2000);
+        }, 3000);
     } else {
-        // Antwoord nog niet compleet, update wat de speler tot nu toe heeft ingevoerd
-        gameCore.gameState.mathProblem.userAnswer = currentLevel.mathProblem.userAnswer;
-        
+        // Antwoord nog niet compleet
         // Speel een bliep geluid voor feedback
         if (typeof gameAudio !== 'undefined' && typeof gameAudio.playSound === 'function') {
             gameAudio.playSound('blip-8-bit', 0.3);
@@ -255,29 +341,53 @@ function loadLevel(levelIndex) {
     
     gameCore.gameState.gameOver = false;
     
-    // Initialiseer mathProblem voor dit level
-    if (level.mathProblem) {
-        console.log("Level heeft een rekenprobleem:", level.mathProblem.equation, "Antwoord:", level.mathProblem.answer);
+    // Initialiseer rekenproblemen voor dit level
+    // Reset rekenprobleem status
+    gameCore.gameState.mathProblems = [];
+    gameCore.gameState.currentMathProblemIndex = 0;
+    gameCore.gameState.allMathProblemsCompleted = false;
+    
+    // Verwerken van mathProblems array (nieuw formaat)
+    if (level.mathProblems && level.mathProblems.length > 0) {
+        console.log("Level heeft", level.mathProblems.length, "rekenproblemen");
         
-        // Reset userAnswer
-        level.mathProblem.userAnswer = "";
-        
-        // Update gamestate - BELANGRIJK: sla altijd alle velden op
-        gameCore.gameState.mathProblem = {
-            equation: level.mathProblem.equation,
-            answer: level.mathProblem.answer,
+        // Kopieer en reset userAnswer voor elk probleem
+        gameCore.gameState.mathProblems = level.mathProblems.map(problem => ({
+            equation: problem.equation,
+            answer: problem.answer,
             userAnswer: "",
             isCorrect: false
-        };
+        }));
         
-        // Verberg collectibles tot het juiste antwoord is gegeven
+        // Verberg collectibles tot alle rekenproblemen zijn opgelost
         if (level.collectibles) {
             level.collectibles.forEach(collectible => {
                 collectible.visible = false;
             });
         }
         
-        console.log("MathProblem in gamestate geïnitialiseerd:", JSON.stringify(gameCore.gameState.mathProblem));
+        console.log("MathProblems geïnitialiseerd:", JSON.stringify(gameCore.gameState.mathProblems));
+    }
+    // Verwerken van enkele mathProblem (oud formaat voor backward compatibility)
+    else if (level.mathProblem) {
+        console.log("Level heeft een rekenprobleem (oud formaat):", level.mathProblem.equation, "Antwoord:", level.mathProblem.answer);
+        
+        // Converteer naar array formaat
+        gameCore.gameState.mathProblems = [{
+            equation: level.mathProblem.equation, 
+            answer: level.mathProblem.answer,
+            userAnswer: "",
+            isCorrect: false
+        }];
+        
+        // Verberg collectibles tot het probleem is opgelost
+        if (level.collectibles) {
+            level.collectibles.forEach(collectible => {
+                collectible.visible = false;
+            });
+        }
+        
+        console.log("MathProblem geconverteerd naar mathProblems:", JSON.stringify(gameCore.gameState.mathProblems));
     }
     
     // We behouden de score tussen levels, dus reset niet tenzij de URL expliciet veranderd is
@@ -376,11 +486,28 @@ function loadLevel(levelIndex) {
     // Update beschikbare dieren UI
     updateAvailableAnimalsUI();
     
-    // Toon instructie als dit level een rekenprobleem heeft
-    if (level.mathProblem && level.mathProblem.equation) {
-        gameCore.gameState.message = "Los de som op door op de getallen te springen!";
+    // Toon instructie als dit level rekenproblemen heeft
+    if ((level.mathProblems && level.mathProblems.length > 0) || 
+        (level.mathProblem && level.mathProblem.equation)) {
+        
+        // Geef een andere instructie afhankelijk van het aantal rekensommen
+        let hasMultipleProblems = false;
+        let problemCount = 0;
+        
+        if (level.mathProblems && level.mathProblems.length > 0) {
+            problemCount = level.mathProblems.length;
+            hasMultipleProblems = problemCount > 1;
+        }
+        
+        if (hasMultipleProblems) {
+            gameCore.gameState.message = `Los de ${problemCount} sommen op door op de getallen te springen!`;
+        } else {
+            gameCore.gameState.message = "Los de som op door op de getallen te springen!";
+        }
+        
         setTimeout(() => {
-            if (gameCore.gameState.message === "Los de som op door op de getallen te springen!") {
+            if (gameCore.gameState.message === "Los de som op door op de getallen te springen!" ||
+                gameCore.gameState.message.includes("Los de") && gameCore.gameState.message.includes("sommen op")) {
                 gameCore.gameState.message = "";
             }
         }, 3000);
@@ -639,8 +766,9 @@ function gameLoop() {
             }
         }
         
-        // Collectibles tekenen (alleen als er geen rekenprobleem is of als het is opgelost)
-        if (!currentLevelData.mathProblem || gameCore.gameState.mathProblem.isCorrect) {
+        // Collectibles tekenen (alleen als er geen rekenprobleem is of als alle rekenproblemen zijn opgelost)
+        const allProblemsCompleted = gameCore.gameState.allMathProblemsCompleted;
+        if ((!currentLevelData.mathProblems && !currentLevelData.mathProblem) || allProblemsCompleted) {
             currentLevelData.collectibles.forEach(collectible => {
                 gameRendering.drawCollectible(collectible);
             });
@@ -704,46 +832,138 @@ function gameLoop() {
         }
         
         // Toon rekenprobleem (als er een is)
-        if (gameCore.gameState.mathProblem && gameCore.gameState.mathProblem.equation) {
-            // Teken achtergrond voor rekensom
+        if (gameCore.gameState.mathProblems && gameCore.gameState.mathProblems.length > 0) {
+            // Bepaal de totale hoogte die nodig is voor alle sommen (opgeloste en huidige)
+            const boxHeight = 40;
+            const boxSpacing = 10;
             const padding = 20;
-            gameCore.ctx.font = 'bold 22px Comic Sans MS';
-            const problemWidth = gameCore.ctx.measureText(gameCore.gameState.mathProblem.equation).width + padding * 4;
-            const problemHeight = 40;
+            const maxBoxWidth = gameCore.canvas.width * 0.8; // Max 80% van scherm breedte
             
-            gameCore.ctx.fillStyle = currentLevelData.theme === 'night' ? 'rgba(0, 0, 0, 0.7)' : 'rgba(255, 255, 255, 0.7)';
-            gameCore.ctx.beginPath();
-            gameCore.ctx.roundRect(gameCore.canvas.width/2 - problemWidth/2, 30, problemWidth, problemHeight, 5);
-            gameCore.ctx.fill();
+            // Bereken het aantal opgeloste problemen (voor plaatsing)
+            let completedProblems = 0;
+            const currentProblemIndex = gameCore.gameState.currentMathProblemIndex || 0;
             
-            // Teken kader
-            gameCore.ctx.strokeStyle = currentLevelData.theme === 'night' ? '#aaa' : '#555';
-            gameCore.ctx.lineWidth = 2;
-            gameCore.ctx.stroke();
-            
-            // Bereken het aantal verwachte cijfers in het antwoord
-            const expectedAnswer = currentLevelData.mathProblem.answer;
-            const answerLength = expectedAnswer.length;
-            
-            // Maak de te tonen vergelijking met underscores voor het antwoord
-            let displayEquation = gameCore.gameState.mathProblem.equation;
-            
-            // Maak een reeks underscores voor het antwoord
-            let answerDisplay = "";
-            for (let i = 0; i < answerLength; i++) {
-                // Als er al een cijfer is ingevoerd op deze positie, toon dat cijfer
-                if (gameCore.gameState.mathProblem.userAnswer && gameCore.gameState.mathProblem.userAnswer[i]) {
-                    answerDisplay += gameCore.gameState.mathProblem.userAnswer[i];
-                } else {
-                    // Anders toon een underscore
-                    answerDisplay += "_";
+            // Teken alleen de MEEST RECENTE opgeloste som (max 1) in een groene box
+            // We houden bij hoeveel opgeloste problemen we hebben
+            gameCore.gameState.mathProblems.forEach((problem, index) => {
+                // Teken als deze reeds is opgelost en een vergelijking heeft
+                // Ook de laatste som mag getoond worden als die opgelost is (allMathProblemsCompleted)
+                if ((index < currentProblemIndex || gameCore.gameState.allMathProblemsCompleted) && 
+                     problem.isCorrect && problem.equation) {
+                    completedProblems++;
                 }
+            });
+            
+            // We willen altijd alleen de meest recente opgeloste som tonen
+            // Als allMathProblemsCompleted = true, tonen we de laatste opgeloste som
+            // anders tonen we de vorige som (currentIndex - 1) als die bestaat
+            
+            let problemToShow = null;
+            let problemToShowIndex = -1;
+            
+            if (gameCore.gameState.allMathProblemsCompleted) {
+                // Als alles is opgelost, toon dan de laatste som
+                problemToShowIndex = gameCore.gameState.mathProblems.length - 1;
+                problemToShow = gameCore.gameState.mathProblems[problemToShowIndex];
+            } else if (currentProblemIndex > 0) {
+                // Anders toon de vorige som (die net opgelost is)
+                problemToShowIndex = currentProblemIndex - 1;
+                problemToShow = gameCore.gameState.mathProblems[problemToShowIndex];
             }
             
-            // Toon de vergelijking
-            gameCore.ctx.fillStyle = currentLevelData.theme === 'night' ? '#ffb733' : '#ff8c00';  // Oranje kleur voor de som
-            gameCore.ctx.textAlign = 'center';
-            gameCore.ctx.fillText(displayEquation + " " + answerDisplay, gameCore.canvas.width/2, 54);
+            // Teken de opgeloste som als die gevonden is
+            if (problemToShow && problemToShow.isCorrect) {
+                const problem = problemToShow;
+                
+                // Y-positie voor de opgeloste som - bovenaan
+                const yPos = 30;
+                    
+                // Bereken breedte van deze box
+                gameCore.ctx.font = 'bold 22px Comic Sans MS';
+                const equationWidth = gameCore.ctx.measureText(problem.equation).width;
+                const answerWidth = gameCore.ctx.measureText(problem.completedAnswer || problem.answer || "").width;
+                const spaceWidth = gameCore.ctx.measureText(" ").width * 2;
+                const boxWidth = Math.min(maxBoxWidth, equationWidth + spaceWidth + answerWidth + padding * 2);
+                
+                // Teken groene box voor opgeloste som
+                gameCore.ctx.fillStyle = 'rgba(40, 180, 60, 0.8)'; // Heldergroene box met wat transparantie
+                gameCore.ctx.beginPath();
+                gameCore.ctx.roundRect(gameCore.canvas.width/2 - boxWidth/2, yPos, boxWidth, boxHeight, 5);
+                gameCore.ctx.fill();
+                
+                // Teken kader
+                gameCore.ctx.strokeStyle = '#2c9f42'; // Donkerder groen kader
+                gameCore.ctx.lineWidth = 2;
+                gameCore.ctx.stroke();
+                
+                // Toon de vergelijking met goed antwoord
+                gameCore.ctx.fillStyle = 'white'; // Witte tekst voor betere zichtbaarheid
+                gameCore.ctx.textAlign = 'right'; // Rechtslijnend voor de vergelijking
+                
+                // Bepaal de tekst positie - verschuif naar links om ruimte te maken voor het vinkje
+                const textX = gameCore.canvas.width/2 + boxWidth/2 - padding - gameCore.ctx.measureText("  ✓").width;
+                const completeEquation = problem.equation + " " + (problem.completedAnswer || problem.answer || "");
+                gameCore.ctx.fillText(completeEquation, textX, yPos + 27);
+                
+                // Teken een vinkje rechts van de vergelijking
+                const checkmark = "✓";
+                gameCore.ctx.textAlign = 'left'; // Linkslijnend voor het vinkje
+                gameCore.ctx.fillText(checkmark, textX + gameCore.ctx.measureText(" ").width * 2, yPos + 27);
+                
+                // Reset textAlign naar de standaardwaarde
+                gameCore.ctx.textAlign = 'center';
+            }
+            
+            // Haal het huidige rekenprobleem op
+            const currentProblem = gameCore.gameState.mathProblems[currentProblemIndex];
+            
+            // Teken de huidige som alleen als deze nog niet is opgelost (niet allMathProblemsCompleted)
+            // OF als dit niet de laatste som is die opgelost is
+            if (currentProblem && currentProblem.equation && 
+                (!gameCore.gameState.allMathProblemsCompleted || 
+                 gameCore.gameState.mathProblems.length === 1)) {
+                // Bereken het aantal verwachte cijfers in het antwoord
+                const expectedAnswer = currentProblem.answer;
+                const answerLength = expectedAnswer ? expectedAnswer.length : 0;
+                
+                // Y positie voor de huidige som - net onder de vorige som als die getoond wordt
+                const currentYPos = lastCompletedIndex >= 0 ? 30 + (boxHeight + boxSpacing) : 30;
+                
+                // Bereken breedte op basis van vergelijking en mogelijke antwoord
+                gameCore.ctx.font = 'bold 22px Comic Sans MS';
+                const equationWidth = gameCore.ctx.measureText(currentProblem.equation).width;
+                const answerPlaceholderWidth = gameCore.ctx.measureText("_".repeat(answerLength || 1)).width;
+                const spaceWidth = gameCore.ctx.measureText(" ").width * 2;
+                const problemWidth = Math.min(maxBoxWidth, equationWidth + spaceWidth + answerPlaceholderWidth + padding * 4);
+                
+                // Teken achtergrond voor huidige rekensom
+                gameCore.ctx.fillStyle = currentLevelData.theme === 'night' ? 'rgba(0, 0, 0, 0.7)' : 'rgba(255, 255, 255, 0.7)';
+                gameCore.ctx.beginPath();
+                gameCore.ctx.roundRect(gameCore.canvas.width/2 - problemWidth/2, currentYPos, problemWidth, boxHeight, 5);
+                gameCore.ctx.fill();
+                
+                // Teken kader
+                gameCore.ctx.strokeStyle = currentLevelData.theme === 'night' ? '#aaa' : '#555';
+                gameCore.ctx.lineWidth = 2;
+                gameCore.ctx.stroke();
+                
+                // Maak een reeks underscores voor het antwoord
+                let answerDisplay = "";
+                for (let i = 0; i < answerLength; i++) {
+                    // Als er al een cijfer is ingevoerd op deze positie, toon dat cijfer
+                    if (currentProblem.userAnswer && currentProblem.userAnswer[i]) {
+                        answerDisplay += currentProblem.userAnswer[i];
+                    } else {
+                        // Anders toon een underscore
+                        answerDisplay += "_";
+                    }
+                }
+                
+                // Toon de vergelijking
+                gameCore.ctx.fillStyle = currentLevelData.theme === 'night' ? '#ffb733' : '#ff8c00';  // Oranje kleur voor de som
+                gameCore.ctx.textAlign = 'center';
+                gameCore.ctx.fillText(currentProblem.equation + " " + answerDisplay, gameCore.canvas.width/2, currentYPos + 27);
+            }
         }
         
         // Toon altijd "Druk op spatie" als level is voltooid

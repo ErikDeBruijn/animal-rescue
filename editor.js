@@ -452,11 +452,13 @@ function loadLevel(levelIndex) {
                 saved: false
             },
             collectibles: [],
-            mathProblem: {
-                equation: "",
-                answer: "",
-                userAnswer: ""
-            }
+            mathProblems: [
+                {
+                    equation: "",
+                    answer: "",
+                    userAnswer: ""
+                }
+            ]
         };
     } else {
         // Clone het level object om het origineel niet te wijzigen
@@ -471,13 +473,22 @@ function loadLevel(levelIndex) {
             });
         }
         
-        // Initialiseer mathProblem als deze niet bestaat in het level
-        if (!editorState.editingLevel.mathProblem) {
-            editorState.editingLevel.mathProblem = {
-                equation: "",
-                answer: "",
-                userAnswer: ""
-            };
+        // Controleer of we mathProblems array hebben of een enkele mathProblem
+        if (!editorState.editingLevel.mathProblems) {
+            if (editorState.editingLevel.mathProblem) {
+                // Converteer oude mathProblem naar mathProblems array
+                editorState.editingLevel.mathProblems = [editorState.editingLevel.mathProblem];
+                delete editorState.editingLevel.mathProblem;
+            } else {
+                // Initialiseer leeg als er nog geen problemen zijn
+                editorState.editingLevel.mathProblems = [
+                    {
+                        equation: "",
+                        answer: "",
+                        userAnswer: ""
+                    }
+                ];
+            }
         }
     }
     
@@ -551,12 +562,17 @@ function loadLevel(levelIndex) {
         }
     }
     
-    // Update math problem velden
-    const mathProblemInput = document.getElementById('math-problem');
-    const mathAnswerInput = document.getElementById('math-answer');
-    if (mathProblemInput && mathAnswerInput) {
-        mathProblemInput.value = editorState.editingLevel.mathProblem.equation || '';
-        mathAnswerInput.value = editorState.editingLevel.mathProblem.answer || '';
+    // Math problem velden worden later geüpdatet door updateMathProblemFields
+    
+    // Update rekenprobleem velden
+    try {
+        if (typeof updateMathProblemFields === 'function') {
+            updateMathProblemFields();
+        } else {
+            console.warn('updateMathProblemFields is not defined yet, skipping math problem fields update');
+        }
+    } catch (e) {
+        console.error('Error updating math problem fields:', e);
     }
     
     // Render het level
@@ -595,6 +611,167 @@ function updateDeleteButton() {
     } else {
         deleteBtn.disabled = false;
         deleteBtn.style.opacity = '1';
+    }
+}
+
+// Functie om mathProblemFields bij te werken op basis van level data
+function updateMathProblemFields() {
+    const container = document.getElementById('math-problems-container');
+    if (!container) return; // Safety check
+    
+    // Leeg de container
+    container.innerHTML = '';
+    
+    // Zorg ervoor dat we een array hebben voor math problems
+    if (!editorState.editingLevel.mathProblems) {
+        if (editorState.editingLevel.mathProblem) {
+            // Converteer oude mathProblem naar mathProblems array
+            editorState.editingLevel.mathProblems = [editorState.editingLevel.mathProblem];
+            delete editorState.editingLevel.mathProblem;
+        } else {
+            // Initialiseer leeg als er nog geen problemen zijn
+            editorState.editingLevel.mathProblems = [
+                {
+                    equation: "",
+                    answer: "",
+                    userAnswer: ""
+                }
+            ];
+        }
+    }
+    
+    // Maak een UI element voor elk math problem
+    editorState.editingLevel.mathProblems.forEach((problem, index) => {
+        const problemDiv = document.createElement('div');
+        problemDiv.className = 'math-problem';
+        
+        // Maak rij voor vergelijking
+        const equationRow = document.createElement('div');
+        equationRow.className = 'prop-row';
+        
+        const equationLabel = document.createElement('label');
+        equationLabel.setAttribute('for', `math-problem-${index}`);
+        equationLabel.textContent = `Som ${index + 1}:`;
+        
+        const equationInput = document.createElement('input');
+        equationInput.type = 'text';
+        equationInput.id = `math-problem-${index}`;
+        equationInput.className = 'math-problem-input';
+        equationInput.placeholder = 'Bijv. 2+3=';
+        equationInput.value = problem.equation || '';
+        
+        equationRow.appendChild(equationLabel);
+        equationRow.appendChild(equationInput);
+        
+        // Maak rij voor antwoord
+        const answerRow = document.createElement('div');
+        answerRow.className = 'prop-row';
+        
+        const answerLabel = document.createElement('label');
+        answerLabel.setAttribute('for', `math-answer-${index}`);
+        answerLabel.textContent = 'Antwoord:';
+        
+        const answerInput = document.createElement('input');
+        answerInput.type = 'number';
+        answerInput.id = `math-answer-${index}`;
+        answerInput.className = 'math-answer-input';
+        answerInput.min = '0';
+        answerInput.max = '999';
+        answerInput.value = problem.answer || '';
+        
+        answerRow.appendChild(answerLabel);
+        answerRow.appendChild(answerInput);
+        
+        // Voeg rijen toe aan probleem div
+        problemDiv.appendChild(equationRow);
+        problemDiv.appendChild(answerRow);
+        
+        // Voeg probleem div toe aan container
+        container.appendChild(problemDiv);
+    });
+    
+    // Update event listeners
+    setupMathProblemEvents();
+}
+
+// Setup event listeners voor math problem velden
+function setupMathProblemEvents() {
+    // Voeg event listeners toe voor alle math problem velden
+    document.querySelectorAll('.math-problem-input').forEach((input, index) => {
+        input.addEventListener('input', function() {
+            // Update de juiste math problem in de array
+            if (editorState.editingLevel.mathProblems[index]) {
+                editorState.editingLevel.mathProblems[index].equation = this.value;
+                markUnsavedChanges();
+            }
+        });
+    });
+    
+    document.querySelectorAll('.math-answer-input').forEach((input, index) => {
+        input.addEventListener('input', function() {
+            // Update de juiste math problem in de array
+            if (editorState.editingLevel.mathProblems[index]) {
+                editorState.editingLevel.mathProblems[index].answer = this.value;
+                markUnsavedChanges();
+            }
+        });
+    });
+    
+    // Event listener voor het toevoegen van een math problem
+    const addButton = document.getElementById('add-math-problem');
+    if (addButton) {
+        // Verwijder eerst eventuele bestaande event listeners door nieuwe toe te wijzen
+        addButton.onclick = null;
+        // Voeg een nieuwe listener toe
+        addButton.onclick = function(e) {
+            e.preventDefault(); // Voorkom eventuele dubbele events
+            addMathProblem();
+        };
+    }
+    
+    // Event listener voor het verwijderen van een math problem
+    const removeButton = document.getElementById('remove-math-problem');
+    if (removeButton) {
+        // Verwijder eerst eventuele bestaande event listeners door nieuwe toe te wijzen
+        removeButton.onclick = null;
+        // Voeg een nieuwe listener toe
+        removeButton.onclick = function(e) {
+            e.preventDefault(); // Voorkom eventuele dubbele events
+            removeMathProblem();
+        };
+    }
+}
+
+// Voeg een nieuw math problem toe
+function addMathProblem() {
+    // Voeg een nieuw leeg math problem toe aan de array
+    editorState.editingLevel.mathProblems.push({
+        equation: "",
+        answer: "",
+        userAnswer: ""
+    });
+    
+    // Update de UI
+    updateMathProblemFields();
+    
+    // Mark changes
+    markUnsavedChanges();
+}
+
+// Verwijder het laatste math problem
+function removeMathProblem() {
+    // Controleer of er meer dan één math problem is
+    if (editorState.editingLevel.mathProblems.length > 1) {
+        // Verwijder het laatste probleem
+        editorState.editingLevel.mathProblems.pop();
+        
+        // Update de UI
+        updateMathProblemFields();
+        
+        // Mark changes
+        markUnsavedChanges();
+    } else {
+        alert('Je moet minstens één rekensom hebben!');
     }
 }
 
@@ -683,6 +860,13 @@ function setupEventListeners() {
     
     // Globaal keyboard event listener voor delete key
     document.addEventListener('keydown', function(e) {
+        // Controleer of de focus NIET in een input, textarea of select element is
+        if (document.activeElement.tagName === 'INPUT' || 
+            document.activeElement.tagName === 'TEXTAREA' || 
+            document.activeElement.tagName === 'SELECT') {
+            return; // Sta toe dat de browser de normale afhandeling doet
+        }
+        
         // Check of de delete of backspace toets is ingedrukt
         if ((e.key === 'Delete' || e.key === 'Backspace') && 
             editorState.selectedObject && 
@@ -763,16 +947,200 @@ function setupEventListeners() {
         playCurrentLevel();
     });
     
-    // Math problem velden
-    document.getElementById('math-problem').addEventListener('input', function(e) {
-        editorState.editingLevel.mathProblem.equation = e.target.value;
-        markUnsavedChanges();
-    });
+    // Math problem velden en knoppen
+    setupMathProblemEvents();
     
-    document.getElementById('math-answer').addEventListener('input', function(e) {
-        editorState.editingLevel.mathProblem.answer = e.target.value;
+    // Functie om de math problem event listeners op te zetten
+    function setupMathProblemEvents() {
+        // Verwijder bestaande event listeners (in geval van herlaadactie)
+        const container = document.getElementById('math-problems-container');
+        const problemElements = container.querySelectorAll('.math-problem');
+        
+        problemElements.forEach((element, index) => {
+            // Zet event listeners voor elk math probleem
+            const equationInput = element.querySelector(`.math-problem-input`);
+            const answerInput = element.querySelector(`.math-answer-input`);
+            
+            if (equationInput && answerInput) {
+                // Input event voor vergelijking
+                equationInput.addEventListener('input', function(e) {
+                    // Update de waarde in de level data
+                    if (!editorState.editingLevel.mathProblems[index]) {
+                        editorState.editingLevel.mathProblems[index] = { equation: "", answer: "", userAnswer: "" };
+                    }
+                    editorState.editingLevel.mathProblems[index].equation = e.target.value;
+                    markUnsavedChanges();
+                });
+                
+                // Input event voor antwoord
+                answerInput.addEventListener('input', function(e) {
+                    // Update de waarde in de level data
+                    if (!editorState.editingLevel.mathProblems[index]) {
+                        editorState.editingLevel.mathProblems[index] = { equation: "", answer: "", userAnswer: "" };
+                    }
+                    editorState.editingLevel.mathProblems[index].answer = e.target.value;
+                    markUnsavedChanges();
+                });
+            }
+        });
+    }
+    
+    // Functie om een nieuw math probleem toe te voegen
+    function addMathProblem() {
+        // Voeg een nieuw leeg probleem toe aan de level data
+        if (!editorState.editingLevel.mathProblems) {
+            editorState.editingLevel.mathProblems = [];
+        }
+        
+        editorState.editingLevel.mathProblems.push({
+            equation: "",
+            answer: "",
+            userAnswer: ""
+        });
+        
+        // Voeg het nieuwe probleem toe aan de UI
+        const container = document.getElementById('math-problems-container');
+        const index = editorState.editingLevel.mathProblems.length - 1;
+        
+        const mathProblemDiv = document.createElement('div');
+        mathProblemDiv.classList.add('math-problem');
+        mathProblemDiv.innerHTML = `
+            <div class="prop-row">
+                <label for="math-problem-${index}">Som ${index + 1}:</label>
+                <input type="text" id="math-problem-${index}" class="math-problem-input" placeholder="Bijv. 2+3=">
+            </div>
+            <div class="prop-row">
+                <label for="math-answer-${index}">Antwoord:</label>
+                <input type="number" id="math-answer-${index}" class="math-answer-input" min="0" max="999">
+            </div>
+        `;
+        
+        container.appendChild(mathProblemDiv);
+        
+        // Nieuwe event listeners toevoegen
+        setupMathProblemEvents();
+        
+        // Markeer als onopgeslagen wijziging
         markUnsavedChanges();
-    });
+    }
+    
+    // Functie om het laatste math probleem te verwijderen
+    function removeMathProblem() {
+        if (!editorState.editingLevel.mathProblems || editorState.editingLevel.mathProblems.length <= 1) {
+            alert("Er moet minimaal één rekenprobleem zijn!");
+            return;
+        }
+        
+        // Verwijder het laatste probleem uit de level data
+        editorState.editingLevel.mathProblems.pop();
+        
+        // Verwijder het laatste probleem uit de UI
+        const container = document.getElementById('math-problems-container');
+        const problemElements = container.querySelectorAll('.math-problem');
+        
+        if (problemElements.length > 0) {
+            container.removeChild(problemElements[problemElements.length - 1]);
+        }
+        
+        // Markeer als onopgeslagen wijziging
+        markUnsavedChanges();
+    }
+    
+    // Functie om de math problem velden bij te werken op basis van level data
+    function updateMathProblemFields() {
+        const container = document.getElementById('math-problems-container');
+        if (!container) return;
+        
+        // Leeg de container
+        container.innerHTML = '';
+        
+        // Zorg ervoor dat we een array hebben voor math problems
+        if (!editorState.editingLevel.mathProblems) {
+            if (editorState.editingLevel.mathProblem) {
+                // Converteer oude mathProblem naar mathProblems array
+                editorState.editingLevel.mathProblems = [editorState.editingLevel.mathProblem];
+                delete editorState.editingLevel.mathProblem;
+            } else {
+                // Initialiseer leeg als er nog geen problemen zijn
+                editorState.editingLevel.mathProblems = [
+                    {
+                        equation: "",
+                        answer: "",
+                        userAnswer: ""
+                    }
+                ];
+            }
+        }
+        
+        // Maak een UI element voor elk math probleem
+        editorState.editingLevel.mathProblems.forEach((problem, index) => {
+            const mathProblemDiv = document.createElement('div');
+            mathProblemDiv.classList.add('math-problem');
+            mathProblemDiv.innerHTML = `
+                <div class="prop-row">
+                    <label for="math-problem-${index}">Som ${index + 1}:</label>
+                    <input type="text" id="math-problem-${index}" class="math-problem-input" placeholder="Bijv. 2+3=" value="${problem.equation || ''}">
+                </div>
+                <div class="prop-row">
+                    <label for="math-answer-${index}">Antwoord:</label>
+                    <input type="number" id="math-answer-${index}" class="math-answer-input" min="0" max="999" value="${problem.answer || ''}">
+                </div>
+            `;
+            
+            container.appendChild(mathProblemDiv);
+        });
+        
+        // Update event listeners
+        setupMathProblemEvents();
+    }
+    
+    // Functie om de math problem velden bij te werken op basis van level data
+    function updateMathProblemFields() {
+        const container = document.getElementById('math-problems-container');
+        if (!container) return;
+        
+        // Leeg de container
+        container.innerHTML = '';
+        
+        // Zorg ervoor dat we een array hebben voor math problems
+        if (!editorState.editingLevel.mathProblems) {
+            if (editorState.editingLevel.mathProblem) {
+                // Converteer oude mathProblem naar mathProblems array
+                editorState.editingLevel.mathProblems = [editorState.editingLevel.mathProblem];
+                delete editorState.editingLevel.mathProblem;
+            } else {
+                // Initialiseer leeg als er nog geen problemen zijn
+                editorState.editingLevel.mathProblems = [
+                    {
+                        equation: "",
+                        answer: "",
+                        userAnswer: ""
+                    }
+                ];
+            }
+        }
+        
+        // Maak een UI element voor elk math probleem
+        editorState.editingLevel.mathProblems.forEach((problem, index) => {
+            const mathProblemDiv = document.createElement('div');
+            mathProblemDiv.classList.add('math-problem');
+            mathProblemDiv.innerHTML = `
+                <div class="prop-row">
+                    <label for="math-problem-${index}">Som ${index + 1}:</label>
+                    <input type="text" id="math-problem-${index}" class="math-problem-input" placeholder="Bijv. 2+3=" value="${problem.equation || ''}">
+                </div>
+                <div class="prop-row">
+                    <label for="math-answer-${index}">Antwoord:</label>
+                    <input type="number" id="math-answer-${index}" class="math-answer-input" min="0" max="999" value="${problem.answer || ''}">
+                </div>
+            `;
+            
+            container.appendChild(mathProblemDiv);
+        });
+        
+        // Update event listeners
+        setupMathProblemEvents();
+    }
     
     // Helper functies voor de bevestigingsdialog
     function showDeleteConfirmation() {
@@ -1623,6 +1991,13 @@ function markAsUnsaved() {
 
 // Handle keyboard input for object movement
 function handleKeyDown(e) {
+    // Controleer of de focus in een input, textarea of select element is
+    if (document.activeElement.tagName === 'INPUT' || 
+        document.activeElement.tagName === 'TEXTAREA' || 
+        document.activeElement.tagName === 'SELECT') {
+        return; // Sta toe dat de browser de normale afhandeling doet
+    }
+    
     // Only process arrow keys if we have a selected object
     if (!editorState.selectedObject) return;
     
@@ -3154,8 +3529,33 @@ function exportLevelCode() {
     }
     code += `\n    ]`;
     
-    // Add mathProblem if it has values
-    if (level.mathProblem && (level.mathProblem.equation || level.mathProblem.answer)) {
+    // Add mathProblems if they have values
+    if (level.mathProblems && level.mathProblems.length > 0 && 
+        level.mathProblems.some(p => p.equation || p.answer)) {
+        code += `,\n    mathProblems: [\n`;
+        
+        level.mathProblems.forEach((problem, index) => {
+            if (!problem.equation && !problem.answer) return; // Skip empty problems
+            
+            code += `        {\n`;
+            code += `            equation: "${problem.equation || ''}",\n`;
+            code += `            answer: "${problem.answer || ''}",\n`;
+            code += `            userAnswer: ""\n`;
+            code += `        }`;
+            
+            // Add comma if not the last problem
+            if (index < level.mathProblems.length - 1 && 
+                level.mathProblems.slice(index + 1).some(p => p.equation || p.answer)) {
+                code += `,`;
+            }
+            
+            code += `\n`;
+        });
+        
+        code += `    ]\n`;
+    } 
+    // Backwards compatibility: handle old mathProblem format
+    else if (level.mathProblem && (level.mathProblem.equation || level.mathProblem.answer)) {
         code += `,\n    mathProblem: {\n`;
         code += `        equation: "${level.mathProblem.equation}",\n`;
         code += `        answer: "${level.mathProblem.answer}",\n`;
