@@ -635,6 +635,63 @@ class Player {
         
         // Platform collisions
         platforms.forEach(platform => {
+            // Check NUMBER platforms separately for bottom collision (fist bump)
+            if (platform.type === "NUMBER") {
+                // These bounds checks are separate from the standard collision detection
+                // to allow hitting the platform from underneath
+                
+                // Check if player is moving upward and in the right vertical position
+                if (this.velY < 0 && // Player is moving upward
+                    this.y > platform.y + platform.height - 15 && // Player is below the platform
+                    this.y < platform.y + platform.height + 10) { // But not too far below
+                    
+                    // Check horizontal alignment (player must be within the platform horizontally)
+                    if (this.x + this.width * 0.3 < platform.x + platform.width &&
+                        this.x + this.width * 0.7 > platform.x) {
+                        
+                        // Player hit the number platform from below
+                        console.log(`NUMBER platform hit: ${platform.numberValue} by ${this.name} at position (${this.x}, ${this.y}), platform at (${platform.x}, ${platform.y})`);
+                        
+                        // Bounce the player down slightly
+                        this.velY = 3;
+                        this.y = platform.y + platform.height + 2;
+                        
+                        // Trigger number platform feedback - show which number was hit
+                        gameCore.gameState.message = `Number ${platform.numberValue} activated!`;
+                        
+                        // Clear the message after 1 second
+                        setTimeout(() => {
+                            if (gameCore.gameState.message === `Number ${platform.numberValue} activated!`) {
+                                gameCore.gameState.message = "";
+                            }
+                        }, 1000);
+                        
+                        // Trigger sound effect
+                        if (typeof gameAudio !== 'undefined' && typeof gameAudio.playSound === 'function') {
+                            gameAudio.playSound('bounce', 0.3); // Use bounce sound for now
+                        }
+                        
+                        // Trigger a visual effect
+                        platform.hitEffect = {
+                            time: 20, // Effect lasts for 20 frames
+                            intensity: 1.0 // Full intensity
+                        };
+                        
+                        // Dispatch a custom event that can be listened to by game logic
+                        // This can be used to implement the math game functionality
+                        const numberEvent = new CustomEvent('numberPlatformHit', {
+                            detail: {
+                                platform: platform,
+                                value: platform.numberValue || 0,
+                                player: this
+                            }
+                        });
+                        window.dispatchEvent(numberEvent);
+                    }
+                }
+            }
+            
+            // Standard collision detection with platforms
             if (this.collidesWithPlatform(platform)) {
                 // Collision handling afhankelijk van diersoort
                 if (platform.type === "LASER") {
@@ -757,7 +814,7 @@ class Player {
                             }
                         }
                     }
-                } else if (platform.type === "NORMAL" || platform.type === "CLIMB" || platform.type === "TREE" || platform.type === "ICE" || platform.type === "VERTICAL" || platform.type === "TREADMILL") {
+                } else if (platform.type === "NORMAL" || platform.type === "CLIMB" || platform.type === "TREE" || platform.type === "ICE" || platform.type === "VERTICAL" || platform.type === "TREADMILL" || platform.type === "NUMBER") {
                     // Als de eenhoorn vliegt, stop het vliegen als de eenhoorn een platform raakt
                     // Dit moet altijd als eerste worden gecontroleerd om door-vliegen te voorkomen
                     if (this.animalType === "UNICORN" && this.flying) {
@@ -902,58 +959,6 @@ class Player {
                             }
                         }
                         
-                        // Special case: NUMBER platforms can also be hit from below (fist bump)
-                        if (platform.type === "NUMBER") {
-                            // Check for collision from bottom (character jumping up into platform)
-                            if (this.velY < 0 && // Player is moving upward
-                                this.y > platform.y + platform.height - 15 && // Player is below the platform
-                                this.y < platform.y + platform.height + 10) { // But not too far below
-                                
-                                // Check horizontal alignment (player must be within the platform horizontally)
-                                if (this.x + this.width * 0.3 < platform.x + platform.width &&
-                                    this.x + this.width * 0.7 > platform.x) {
-                                    
-                                    // Player hit the number platform from below
-                                    console.log(`NUMBER platform hit: ${platform.numberValue}`);
-                                    
-                                    // Bounce the player down slightly
-                                    this.velY = 3;
-                                    this.y = platform.y + platform.height + 2;
-                                    
-                                    // Trigger number platform feedback - show which number was hit
-                                    gameCore.gameState.message = `Number ${platform.numberValue} activated!`;
-                                    
-                                    // Clear the message after 1 second
-                                    setTimeout(() => {
-                                        if (gameCore.gameState.message === `Number ${platform.numberValue} activated!`) {
-                                            gameCore.gameState.message = "";
-                                        }
-                                    }, 1000);
-                                    
-                                    // Trigger sound effect
-                                    if (typeof gameAudio !== 'undefined' && typeof gameAudio.playSound === 'function') {
-                                        gameAudio.playSound('bounce', 0.3); // Use bounce sound for now
-                                    }
-                                    
-                                    // Trigger a visual effect
-                                    platform.hitEffect = {
-                                        time: 20, // Effect lasts for 20 frames
-                                        intensity: 1.0 // Full intensity
-                                    };
-                                    
-                                    // Dispatch a custom event that can be listened to by game logic
-                                    // This can be used to implement the math game functionality
-                                    const numberEvent = new CustomEvent('numberPlatformHit', {
-                                        detail: {
-                                            platform: platform,
-                                            value: platform.numberValue,
-                                            player: this
-                                        }
-                                    });
-                                    window.dispatchEvent(numberEvent);
-                                }
-                            }
-                        }
                     }
                 }
                 
