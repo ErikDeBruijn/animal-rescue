@@ -152,6 +152,9 @@
     <h1>Huisdieren Redders - Wereldkaart Editor</h1>
     
     <div class="edit-mode-indicator" id="edit-mode">Modus: Verplaatsen</div>
+    <div class="mode-instructions" id="mode-instructions" style="position: fixed; top: 40px; left: 10px; background-color: rgba(0, 0, 0, 0.7); color: white; padding: 5px 15px; border-radius: 5px; display: none;">
+        Klik ergens op de kaart om een nieuw level toe te voegen
+    </div>
     
     <div class="map-container" id="map-container">
         <!-- Level nodes and paths will be added here dynamically -->
@@ -220,7 +223,7 @@
         </div>
         
         <div class="buttons-container" style="margin-top: 20px;">
-            <button id="toggle-mode">Wissel Modus</button>
+            <button id="toggle-mode">Wissel Modus (Verplaatsen → Selecteren → Toevoegen)</button>
             <button id="return-button">Terug naar Spel</button>
             <button id="help-button">Help</button>
         </div>
@@ -246,6 +249,7 @@
                 <p><strong>Modus:</strong></p>
                 <p>- <strong>Verplaatsen:</strong> Sleep level nodes naar nieuwe posities</p>
                 <p>- <strong>Selecteren:</strong> Klik op nodes om ze te selecteren voor bewerken</p>
+                <p>- <strong>Toevoegen:</strong> Klik ergens op de kaart om direct een nieuw level toe te voegen</p>
                 <p><strong>Level Nodes:</strong></p>
                 <p>- <strong>Toevoegen:</strong> Vul X, Y, Level, en Type in en klik 'Toevoegen'</p>
                 <p>- <strong>Bijwerken:</strong> Selecteer een node, wijzig waarden, klik 'Bijwerken'</p>
@@ -269,7 +273,7 @@
     <script>
         // Editor state
         let editorState = {
-            mode: 'move', // 'move' or 'select'
+            mode: 'move', // 'move', 'select', or 'add'
             selectedNodeIndex: -1,
             selectedPathIndex: -1,
             draggedNode: null,
@@ -638,8 +642,20 @@
         function setupEditorControls() {
             // Toggle editor mode
             document.getElementById('toggle-mode').addEventListener('click', function() {
-                editorState.mode = editorState.mode === 'move' ? 'select' : 'move';
-                document.getElementById('edit-mode').textContent = `Modus: ${editorState.mode === 'move' ? 'Verplaatsen' : 'Selecteren'}`;
+                // Cycle through modes: move -> select -> add -> move
+                if (editorState.mode === 'move') {
+                    editorState.mode = 'select';
+                    document.getElementById('edit-mode').textContent = 'Modus: Selecteren';
+                    document.getElementById('mode-instructions').style.display = 'none';
+                } else if (editorState.mode === 'select') {
+                    editorState.mode = 'add';
+                    document.getElementById('edit-mode').textContent = 'Modus: Nieuw Level Toevoegen';
+                    document.getElementById('mode-instructions').style.display = 'block';
+                } else {
+                    editorState.mode = 'move';
+                    document.getElementById('edit-mode').textContent = 'Modus: Verplaatsen';
+                    document.getElementById('mode-instructions').style.display = 'none';
+                }
             });
             
             // Add a new node
@@ -944,6 +960,64 @@
                 if (event.target === this) {
                     toggleInstructionsPopup();
                 }
+            });
+            
+            // Add event listener for map container clicks to add new nodes
+            document.getElementById('map-container').addEventListener('click', function(event) {
+                // Only process clicks in 'add' mode and if the click is directly on the map (not on a node)
+                if (editorState.mode !== 'add' || event.target !== this) {
+                    return;
+                }
+                
+                // Get the click coordinates relative to the map container
+                const rect = this.getBoundingClientRect();
+                const x = Math.round(event.clientX - rect.left);
+                const y = Math.round(event.clientY - rect.top);
+                
+                // Find next available level number
+                const existingLevels = window.mapData.LEVEL_POSITIONS.map(node => node[2]);
+                let nextLevel = 1;
+                
+                while (existingLevels.includes(nextLevel)) {
+                    nextLevel++;
+                }
+                
+                // Get the currently selected type from the dropdown
+                const type = document.getElementById('node-type').value;
+                
+                // Add the new node at the clicked position
+                window.mapData.LEVEL_POSITIONS.push([x, y, nextLevel, type]);
+                
+                // Update the form fields with the new node's data
+                document.getElementById('node-x').value = x;
+                document.getElementById('node-y').value = y;
+                document.getElementById('node-level').value = nextLevel;
+                
+                // Recreate the map
+                createMapNodes();
+                
+                // Update JSON preview
+                updateJSONPreview();
+                
+                // Show a brief notification
+                const notification = document.createElement('div');
+                notification.style.position = 'fixed';
+                notification.style.top = '50%';
+                notification.style.left = '50%';
+                notification.style.transform = 'translate(-50%, -50%)';
+                notification.style.padding = '15px 30px';
+                notification.style.backgroundColor = 'rgba(0, 150, 0, 0.8)';
+                notification.style.color = 'white';
+                notification.style.borderRadius = '5px';
+                notification.style.fontWeight = 'bold';
+                notification.style.zIndex = '1000';
+                notification.textContent = `Level ${nextLevel} toegevoegd!`;
+                document.body.appendChild(notification);
+                
+                // Remove the notification after 1.5 seconds
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 1500);
             });
         }
         
