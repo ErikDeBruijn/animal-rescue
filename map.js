@@ -123,7 +123,11 @@ function loadGameProgress() {
 function createMapNodes() {
     const mapContainer = document.getElementById('map-container');
     
-    // Clear existing nodes
+    // Clear existing nodes but preserve the background
+    const mapBackground = mapContainer.querySelector('.map-background');
+    mapContainer.innerHTML = '';
+    mapContainer.appendChild(mapBackground);
+    
     mapState.levelNodes = [];
     
     // Create a nodemap for quick lookup
@@ -193,6 +197,23 @@ function createMapNodes() {
             node.textContent = 'M';
             node.classList.add('memory-level');
             node.title = `Memory Level ${level} (Optioneel)`;
+            
+            // Add card deck visuals for memory games
+            const cardStack = document.createElement('div');
+            cardStack.className = 'memory-card-stack';
+            cardStack.style.left = `${x + 20}px`;
+            cardStack.style.top = `${y - 35}px`;
+            
+            // Create 3 stacked cards
+            for (let i = 0; i < 3; i++) {
+                const card = document.createElement('div');
+                card.className = 'memory-card-icon';
+                card.style.left = `${i * 3}px`;
+                card.style.top = `${-i * 3}px`;
+                cardStack.appendChild(card);
+            }
+            
+            mapContainer.appendChild(cardStack);
         } else {
             node.textContent = level;
             node.title = `Level ${level}`;

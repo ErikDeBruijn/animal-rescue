@@ -98,6 +98,34 @@
             cursor: move;
         }
         
+        .ghost-node {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: rgba(100, 100, 255, 0.7);
+            color: white;
+            text-align: center;
+            line-height: 50px;
+            font-weight: bold;
+            font-size: 24px;
+            z-index: 50;
+            cursor: pointer;
+            border: 2px dashed white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            transition: transform 0.1s;
+        }
+        
+        .ghost-node:hover {
+            transform: scale(1.1);
+        }
+        
+        .level-node.selected {
+            box-shadow: 0 0 10px gold, 0 0 20px gold;
+            transform: scale(1.1);
+            z-index: 60;
+        }
+        
         .edit-mode-indicator {
             position: fixed;
             top: 10px;
@@ -163,6 +191,15 @@
     </div>
     
     <div class="map-container" id="map-container">
+        <!-- Background elements -->
+        <div class="map-background">
+            <div class="water"></div>
+            <div class="sand shore-1"></div>
+            <div class="sand shore-2"></div>
+            <div class="land island-1"></div>
+            <div class="land island-2"></div>
+            <div class="start-marker">START</div>
+        </div>
         <!-- Level nodes and paths will be added here dynamically -->
     </div>
     
@@ -229,7 +266,7 @@
         </div>
         
         <div class="buttons-container" style="margin-top: 20px;">
-            <button id="toggle-mode">Wissel Modus (Verplaatsen → Selecteren → Toevoegen)</button>
+            <button id="toggle-mode" disabled>Automatische Modus Actief</button>
         </div>
     </div>
     
@@ -243,10 +280,11 @@
             <div class="popup-body">
                 <p><strong>Welkom bij de Wereldkaart Editor!</strong></p>
                 <p>Hier kun je level nodes en paden voor de wereldkaart aanpassen:</p>
-                <p><strong>Modus:</strong></p>
-                <p>- <strong>Verplaatsen:</strong> Sleep level nodes naar nieuwe posities</p>
-                <p>- <strong>Selecteren:</strong> Klik op nodes om ze te selecteren voor bewerken</p>
-                <p>- <strong>Toevoegen:</strong> Klik ergens op de kaart om direct een nieuw level toe te voegen</p>
+                <p><strong>Intuïtieve modus:</strong></p>
+                <p>- <strong>Verplaatsen:</strong> Sleep een level node om het te verplaatsen</p>
+                <p>- <strong>Selecteren:</strong> Klik op een node om het te selecteren voor bewerken</p>
+                <p>- <strong>Toevoegen:</strong> Beweeg de muis over de kaart om een preview te zien, klik om te plaatsen</p>
+                <p>De editor schakelt automatisch tussen deze modi, afhankelijk van je muispositie!</p>
                 <p><strong>Level Nodes:</strong></p>
                 <p>- <strong>Toevoegen:</strong> Vul X, Y, Level, en Type in en klik 'Toevoegen'</p>
                 <p>- <strong>Bijwerken:</strong> Selecteer een node, wijzig waarden, klik 'Bijwerken'</p>
@@ -275,7 +313,9 @@
             selectedPathIndex: -1,
             draggedNode: null,
             offsetX: 0,
-            offsetY: 0
+            offsetY: 0,
+            ghostNode: null, // Store ghost node for preview
+            hoveredNode: null // Store hovered node
         };
         
         // Initialize the editor
@@ -308,8 +348,12 @@
         function createMapNodes() {
             const mapContainer = document.getElementById('map-container');
             
-            // Clear existing nodes
+            // Clear existing nodes but preserve the background
+            const mapBackground = mapContainer.querySelector('.map-background');
             mapContainer.innerHTML = '';
+            
+            // Add the background back
+            mapContainer.appendChild(mapBackground);
             
             // Create a nodemap for quick lookup
             const nodeMap = {};
@@ -374,6 +418,23 @@
                     node.textContent = 'M';
                     node.classList.add('memory-level');
                     node.title = `Memory Level ${level}`;
+                    
+                    // Add card deck visuals for memory games
+                    const cardStack = document.createElement('div');
+                    cardStack.className = 'memory-card-stack';
+                    cardStack.style.left = `${x + 20}px`;
+                    cardStack.style.top = `${y - 35}px`;
+                    
+                    // Create 3 stacked cards
+                    for (let i = 0; i < 3; i++) {
+                        const card = document.createElement('div');
+                        card.className = 'memory-card-icon';
+                        card.style.left = `${i * 3}px`;
+                        card.style.top = `${-i * 3}px`;
+                        cardStack.appendChild(card);
+                    }
+                    
+                    mapContainer.appendChild(cardStack);
                 } else {
                     node.textContent = level;
                     node.title = `Level ${level}`;
@@ -390,13 +451,16 @@
                 
                 mapContainer.appendChild(node);
                 
-                // Add event listeners for dragging in move mode
+                // Add event listeners for dragging and selection (implicit mode switching)
                 node.addEventListener('mousedown', function(e) {
-                    if (editorState.mode === 'move') {
-                        startDrag(e, index);
-                    } else if (editorState.mode === 'select') {
-                        selectNode(index);
-                    }
+                    // Always start in drag mode when pressing on a node
+                    startDrag(e, index);
+                    
+                    // Highlight the node to indicate it's selected
+                    document.querySelectorAll('.level-node').forEach(n => {
+                        n.classList.remove('selected');
+                    });
+                    node.classList.add('selected');
                 });
             });
             
@@ -410,12 +474,25 @@
             const node = document.querySelector(`.level-node[data-index="${nodeIndex}"]`);
             if (!node) return;
             
+            // Remove ghost node when starting a drag
+            removeGhostNode();
+            
+            // Implicitly switch to move mode
+            editorState.mode = 'move';
+            document.getElementById('edit-mode').textContent = 'Modus: Verplaatsen';
+            document.getElementById('mode-instructions').style.display = 'none';
+            
+            // Store the dragged node and its index
             editorState.draggedNode = nodeIndex;
+            editorState.selectedNodeIndex = nodeIndex;
             
             // Calculate offset from the node's top-left corner
             const rect = node.getBoundingClientRect();
             editorState.offsetX = e.clientX - rect.left;
             editorState.offsetY = e.clientY - rect.top;
+            
+            // Track if it's actually being dragged (to differentiate from a click)
+            editorState.hasMoved = false;
             
             // Add event listeners for dragging
             document.addEventListener('mousemove', drag);
@@ -431,6 +508,9 @@
             
             const node = document.querySelector(`.level-node[data-index="${editorState.draggedNode}"]`);
             if (!node) return;
+            
+            // Mark that we've actually moved the node
+            editorState.hasMoved = true;
             
             // Calculate new position relative to map container
             const mapContainer = document.getElementById('map-container');
@@ -457,12 +537,38 @@
         }
         
         // Stop dragging a node
-        function stopDrag() {
+        function stopDrag(e) {
+            const nodeIndex = editorState.draggedNode;
             editorState.draggedNode = null;
             
             // Remove event listeners
             document.removeEventListener('mousemove', drag);
             document.removeEventListener('mouseup', stopDrag);
+            
+            // If it was just a click (no movement), switch to select mode and select the node
+            if (!editorState.hasMoved && nodeIndex !== null) {
+                editorState.mode = 'select';
+                document.getElementById('edit-mode').textContent = 'Modus: Selecteren';
+                
+                // Update form with node data to edit
+                const nodeData = window.mapData.LEVEL_POSITIONS[nodeIndex];
+                if (nodeData) {
+                    document.getElementById('node-x').value = nodeData[0];
+                    document.getElementById('node-y').value = nodeData[1];
+                    document.getElementById('node-level').value = nodeData[2];
+                    document.getElementById('node-type').value = nodeData[3];
+                    
+                    // Enable update/delete buttons
+                    document.getElementById('update-node').disabled = false;
+                    document.getElementById('delete-node').disabled = false;
+                    
+                    // Make the Nodes tab active
+                    selectTab('nodes');
+                }
+            }
+            
+            // Reset the movement flag
+            editorState.hasMoved = false;
             
             // Update JSON preview
             updateJSONPreview();
@@ -637,23 +743,16 @@
         
         // Set up editor controls
         function setupEditorControls() {
-            // Toggle editor mode
-            document.getElementById('toggle-mode').addEventListener('click', function() {
-                // Cycle through modes: move -> select -> add -> move
-                if (editorState.mode === 'move') {
-                    editorState.mode = 'select';
-                    document.getElementById('edit-mode').textContent = 'Modus: Selecteren';
-                    document.getElementById('mode-instructions').style.display = 'none';
-                } else if (editorState.mode === 'select') {
-                    editorState.mode = 'add';
-                    document.getElementById('edit-mode').textContent = 'Modus: Nieuw Level Toevoegen';
-                    document.getElementById('mode-instructions').style.display = 'block';
-                } else {
-                    editorState.mode = 'move';
-                    document.getElementById('edit-mode').textContent = 'Modus: Verplaatsen';
-                    document.getElementById('mode-instructions').style.display = 'none';
-                }
-            });
+            // Update the mode indicator to show implicit mode is active
+            document.getElementById('edit-mode').textContent = 'Modus: Automatisch';
+            document.getElementById('mode-instructions').style.display = 'none';
+            
+            // Add tooltip to explain automatic mode switching
+            const toggleButton = document.getElementById('toggle-mode');
+            toggleButton.title = "De editor schakelt automatisch tussen verplaatsen, selecteren en toevoegen op basis van de muispositie";
+            
+            // Hide mode instructions, as they're no longer needed
+            document.getElementById('mode-instructions').style.display = 'none';
             
             // Add a new node
             document.getElementById('add-node').addEventListener('click', function() {
@@ -969,45 +1068,131 @@
                 }
             });
             
+            // Add event listener for map container movement to show ghost nodes
+            document.getElementById('map-container').addEventListener('mousemove', function(event) {
+                // Get the element under the mouse
+                const elementUnderMouse = document.elementFromPoint(event.clientX, event.clientY);
+                const isNode = elementUnderMouse.classList.contains('level-node') && !elementUnderMouse.id.includes('ghost');
+                
+                // If we're hovering over a node, set selection mode implicitly
+                if (isNode) {
+                    if (editorState.mode !== 'select' && !editorState.draggedNode) {
+                        editorState.mode = 'select';
+                        document.getElementById('edit-mode').textContent = 'Modus: Selecteren';
+                        document.getElementById('mode-instructions').style.display = 'none';
+                    }
+                    
+                    // Store the hovered node
+                    editorState.hoveredNode = elementUnderMouse;
+                    elementUnderMouse.style.cursor = 'pointer';
+                    
+                    // Remove any ghost node when hovering over a real node
+                    removeGhostNode();
+                } 
+                // If we're not hovering over a node or dragging, create a ghost node
+                else if (!editorState.draggedNode && event.target === this) {
+                    // Get the click coordinates relative to the map container
+                    const rect = this.getBoundingClientRect();
+                    const x = Math.round(event.clientX - rect.left);
+                    const y = Math.round(event.clientY - rect.top);
+                    
+                    // Create or update ghost node
+                    createGhostNode(x, y);
+                }
+            });
+            
+            // Add event listener for map container to remove ghost node when mouse leaves
+            document.getElementById('map-container').addEventListener('mouseleave', function() {
+                removeGhostNode();
+            });
+            
             // Add event listener for map container clicks to add new nodes
             document.getElementById('map-container').addEventListener('click', function(event) {
-                // Only process clicks in 'add' mode and if the click is directly on the map (not on a node)
-                if (editorState.mode !== 'add' || event.target !== this) {
-                    return;
+                // Get the element under the mouse
+                const elementUnderMouse = document.elementFromPoint(event.clientX, event.clientY);
+                
+                // Handle different actions based on what's being clicked
+                if (elementUnderMouse.id === 'ghost-node') {
+                    // If clicking on a ghost node, create a real node there
+                    const ghost = editorState.ghostNode;
+                    if (ghost) {
+                        // Add the new node at the ghost position
+                        window.mapData.LEVEL_POSITIONS.push([ghost.x, ghost.y, ghost.level, ghost.type]);
+                        
+                        // Update the form fields with the new node's data
+                        document.getElementById('node-x').value = ghost.x;
+                        document.getElementById('node-y').value = ghost.y;
+                        document.getElementById('node-level').value = ghost.level;
+                        
+                        // Find highest level
+                        let highestLevel = 0;
+                        window.mapData.LEVEL_POSITIONS.forEach(([_, __, level]) => {
+                            if (level !== ghost.level && level < 100 && level > highestLevel) {
+                                highestLevel = level;
+                            }
+                        });
+                        
+                        // Connect to highest level if it exists
+                        if (highestLevel > 0) {
+                            window.mapData.PATH_CONNECTIONS.push([highestLevel, ghost.level, highestLevel]);
+                        }
+                        
+                        // Recreate the map
+                        createMapNodes();
+                        
+                        // Update JSON preview
+                        updateJSONPreview();
+                        
+                        // Show success notification
+                        showNotification(`Level ${ghost.level} toegevoegd!`);
+                        
+                        // Remove the ghost node
+                        removeGhostNode();
+                    }
                 }
-                
-                // Get the click coordinates relative to the map container
-                const rect = this.getBoundingClientRect();
-                const x = Math.round(event.clientX - rect.left);
-                const y = Math.round(event.clientY - rect.top);
-                
-                // Find next available level number
-                const existingLevels = window.mapData.LEVEL_POSITIONS.map(node => node[2]);
-                let nextLevel = 1;
-                
-                while (existingLevels.includes(nextLevel)) {
-                    nextLevel++;
+                else if (elementUnderMouse.classList.contains('level-node') && !elementUnderMouse.id.includes('ghost')) {
+                    // If clicking on a real node, select it
+                    const index = parseInt(elementUnderMouse.dataset.index);
+                    if (!isNaN(index)) {
+                        selectNode(index);
+                    }
                 }
-                
-                // Get the currently selected type from the dropdown
-                const type = document.getElementById('node-type').value;
-                
-                // Add the new node at the clicked position
-                window.mapData.LEVEL_POSITIONS.push([x, y, nextLevel, type]);
-                
-                // Update the form fields with the new node's data
-                document.getElementById('node-x').value = x;
-                document.getElementById('node-y').value = y;
-                document.getElementById('node-level').value = nextLevel;
-                
-                // Recreate the map
-                createMapNodes();
-                
-                // Update JSON preview
-                updateJSONPreview();
-                
-                // Show success notification
-                showNotification(`Level ${nextLevel} toegevoegd!`);
+                else if (event.target === this) {
+                    // If clicking on empty space with a ghost node, convert it to a real node
+                    if (editorState.ghostNode) {
+                        const ghost = editorState.ghostNode;
+                        
+                        // Add the new node at the ghost position
+                        window.mapData.LEVEL_POSITIONS.push([ghost.x, ghost.y, ghost.level, ghost.type]);
+                        
+                        // Update the form fields with the new node's data
+                        document.getElementById('node-x').value = ghost.x;
+                        document.getElementById('node-y').value = ghost.y;
+                        document.getElementById('node-level').value = ghost.level;
+                        
+                        // Find highest level
+                        let highestLevel = 0;
+                        window.mapData.LEVEL_POSITIONS.forEach(([_, __, level]) => {
+                            if (level !== ghost.level && level < 100 && level > highestLevel) {
+                                highestLevel = level;
+                            }
+                        });
+                        
+                        // Connect to highest level if it exists
+                        if (highestLevel > 0) {
+                            window.mapData.PATH_CONNECTIONS.push([highestLevel, ghost.level, highestLevel]);
+                        }
+                        
+                        // Recreate the map
+                        createMapNodes();
+                        
+                        // Update JSON preview
+                        updateJSONPreview();
+                        
+                        // Show success notification
+                        showNotification(`Level ${ghost.level} toegevoegd!`);
+                    }
+                }
             });
         }
         
@@ -1035,6 +1220,89 @@
             } else {
                 popup.style.display = 'flex';
             }
+        }
+        
+        // Create a ghost node as a preview
+        function createGhostNode(x, y) {
+            // Remove any existing ghost node
+            removeGhostNode();
+            
+            // Find next available level number
+            const existingLevels = window.mapData.LEVEL_POSITIONS.map(node => node[2]);
+            let nextLevel = 1;
+            
+            while (existingLevels.includes(nextLevel)) {
+                nextLevel++;
+            }
+            
+            // Get the currently selected type from the dropdown
+            const type = document.getElementById('node-type').value;
+            
+            // Create the ghost node element
+            const ghostNode = document.createElement('div');
+            ghostNode.className = 'level-node level-unlocked ghost-node';
+            
+            // Set text content based on game type
+            if (type === 'memoryGame') {
+                ghostNode.textContent = 'M';
+                ghostNode.classList.add('memory-level');
+                ghostNode.title = `Nieuw Memory Level ${nextLevel}`;
+                
+                // Also create a ghost card stack
+                const cardStack = document.createElement('div');
+                cardStack.className = 'memory-card-stack ghost-card-stack';
+                cardStack.style.left = `${x + 20}px`;
+                cardStack.style.top = `${y - 35}px`;
+                cardStack.style.opacity = '0.7';
+                
+                // Create 3 stacked cards
+                for (let i = 0; i < 3; i++) {
+                    const card = document.createElement('div');
+                    card.className = 'memory-card-icon';
+                    card.style.left = `${i * 3}px`;
+                    card.style.top = `${-i * 3}px`;
+                    card.style.border = '2px dashed #388E3C';
+                    cardStack.appendChild(card);
+                }
+                
+                document.getElementById('map-container').appendChild(cardStack);
+                ghostNode.dataset.hasCardStack = true;
+            } else {
+                ghostNode.textContent = nextLevel;
+                ghostNode.title = `Nieuw Level ${nextLevel}`;
+            }
+            
+            ghostNode.id = 'ghost-node';
+            ghostNode.style.left = `${x - 25}px`; // Center horizontally
+            ghostNode.style.top = `${y - 25}px`;  // Center vertically
+            ghostNode.style.opacity = '0.7';
+            ghostNode.style.border = '2px dashed #fff';
+            ghostNode.style.cursor = 'pointer';
+            
+            // Store level number and type for later use
+            ghostNode.dataset.level = nextLevel;
+            ghostNode.dataset.gameType = type;
+            
+            document.getElementById('map-container').appendChild(ghostNode);
+            editorState.ghostNode = { node: ghostNode, x, y, level: nextLevel, type };
+            
+            return ghostNode;
+        }
+        
+        // Remove the ghost node
+        function removeGhostNode() {
+            const ghostNode = document.getElementById('ghost-node');
+            if (ghostNode) {
+                ghostNode.parentNode.removeChild(ghostNode);
+            }
+            
+            // Also remove any ghost card stack
+            const ghostCardStack = document.querySelector('.ghost-card-stack');
+            if (ghostCardStack) {
+                ghostCardStack.parentNode.removeChild(ghostCardStack);
+            }
+            
+            editorState.ghostNode = null;
         }
         
         // Helper function to show a notification
