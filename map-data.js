@@ -43,31 +43,66 @@ window.mapData = {
             PATH_CONNECTIONS: this.PATH_CONNECTIONS
         };
         
-        // Save to server API
-        return fetch('/api/map-data', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                mapData: mapDataJSON
-            }),
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                console.log("Map data saved to server");
-                return true;
-            } else {
-                console.error("Error saving map data to server:", data.error);
-                // Als er een server error is, toch true teruggeven zodat de UI niet breekt
-                return true;
-            }
-        })
-        .catch(error => {
-            console.error("Error saving map data to server:", error);
-            return false;
-        });
+        // First create a backup of existing data
+        return fetch('/api/map-data')
+            .then(response => response.json())
+            .then(result => {
+                if (result.success && result.data) {
+                    // Create backup by saving current data to .bak file
+                    return fetch('/api/map-data/backup', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            mapData: result.data
+                        }),
+                    })
+                    .then(backupResponse => backupResponse.json())
+                    .then(backupData => {
+                        if (!backupData.success) {
+                            console.warn("Could not create backup of map data:", backupData.error);
+                        } else {
+                            console.log("Created backup of map data to map-data.json.bak");
+                        }
+                        
+                        // Continue with saving new data regardless of backup success
+                        return true;
+                    });
+                }
+                return true; // Continue even if we couldn't get current data
+            })
+            .catch(error => {
+                console.warn("Error creating backup:", error);
+                return true; // Continue with save even if backup fails
+            })
+            .then(() => {
+                // Save to server API
+                return fetch('/api/map-data', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        mapData: mapDataJSON
+                    }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        console.log("Map data saved to server");
+                        return true;
+                    } else {
+                        console.error("Error saving map data to server:", data.error);
+                        // Als er een server error is, toch true teruggeven zodat de UI niet breekt
+                        return true;
+                    }
+                });
+            })
+            .catch(error => {
+                console.error("Error saving map data to server:", error);
+                return false;
+            });
     },
     
     // Method to load the data

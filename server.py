@@ -230,6 +230,43 @@ def save_map_data():
         logger.error(traceback.format_exc())
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/map-data/backup', methods=['POST'])
+def backup_map_data():
+    """Sla een backup van de map data op als JSON.bak file"""
+    try:
+        data = request.json
+        if not data or 'mapData' not in data:
+            return jsonify({'success': False, 'error': 'Missing map data for backup'}), 400
+        
+        map_data = data['mapData']
+        
+        # Validate that the data is proper JSON
+        try:
+            # Parse as JSON to validate
+            parsed_data = json.loads(json.dumps(map_data))
+            
+            # Controleer of de benodigde velden aanwezig zijn
+            if 'LEVEL_POSITIONS' not in parsed_data or 'PATH_CONNECTIONS' not in parsed_data:
+                return jsonify({'success': False, 'error': 'Invalid map data format for backup - missing required fields'}), 400
+                
+            # Check dat de data arrays zijn
+            if not isinstance(parsed_data['LEVEL_POSITIONS'], list) or not isinstance(parsed_data['PATH_CONNECTIONS'], list):
+                return jsonify({'success': False, 'error': 'Invalid map data format for backup - positions and connections must be arrays'}), 400
+        except json.JSONDecodeError as e:
+            return jsonify({'success': False, 'error': f'Invalid JSON format for backup: {str(e)}'}), 400
+        
+        # Schrijf de data naar het .bak bestand
+        with open(f"{MAP_DATA_JSON}.bak", 'w', encoding='utf-8') as f:
+            json.dump(map_data, f, indent=2)
+        
+        logger.info(f"Map data backup successfully saved as JSON.bak")
+        return jsonify({'success': True})
+    except Exception as e:
+        logger.error(f"Error saving map data backup: {str(e)}")
+        import traceback
+        logger.error(traceback.format_exc())
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/<path:path>')
 def serve_static(path):
     """Serveer alle statische bestanden"""
