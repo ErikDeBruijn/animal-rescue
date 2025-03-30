@@ -451,7 +451,12 @@ function loadLevel(levelIndex) {
                 height: 25, 
                 saved: false
             },
-            collectibles: []
+            collectibles: [],
+            mathProblem: {
+                equation: "",
+                answer: "",
+                userAnswer: ""
+            }
         };
     } else {
         // Clone het level object om het origineel niet te wijzigen
@@ -464,6 +469,15 @@ function loadLevel(levelIndex) {
                     collectible.type = 'STAR'; // Standaard type als dit ontbreekt
                 }
             });
+        }
+        
+        // Initialiseer mathProblem als deze niet bestaat in het level
+        if (!editorState.editingLevel.mathProblem) {
+            editorState.editingLevel.mathProblem = {
+                equation: "",
+                answer: "",
+                userAnswer: ""
+            };
         }
     }
     
@@ -535,6 +549,14 @@ function loadLevel(levelIndex) {
                 document.documentElement.classList.remove('night-theme');
             }
         }
+    }
+    
+    // Update math problem velden
+    const mathProblemInput = document.getElementById('math-problem');
+    const mathAnswerInput = document.getElementById('math-answer');
+    if (mathProblemInput && mathAnswerInput) {
+        mathProblemInput.value = editorState.editingLevel.mathProblem.equation || '';
+        mathAnswerInput.value = editorState.editingLevel.mathProblem.answer || '';
     }
     
     // Render het level
@@ -1158,6 +1180,7 @@ function setupEventListeners() {
         // Update the preview if we're in placement mode
         if (editorState.placementMode && editorState.selectedObjectType === 'collectible') {
             createPlacementPreview('collectible');
+            renderEditor(); // Re-render to update the preview immediately
         }
         
         // If we have a selected collectible, update its type
@@ -1448,6 +1471,8 @@ function setActiveObjectType(type) {
         document.getElementById('enemy-props').style.display = 'block';
     } else if (type === 'trap') {
         document.getElementById('trap-props').style.display = 'block';
+    } else if (type === 'collectible') {
+        document.getElementById('collectible-props').style.display = 'block';
     }
 }
 
@@ -1521,7 +1546,7 @@ function createPlacementPreview(type) {
                 type: 'collectible', // This 'type' indicates this is a collectible object
                 width: 30,
                 height: 30,
-                collectibleType: collectibleType 
+                collectibleType: collectibleType // Used for the preview
             };
             break;
             
@@ -2136,17 +2161,8 @@ function createNewObject(x, y) {
             break;
             
         case 'startPosition':
-            if (editorState.editingLevel.startPositions.length < 2) {
-                const newStartPos = {
-                    x: x,
-                    y: y
-                };
-                
-                editorState.editingLevel.startPositions.push(newStartPos);
-                editorState.selectedObject = newStartPos;
-            } else {
-                alert("Er kunnen maximaal 2 startposities zijn!");
-            }
+            // Startposities kunnen niet toegevoegd worden
+            alert("Het is niet mogelijk om startposities toe te voegen of te verwijderen.");
             break;
             
         case 'trap':

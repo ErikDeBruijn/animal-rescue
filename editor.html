@@ -62,6 +62,18 @@
                         <option value="night">Avond</option>
                     </select>
                 </div>
+                <div class="math-problem-section">
+                    <h4>Rekenprobleem</h4>
+                    <div class="prop-row">
+                        <label for="math-problem">Som:</label>
+                        <input type="text" id="math-problem" placeholder="Bijv. 2+3=">
+                    </div>
+                    <div class="prop-row">
+                        <label for="math-answer">Antwoord:</label>
+                        <input type="number" id="math-answer" min="0" max="999">
+                    </div>
+                    <p><small>Gebruik getallen-platforms om het antwoord in te voeren</small></p>
+                </div>
             </div>
             
             <div class="panel tool-group">
@@ -168,16 +180,19 @@
                 </div>
                 
                 <!-- Collectible eigenschappen -->
-                <div id="collectible-props" class="object-props" style="margin-top: 10px; border: 2px solid #2c9f42; padding: 10px; border-radius: 5px;">
-                    <h4 style="margin-top: 0; color: #2c9f42;">Verzamelitem eigenschappen</h4>
+                <div id="collectible-props" class="object-props" style="margin-top: 10px; border: 3px solid #2c9f42; padding: 10px; border-radius: 5px; box-shadow: 0 0 10px rgba(44, 159, 66, 0.5);">
+                    <h4 style="margin-top: 0; color: #2c9f42; text-align: center;">Verzamelitem eigenschappen</h4>
                     <div style="display: flex; align-items: center;">
                         <label for="collectible-type" style="margin-right: 10px; font-weight: bold;">Type:</label>
-                        <select id="collectible-type" style="width: 100%; padding: 8px; border: 1px solid #2c9f42; border-radius: 4px;">
+                        <select id="collectible-type" style="width: 100%; padding: 8px; border: 2px solid #2c9f42; border-radius: 4px; background-color: #f0fff0;">
                             <option value="STAR">Ster</option>
                             <option value="PEPPER">Peper</option>
                             <option value="DOGFOOD">Hondenvoer</option>
                             <option value="HOURGLASS">Zandloper</option>
                         </select>
+                    </div>
+                    <div style="margin-top: 5px; text-align: center; font-style: italic; color: #2c9f42;">
+                        Selecteer het type voordat je plaatst
                     </div>
                 </div>
             </div>
