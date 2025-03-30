@@ -1847,6 +1847,26 @@ function handleCanvasMouseMove(e) {
     // Update cursor position voor preview
     editorState.cursorPosition = { x: mouseX, y: mouseY };
     
+    // In verwijdermodus, toon een highlight op het object onder de cursor
+    if (editorState.selectedTool === 'delete') {
+        const objUnderCursor = findObjectAtPosition(mouseX, mouseY);
+        if (objUnderCursor && objUnderCursor.object !== editorState.selectedObject) {
+            // Tijdelijk het object onder de cursor instellen als geselecteerd object
+            // om de delete highlight te tonen, en daarna weer terugzetten
+            const savedObject = editorState.selectedObject;
+            const savedType = editorState.selectedObjectType;
+            
+            editorState.selectedObject = objUnderCursor.object;
+            editorState.selectedObjectType = objUnderCursor.type;
+            
+            renderEditor();
+            
+            // Herstel de originele selectie
+            editorState.selectedObject = savedObject;
+            editorState.selectedObjectType = savedType;
+        }
+    }
+    
     if (editorState.isDragging && editorState.selectedObject) {
         // Object verplaatsen
         const oldX = editorState.selectedObject.x;
@@ -2461,8 +2481,13 @@ function renderEditor() {
     // Teken alle objecten
     drawObjects();
     
-    // Teken selectie highlight
-    drawSelectionHighlight();
+    // Teken selectie highlight voor geselecteerde objecten
+    // In verwijdermodus tonen we een rood kruis in plaats van de normale highlight
+    if (editorState.selectedTool === 'delete' && editorState.selectedObject) {
+        drawDeleteHighlight();
+    } else {
+        drawSelectionHighlight();
+    }
     
     // Teken het plaatsings-preview object als we in plaatsingsmodus zijn
     if (editorState.placementMode && editorState.placementPreview) {
@@ -2917,6 +2942,45 @@ function drawSelectionHighlight() {
     }
 }
 
+// Teken een rode X over het object dat verwijderd zal worden
+function drawDeleteHighlight() {
+    if (!editorState.selectedObject) return;
+    
+    const obj = editorState.selectedObject;
+    const type = editorState.selectedObjectType;
+    
+    // Rode X tekenen
+    ctx.strokeStyle = 'rgba(255, 0, 0, 0.8)';
+    ctx.lineWidth = 4;
+    
+    if (type === 'startPosition') {
+        // Cirkel met X voor startposities
+        const radius = 18;
+        ctx.beginPath();
+        ctx.arc(obj.x, obj.y, radius, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        // X in de cirkel
+        ctx.beginPath();
+        ctx.moveTo(obj.x - radius * 0.7, obj.y - radius * 0.7);
+        ctx.lineTo(obj.x + radius * 0.7, obj.y + radius * 0.7);
+        ctx.moveTo(obj.x + radius * 0.7, obj.y - radius * 0.7);
+        ctx.lineTo(obj.x - radius * 0.7, obj.y + radius * 0.7);
+        ctx.stroke();
+    } else {
+        // Rechthoek met X voor alle andere objecten
+        ctx.strokeRect(obj.x - 3, obj.y - 3, obj.width + 6, obj.height + 6);
+        
+        // X over het object
+        ctx.beginPath();
+        ctx.moveTo(obj.x - 3, obj.y - 3);
+        ctx.lineTo(obj.x + obj.width + 3, obj.y + obj.height + 3);
+        ctx.moveTo(obj.x + obj.width + 3, obj.y - 3);
+        ctx.lineTo(obj.x - 3, obj.y + obj.height + 3);
+        ctx.stroke();
+    }
+}
+
 // Exporteer de level code naar JavaScript code die in levels.js kan worden geplakt
 function exportLevelCode() {
     const level = editorState.editingLevel;
@@ -3090,7 +3154,18 @@ function exportLevelCode() {
             }
         });
     }
-    code += `\n    ]\n`;
+    code += `\n    ]`;
+    
+    // Add mathProblem if it has values
+    if (level.mathProblem && (level.mathProblem.equation || level.mathProblem.answer)) {
+        code += `,\n    mathProblem: {\n`;
+        code += `        equation: "${level.mathProblem.equation}",\n`;
+        code += `        answer: "${level.mathProblem.answer}",\n`;
+        code += `        userAnswer: ""\n`;
+        code += `    }\n`;
+    } else {
+        code += `\n`;
+    }
     
     code += `}`;
     
