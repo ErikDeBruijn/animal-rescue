@@ -95,7 +95,7 @@ function loadGameProgress() {
         mapState.currentLevel = parseInt(lastPlayedLevel) || 1;
     }
     
-    // Determine unlocked levels (levels connected via paths)
+    // Reset unlocked levels list and start with just level 1
     mapState.unlockedLevels = [1]; // Level 1 is always unlocked
     
     // Add all completed levels to unlocked levels
@@ -105,30 +105,28 @@ function loadGameProgress() {
         }
     });
     
-    // Unlock levels based on path connections
-    PATH_CONNECTIONS.forEach(([startLevel, endLevel, requiredLevel]) => {
-        if (mapState.completedLevels.includes(requiredLevel) || 
-            mapState.unlockedLevels.includes(requiredLevel)) {
-            
-            // Unlock the end level if the required level is completed
-            if (!mapState.unlockedLevels.includes(endLevel)) {
-                mapState.unlockedLevels.push(endLevel);
+    // Only unlock connected levels through proper progression
+    let changed = true;
+    while (changed) {
+        changed = false;
+        
+        // For each path connection, check if the start level is unlocked or completed
+        PATH_CONNECTIONS.forEach(([startLevel, endLevel, requiredLevel]) => {
+            // To unlock a level:
+            // 1. The start level must be unlocked or completed
+            // 2. The required level must be completed
+            if (mapState.unlockedLevels.includes(startLevel) && 
+                mapState.completedLevels.includes(requiredLevel)) {
+                
+                // If endLevel isn't already unlocked, add it and mark as changed
+                if (!mapState.unlockedLevels.includes(endLevel)) {
+                    mapState.unlockedLevels.push(endLevel);
+                    changed = true;
+                    console.log(`Unlocked level ${endLevel} via path from ${startLevel}`);
+                }
             }
-        }
-    });
-    
-    // Unlock memory games only when the connected main level is completed
-    // For example, memory game 101 unlocks when level 2 is completed
-    const memoryLevels = LEVEL_POSITIONS.filter(pos => pos[3] === 'memoryGame').map(pos => pos[2]);
-    memoryLevels.forEach(memoryLevel => {
-        // Find the connection that leads to this memory level
-        const connection = PATH_CONNECTIONS.find(conn => conn[1] === memoryLevel);
-        if (connection && mapState.completedLevels.includes(connection[2])) {
-            if (!mapState.unlockedLevels.includes(memoryLevel)) {
-                mapState.unlockedLevels.push(memoryLevel);
-            }
-        }
-    });
+        });
+    }
     
     // Update score display
     updateScoreDisplay();
@@ -244,6 +242,15 @@ function createMapNodes() {
         node.addEventListener('click', function() {
             if (mapState.unlockedLevels.includes(level)) {
                 selectLevel(level, gameType);
+            } else {
+                // If level is locked, inform the player
+                const requiredPath = PATH_CONNECTIONS.find(([start, end]) => end === level);
+                if (requiredPath) {
+                    const requiredLevel = requiredPath[2];
+                    alert(`Je moet eerst level ${requiredLevel} voltooien om dit level te ontgrendelen.`);
+                } else {
+                    alert('Dit level is nog niet beschikbaar.');
+                }
             }
         });
         
@@ -413,10 +420,20 @@ function checkLevelActivation() {
         }
     });
     
-    // If player is close enough to an unlocked node, activate it
-    if (closestNode && closestDistance < ACTIVATION_DISTANCE && 
-        mapState.unlockedLevels.includes(closestNode.level)) {
-        selectLevel(closestNode.level, closestNode.gameType);
+    // If player is close enough to a node, check if it's unlocked
+    if (closestNode && closestDistance < ACTIVATION_DISTANCE) {
+        if (mapState.unlockedLevels.includes(closestNode.level)) {
+            selectLevel(closestNode.level, closestNode.gameType);
+        } else {
+            // If level is locked, inform the player
+            const requiredPath = PATH_CONNECTIONS.find(([start, end]) => end === closestNode.level);
+            if (requiredPath) {
+                const requiredLevel = requiredPath[2];
+                alert(`Je moet eerst level ${requiredLevel} voltooien om dit level te ontgrendelen.`);
+            } else {
+                alert('Dit level is nog niet beschikbaar.');
+            }
+        }
     }
 }
 
