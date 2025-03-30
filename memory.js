@@ -61,11 +61,11 @@ function initMemoryGame() {
 // Set difficulty based on level
 function setDifficultyByLevel(level) {
     if (level === 101) {
-        memoryState.difficulty = 'easy';
+        memoryState.difficulty = 'beginner'; // 3x3 grid, very easy
     } else if (level === 102) {
-        memoryState.difficulty = 'medium';
+        memoryState.difficulty = 'easy';     // 4x4 grid
     } else if (level === 103) {
-        memoryState.difficulty = 'hard';
+        memoryState.difficulty = 'medium';   // 5x4 grid
     }
     
     // Initialize time display
@@ -82,6 +82,11 @@ function createGrid() {
     let rows, cols, totalCards;
     
     switch (memoryState.difficulty) {
+        case 'beginner':
+            rows = 3;
+            cols = 3;
+            grid.className = 'grid-3x3';
+            break;
         case 'easy':
             rows = 4;
             cols = 4;
@@ -98,9 +103,9 @@ function createGrid() {
             grid.className = 'grid-6x5';
             break;
         default:
-            rows = 4;
-            cols = 4;
-            grid.className = 'grid-4x4';
+            rows = 3;
+            cols = 3;
+            grid.className = 'grid-3x3';
     }
     
     totalCards = rows * cols;

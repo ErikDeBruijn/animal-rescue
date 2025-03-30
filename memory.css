@@ -15,8 +15,8 @@
 
 #memory-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
+    grid-template-columns: repeat(3, 1fr); /* Default to 3x3 */
+    gap: 15px;
     width: 100%;
     height: calc(100% - 60px);
     margin-top: 60px;
@@ -25,12 +25,19 @@
 }
 
 /* Styling voor grotere grids voor hogere levels */
+#memory-grid.grid-3x3 {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px; /* Larger gap for bigger cards */
+}
+
 #memory-grid.grid-4x4 {
     grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
 }
 
 #memory-grid.grid-5x4 {
     grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
 }
 
 #memory-grid.grid-6x5 {
