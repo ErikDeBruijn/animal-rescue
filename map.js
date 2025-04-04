@@ -112,6 +112,7 @@ function initMap() {
     
     // Function to check if player completed all levels and should advance to next map
     window.checkForMapAdvancement = function(completedLevel) {
+        console.log("Checking for map advancement with completed level:", completedLevel);
         if (window.mapData && window.mapData.maps) {
             // Check if we're on map1 and need to advance to map2
             if (window.mapData.currentMap === 'map1') {
@@ -119,27 +120,31 @@ function initMap() {
                 const animalRescueLevels = window.mapData.LEVEL_POSITIONS
                     .filter(node => node[3] === 'animalRescue')
                     .map(node => node[2]);
-                    
+                
+                console.log("Animal rescue levels on current map:", animalRescueLevels);
+                
                 // Load completed levels
                 const completedLevels = JSON.parse(localStorage.getItem('completedLevels') || '[]');
-                
-                // Check if this was the last level needed to complete all levels
-                const remainingLevels = animalRescueLevels.filter(level => !completedLevels.includes(level) && level !== completedLevel);
+                console.log("Already completed levels:", completedLevels);
                 
                 // Find the highest level number on the current map to determine the final level
                 const highestLevel = Math.max(...animalRescueLevels);
+                console.log("Highest level on map:", highestLevel);
+                
+                // Important: The completedLevel is 1-based (from the game's perspective)
+                // So we need to check if it matches the highest level number
+                console.log("Checking if", completedLevel, "===", highestLevel);
                 
                 // If we've completed the highest level on this map, switch to map2
                 // This ensures we only transition after the intended final level
-                if (completedLevel === highestLevel) {
+                if (parseInt(completedLevel) === parseInt(highestLevel)) {
+                    console.log("TRANSITIONING TO MAP 2!");
                     window.mapData.switchMap('map2');
                     window.mapData.saveMapData();
                     
-                    // Add a flag that we showed the map transition
-                    localStorage.setItem('advancedToMap2', 'true');
-                    
-                    // Show a popup message to the user when they return to the map
+                    // Add a flag that we should show the map transition message
                     localStorage.setItem('showMapTransitionMessage', 'true');
+                    console.log("Set showMapTransitionMessage flag");
                 }
             }
         }
@@ -951,6 +956,13 @@ function createLevelInfoPopup() {
 
 // Initialize the map when the DOM is loaded
 document.addEventListener('DOMContentLoaded', initMap);
+
+// Debug function to test map transition
+window.testMapTransition = function() {
+    console.log("Testing map transition manually");
+    localStorage.setItem('showMapTransitionMessage', 'true');
+    showMapTransitionMessage();
+};
 
 // Expose utilities for adding game completion in other files
 window.mapUtils = {
