@@ -127,14 +127,14 @@ function initMap() {
                 const completedLevels = JSON.parse(localStorage.getItem('completedLevels') || '[]');
                 console.log("Already completed levels:", completedLevels);
                 
-                // The final level of map1 is hardcoded to 23 (animal rescue type)
-                const finalLevelMap1 = 23;
+                // The final level of map1 is hardcoded to 22 (animal rescue type)
+                const finalLevelMap1 = 22;
                 console.log("Final level of map1:", finalLevelMap1);
                 
                 // Important: The completedLevel is 1-based (from the game's perspective)
                 console.log("Checking if", completedLevel, "===", finalLevelMap1);
                 
-                // If we've completed level 23, which is the final level of map1, switch to map2
+                // If we've completed level 22, which is the final level of map1, switch to map2
                 if (parseInt(completedLevel) === finalLevelMap1) {
                     console.log("TRANSITIONING TO MAP 2!");
                     window.mapData.switchMap('map2');
