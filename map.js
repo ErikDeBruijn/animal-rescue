@@ -127,17 +127,15 @@ function initMap() {
                 const completedLevels = JSON.parse(localStorage.getItem('completedLevels') || '[]');
                 console.log("Already completed levels:", completedLevels);
                 
-                // Find the highest level number on the current map to determine the final level
-                const highestLevel = Math.max(...animalRescueLevels);
-                console.log("Highest level on map:", highestLevel);
+                // The final level of map1 is hardcoded to 23 (animal rescue type)
+                const finalLevelMap1 = 23;
+                console.log("Final level of map1:", finalLevelMap1);
                 
                 // Important: The completedLevel is 1-based (from the game's perspective)
-                // So we need to check if it matches the highest level number
-                console.log("Checking if", completedLevel, "===", highestLevel);
+                console.log("Checking if", completedLevel, "===", finalLevelMap1);
                 
-                // If we've completed the highest level on this map, switch to map2
-                // This ensures we only transition after the intended final level
-                if (parseInt(completedLevel) === parseInt(highestLevel)) {
+                // If we've completed level 23, which is the final level of map1, switch to map2
+                if (parseInt(completedLevel) === finalLevelMap1) {
                     console.log("TRANSITIONING TO MAP 2!");
                     window.mapData.switchMap('map2');
                     window.mapData.saveMapData();
