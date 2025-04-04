@@ -770,6 +770,12 @@ function gameLoop() {
                             window.mapUtils.markLevelCompleted(completedLevel, gameCore.gameState.score);
                         }
                         
+                        // Check for map advancement (added for multiple maps functionality)
+                        if (window.checkForMapAdvancement && typeof window.checkForMapAdvancement === 'function') {
+                            // Pass current level to check if transition to next map is needed
+                            window.checkForMapAdvancement(completedLevel);
+                        }
+                        
                         // Ga naar de wereldkaart in plaats van het volgende level
                         window.location.href = 'map.html';
                     } else if (gameCore.gameState.gameOver) {

@@ -198,6 +198,12 @@
     </div>
     
     <div class="editor-panel" style="margin-top: 50px;">
+        <div class="map-selector" style="margin-bottom: 15px; text-align: center;">
+            <label for="map-select">Selecteer Kaart: </label>
+            <select id="map-select" style="padding: 5px; border-radius: 4px; min-width: 150px;">
+                <!-- Options will be filled from mapData.AVAILABLE_MAPS -->
+            </select>
+        </div>
         <div class="tab-buttons">
             <div class="tab-button active" data-tab="nodes">Level Nodes</div>
             <div class="tab-button" data-tab="paths">Paden</div>
@@ -277,7 +283,11 @@
             </div>
             <div class="popup-body">
                 <p><strong>Welkom bij de Wereldkaart Editor!</strong></p>
-                <p>Hier kun je level nodes en paden voor de wereldkaart aanpassen:</p>
+                <p>Hier kun je level nodes en paden voor meerdere wereldkaarten aanpassen:</p>
+                <p><strong>Kaart selecteren:</strong></p>
+                <p>- Gebruik de dropdown bovenaan om tussen verschillende kaarten te schakelen</p>
+                <p>- Elke kaart heeft zijn eigen achtergrond en levels</p>
+                <p>- Wijzigingen worden per kaart opgeslagen</p>
                 <p><strong>Intuïtieve modus:</strong></p>
                 <p>- <strong>Verplaatsen:</strong> Sleep een level node om het te verplaatsen</p>
                 <p>- <strong>Selecteren:</strong> Klik op een node om het te selecteren voor bewerken</p>
@@ -292,8 +302,8 @@
                 <p>- <strong>Bijwerken/Verwijderen:</strong> Selecteer een pad in de lijst en bewerk of verwijder het</p>
                 <p><strong>JSON Data:</strong></p>
                 <p>- <strong>Kopiëren:</strong> Kopieer de JSON data naar het klembord</p>
-                <p>- <strong>Opslaan:</strong> Sla de wijzigingen op in lokale opslag</p>
-                <p>- <strong>Laden:</strong> Laad eerder opgeslagen data uit lokale opslag</p>
+                <p>- <strong>Opslaan:</strong> Sla de wijzigingen op in lokale of server opslag</p>
+                <p>- <strong>Laden:</strong> Laad eerder opgeslagen data uit opslag</p>
             </div>
         </div>
     </div>
@@ -325,6 +335,12 @@
                     // Once data is loaded, initialize the editor
                     console.log("Map data loaded successfully");
                     
+                    // Initialize the map selector dropdown
+                    initMapSelector();
+                    
+                    // Set the background image for the current map
+                    updateMapBackground();
+                    
                     // Create the map elements
                     createMapNodes();
                     
@@ -337,10 +353,79 @@
                 .catch(error => {
                     console.error("Error loading map data:", error);
                     // Continue with default data if loading fails
+                    initMapSelector();
+                    updateMapBackground();
                     createMapNodes();
                     setupEditorControls();
                     updateJSONPreview();
                 });
+                
+            // Function to initialize the map selector dropdown
+            function initMapSelector() {
+                const mapSelect = document.getElementById('map-select');
+                mapSelect.innerHTML = ''; // Clear existing options
+                
+                // Add options for each available map
+                window.mapData.getAvailableMaps().forEach(map => {
+                    const option = document.createElement('option');
+                    option.value = map.id;
+                    option.textContent = map.name;
+                    option.selected = map.id === window.mapData.currentMap;
+                    mapSelect.appendChild(option);
+                });
+                
+                // Add event listener for map changes
+                mapSelect.addEventListener('change', function() {
+                    // Check for unsaved changes before switching maps
+                    if (editorState.hasChanges) {
+                        if (!confirm('Je hebt onopgeslagen wijzigingen. Wil je deze opslaan voordat je naar een andere kaart gaat?')) {
+                            // User canceled, revert to previous selection
+                            mapSelect.value = window.mapData.currentMap;
+                            return;
+                        }
+                        
+                        // Save current map data before switching
+                        window.mapData.saveMapData().then(success => {
+                            if (success) {
+                                switchToMap(mapSelect.value);
+                            } else {
+                                // Revert to previous selection if save failed
+                                mapSelect.value = window.mapData.currentMap;
+                            }
+                        });
+                    } else {
+                        // No unsaved changes, switch directly
+                        switchToMap(mapSelect.value);
+                    }
+                });
+            }
+            
+            // Function to switch to a different map
+            function switchToMap(mapId) {
+                if (window.mapData.switchMap(mapId)) {
+                    // Update the background image
+                    updateMapBackground();
+                    
+                    // Recreate the map nodes and paths
+                    createMapNodes();
+                    
+                    // Update the JSON preview
+                    updateJSONPreview();
+                    
+                    // Reset changes flag
+                    editorState.hasChanges = false;
+                    
+                    return true;
+                }
+                return false;
+            }
+            
+            // Function to update the map background
+            function updateMapBackground() {
+                const mapBackground = document.querySelector('.map-background');
+                const backgroundImage = window.mapData.getCurrentMapBackground();
+                mapBackground.style.backgroundImage = `url('${backgroundImage}')`;
+            }
         }
         
         // Create level nodes and paths on the map

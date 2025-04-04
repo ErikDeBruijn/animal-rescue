@@ -41,9 +41,50 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('map-container').appendChild(newPlayerChar);
     }
     
+    // Check if we need to show map transition message
+    if (localStorage.getItem('showMapTransitionMessage') === 'true') {
+        showMapTransitionMessage();
+        localStorage.removeItem('showMapTransitionMessage');
+    }
+    
     // Initialize map
     initMap();
 });
+
+// Show a message when transitioning to a new map
+function showMapTransitionMessage() {
+    // Create the message element
+    const messageContainer = document.createElement('div');
+    messageContainer.className = 'map-transition-message';
+    messageContainer.style.position = 'fixed';
+    messageContainer.style.top = '50%';
+    messageContainer.style.left = '50%';
+    messageContainer.style.transform = 'translate(-50%, -50%)';
+    messageContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+    messageContainer.style.color = 'white';
+    messageContainer.style.padding = '20px 30px';
+    messageContainer.style.borderRadius = '10px';
+    messageContainer.style.boxShadow = '0 0 20px gold';
+    messageContainer.style.textAlign = 'center';
+    messageContainer.style.zIndex = '1000';
+    messageContainer.style.maxWidth = '80%';
+    
+    // Add the content
+    messageContainer.innerHTML = `
+        <h2 style="color: gold; margin-top: 0;">Gefeliciteerd!</h2>
+        <p>Je hebt alle levels op de eerste kaart voltooid!</p>
+        <p>Nu wordt een nieuwe kaart met nieuwe avonturen ontgrendeld.</p>
+        <button id="continue-btn" style="background-color: gold; border: none; padding: 10px 20px; margin-top: 15px; border-radius: 5px; cursor: pointer; font-weight: bold;">Doorgaan naar nieuwe kaart</button>
+    `;
+    
+    // Add to the document
+    document.body.appendChild(messageContainer);
+    
+    // Add event listener to the continue button
+    document.getElementById('continue-btn').addEventListener('click', function() {
+        document.body.removeChild(messageContainer);
+    });
+}
 
 // Initialize the map
 function initMap() {
@@ -53,9 +94,60 @@ function initMap() {
         return;
     }
     
+    // Function to update the map background
+    function updateMapBackground() {
+        const mapBackground = document.querySelector('.map-background');
+        if (mapBackground) {
+            const backgroundImage = window.mapData.getCurrentMapBackground();
+            mapBackground.style.backgroundImage = `url('${backgroundImage}')`;
+        } else {
+            // Apply to the container if there's no dedicated background element
+            const mapContainer = document.getElementById('map-container');
+            if (mapContainer) {
+                const backgroundImage = window.mapData.getCurrentMapBackground();
+                mapContainer.style.backgroundImage = `url('${backgroundImage}')`;
+            }
+        }
+    }
+    
+    // Function to check if player completed all levels and should advance to next map
+    window.checkForMapAdvancement = function(completedLevel) {
+        if (window.mapData && window.mapData.maps) {
+            // Check if we're on map1 and need to advance to map2
+            if (window.mapData.currentMap === 'map1') {
+                // Get all animal rescue (non-memory game) levels on the current map
+                const animalRescueLevels = window.mapData.LEVEL_POSITIONS
+                    .filter(node => node[3] === 'animalRescue')
+                    .map(node => node[2]);
+                    
+                // Load completed levels
+                const completedLevels = JSON.parse(localStorage.getItem('completedLevels') || '[]');
+                
+                // Check if this was the last level needed to complete all levels
+                const remainingLevels = animalRescueLevels.filter(level => !completedLevels.includes(level) && level !== completedLevel);
+                
+                // If we've completed the specific final level (level 23), switch to map2
+                // This ensures we only transition after the intended final level
+                if (completedLevel === 23) {
+                    window.mapData.switchMap('map2');
+                    window.mapData.saveMapData();
+                    
+                    // Add a flag that we showed the map transition
+                    localStorage.setItem('advancedToMap2', 'true');
+                    
+                    // Show a popup message to the user when they return to the map
+                    localStorage.setItem('showMapTransitionMessage', 'true');
+                }
+            }
+        }
+    }
+    
     // Try to load map data if it exists
     Promise.resolve(window.mapData.loadMapData())
         .then(() => {
+            // Update the map background based on the current map
+            updateMapBackground();
+            
             // Load walkable area data
             loadWalkableAreaData()
                 .then(() => {
