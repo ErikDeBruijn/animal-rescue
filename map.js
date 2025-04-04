@@ -126,9 +126,12 @@ function initMap() {
                 // Check if this was the last level needed to complete all levels
                 const remainingLevels = animalRescueLevels.filter(level => !completedLevels.includes(level) && level !== completedLevel);
                 
-                // If we've completed the specific final level (level 23), switch to map2
+                // Find the highest level number on the current map to determine the final level
+                const highestLevel = Math.max(...animalRescueLevels);
+                
+                // If we've completed the highest level on this map, switch to map2
                 // This ensures we only transition after the intended final level
-                if (completedLevel === 23) {
+                if (completedLevel === highestLevel) {
                     window.mapData.switchMap('map2');
                     window.mapData.saveMapData();
                     
