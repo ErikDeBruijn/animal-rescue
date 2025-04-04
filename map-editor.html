@@ -313,7 +313,8 @@
             offsetX: 0,
             offsetY: 0,
             ghostNode: null, // Store ghost node for preview
-            hoveredNode: null // Store hovered node
+            hoveredNode: null, // Store hovered node
+            hasChanges: false // Track if there are unsaved changes
         };
         
         // Initialize the editor
@@ -513,6 +514,9 @@
             
             // Mark that we've actually moved the node
             editorState.hasMoved = true;
+            
+            // Mark that we have unsaved changes when dragging a node
+            editorState.hasChanges = true;
             
             // Calculate new position relative to map container
             const mapContainer = document.getElementById('map-container');
@@ -753,6 +757,16 @@
             const toggleButton = document.getElementById('toggle-mode');
             toggleButton.title = "De editor schakelt automatisch tussen verplaatsen, selecteren en toevoegen op basis van de muispositie";
             
+            // Add beforeunload event to warn when leaving with unsaved changes
+            window.addEventListener('beforeunload', function(e) {
+                if (editorState.hasChanges) {
+                    // Standard message (browsers may override this with their own)
+                    const message = 'Je hebt onopgeslagen wijzigingen. Weet je zeker dat je deze pagina wilt verlaten?';
+                    e.returnValue = message;
+                    return message;
+                }
+            });
+            
             // Hide mode instructions, as they're no longer needed
             document.getElementById('mode-instructions').style.display = 'none';
             
@@ -775,6 +789,9 @@
                 
                 // Recreate the map
                 createMapNodes();
+                
+                // Mark that we have unsaved changes
+                editorState.hasChanges = true;
                 
                 // Update JSON preview
                 updateJSONPreview();
@@ -814,6 +831,9 @@
                 // Recreate the map
                 createMapNodes();
                 
+                // Mark that we have unsaved changes
+                editorState.hasChanges = true;
+                
                 // Show success notification
                 showNotification(`Level ${level} bijgewerkt!`);
                 
@@ -848,6 +868,9 @@
                 
                 // Recreate the map
                 createMapNodes();
+                
+                // Mark that we have unsaved changes
+                editorState.hasChanges = true;
                 
                 // Reset selection
                 editorState.selectedNodeIndex = -1;
@@ -894,6 +917,9 @@
                 // Recreate the map
                 createMapNodes();
                 
+                // Mark that we have unsaved changes
+                editorState.hasChanges = true;
+                
                 // Update JSON preview
                 updateJSONPreview();
             });
@@ -926,6 +952,9 @@
                 // Recreate the map
                 createMapNodes();
                 
+                // Mark that we have unsaved changes
+                editorState.hasChanges = true;
+                
                 // Reset selection
                 editorState.selectedPathIndex = -1;
                 document.getElementById('update-path').disabled = true;
@@ -952,6 +981,9 @@
                 // Recreate the map
                 createMapNodes();
                 
+                // Mark that we have unsaved changes
+                editorState.hasChanges = true;
+                
                 // Reset selection
                 editorState.selectedPathIndex = -1;
                 document.getElementById('update-path').disabled = true;
@@ -977,6 +1009,7 @@
                 }, null, 2);
                 
                 localStorage.setItem('mapData', mapDataJSON);
+                editorState.hasChanges = false;
                 alert('Kaartdata opgeslagen in lokale opslag!');
             });
             
@@ -992,7 +1025,7 @@
                     PATH_CONNECTIONS: window.mapData.PATH_CONNECTIONS
                 };
                 
-                fetch('/api/map-data', {
+                return fetch('/api/map-data', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1004,14 +1037,19 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
+                        // Reset the changes flag after successful save
+                        editorState.hasChanges = false;
                         alert('Kaartdata succesvol opgeslagen op de server!');
+                        return true;
                     } else {
                         alert('Fout bij het opslaan op de server: ' + data.error);
+                        return false;
                     }
                 })
                 .catch(error => {
                     console.error('Error:', error);
                     alert('Fout bij het opslaan op de server: ' + error);
+                    return false;
                 });
             }
             
@@ -1024,6 +1062,8 @@
                             // Update UI with the newly loaded data
                             createMapNodes();
                             updateJSONPreview();
+                            // Reset changes flag after loading from server
+                            editorState.hasChanges = false;
                             alert('Kaartdata succesvol geladen van de server!');
                         } else {
                             alert('Fout bij het laden van de kaartdata');
@@ -1038,7 +1078,21 @@
             // Return to game (both buttons)
             document.querySelectorAll('#return-button').forEach(button => {
                 button.addEventListener('click', function() {
-                    window.location.href = 'map.html';
+                    // Check for unsaved changes before navigating away
+                    if (editorState.hasChanges) {
+                        if (confirm('Je hebt onopgeslagen wijzigingen. Wil je deze opslaan voordat je verder gaat?')) {
+                            // Save changes first, then navigate after saving completes
+                            saveToServer().then(() => {
+                                window.location.href = 'map.html';
+                            });
+                        } else {
+                            // Navigate without saving
+                            window.location.href = 'map.html';
+                        }
+                    } else {
+                        // No changes, navigate immediately
+                        window.location.href = 'map.html';
+                    }
                 });
             });
             
@@ -1126,6 +1180,9 @@
                         document.getElementById('node-y').value = ghost.y;
                         document.getElementById('node-level').value = ghost.level;
                         
+                        // Mark that we have unsaved changes
+                        editorState.hasChanges = true;
+                        
                         // Find highest level
                         let highestLevel = 0;
                         window.mapData.LEVEL_POSITIONS.forEach(([_, __, level]) => {
@@ -1171,6 +1228,9 @@
                         document.getElementById('node-x').value = ghost.x;
                         document.getElementById('node-y').value = ghost.y;
                         document.getElementById('node-level').value = ghost.level;
+                        
+                        // Mark that we have unsaved changes
+                        editorState.hasChanges = true;
                         
                         // Find highest level
                         let highestLevel = 0;
