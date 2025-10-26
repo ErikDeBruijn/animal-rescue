@@ -1,7 +1,7 @@
 // check-syntax.js - Een uitgebreide syntax check voor alle JavaScript bestanden
-const fs = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
+import fs from 'fs';
+import path from 'path';
+import { execSync } from 'child_process';
 
 // Configuratie
 const EXCLUDED_DIRS = ['node_modules', '.git'];

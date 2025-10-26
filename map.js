@@ -28,6 +28,24 @@ let mapState = {
     }
 };
 
+// Function to update the map background
+function updateMapBackground() {
+    const mapBackground = document.querySelector('.map-background');
+    if (mapBackground) {
+        const backgroundImage = window.mapData.getCurrentMapBackground();
+        console.log("Updating map background to:", backgroundImage);
+        mapBackground.style.backgroundImage = `url('${backgroundImage}')`;
+    } else {
+        // Apply to the container if there's no dedicated background element
+        const mapContainer = document.getElementById('map-container');
+        if (mapContainer) {
+            const backgroundImage = window.mapData.getCurrentMapBackground();
+            console.log("Updating map container background to:", backgroundImage);
+            mapContainer.style.backgroundImage = `url('${backgroundImage}')`;
+        }
+    }
+}
+
 // Initialize the world map when the DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     console.log("DOM loaded, initializing world map...");
@@ -93,23 +111,7 @@ function initMap() {
         console.error("Map data not loaded! Make sure map-data.js is included before map.js");
         return;
     }
-    
-    // Function to update the map background
-    function updateMapBackground() {
-        const mapBackground = document.querySelector('.map-background');
-        if (mapBackground) {
-            const backgroundImage = window.mapData.getCurrentMapBackground();
-            mapBackground.style.backgroundImage = `url('${backgroundImage}')`;
-        } else {
-            // Apply to the container if there's no dedicated background element
-            const mapContainer = document.getElementById('map-container');
-            if (mapContainer) {
-                const backgroundImage = window.mapData.getCurrentMapBackground();
-                mapContainer.style.backgroundImage = `url('${backgroundImage}')`;
-            }
-        }
-    }
-    
+
     // Function to check if player completed all levels and should advance to next map
     window.checkForMapAdvancement = function(completedLevel) {
         console.log("Checking for map advancement with completed level:", completedLevel);
@@ -139,6 +141,12 @@ function initMap() {
                     console.log("TRANSITIONING TO MAP 2!");
                     window.mapData.switchMap('map2');
                     window.mapData.saveMapData();
+                    
+                    // Save the current map to localStorage so it persists across page reloads
+                    localStorage.setItem('currentMap', 'map2');
+                    
+                    // Update the map background immediately
+                    updateMapBackground();
                     
                     // Add a flag that we should show the map transition message
                     localStorage.setItem('showMapTransitionMessage', 'true');
@@ -315,7 +323,19 @@ function createMapNodes() {
     // Clear existing nodes but preserve the background
     const mapBackground = mapContainer.querySelector('.map-background');
     mapContainer.innerHTML = '';
-    mapContainer.appendChild(mapBackground);
+    
+    // If mapBackground doesn't exist, create it
+    if (mapBackground) {
+        mapContainer.appendChild(mapBackground);
+    } else {
+        // Create a new background element
+        const newMapBackground = document.createElement('div');
+        newMapBackground.className = 'map-background';
+        mapContainer.appendChild(newMapBackground);
+    }
+    
+    // Make sure to set the background image for both the container and background div
+    updateMapBackground();
     
     mapState.levelNodes = [];
     
