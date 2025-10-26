@@ -2,9 +2,6 @@
 // Contains all game entity behaviors, physics and game logic
 // This file focuses on behavior only - rendering is handled in game-characters.js
 
-// Get frameCount from gameControls to avoid duplicates
-const getFrameCount = () => window.gameControls ? window.gameControls.frameCount || 0 : 0;
-
 // Player class with all behavior and physics logic
 class Player {
     constructor(x, y, controls, name, defaultAnimal) {
@@ -319,19 +316,8 @@ class Player {
         }
         
         // Bepaal of de speler actief een bewegingstoets indrukt
-        // Check specifieke toetsen voor elke speler en niet de algemene 'left'/'right' keys
-        // Dit is belangrijk om te voorkomen dat beide spelers op dezelfde controller reageren
-        const playerSpecificLeft = this.name === "Speler 1" ? 
-            (gameControls.keys['a'] || gameControls.keys['A']) : 
-            (gameControls.keys['ArrowLeft']);
-            
-        const playerSpecificRight = this.name === "Speler 1" ? 
-            (gameControls.keys['d'] || gameControls.keys['D']) : 
-            (gameControls.keys['ArrowRight']);
-            
-        // De algemene left/right keys worden nog steeds gecontroleerd voor backward compatibility
-        const isPressingLeft = playerSpecificLeft || gameControls.keys[this.controls.left] || gameControls.keys[this.controls.left.toLowerCase()];
-        const isPressingRight = playerSpecificRight || gameControls.keys[this.controls.right] || gameControls.keys[this.controls.right.toLowerCase()];
+        const isPressingLeft = gameControls.keys[this.controls.left] || gameControls.keys[this.controls.left.toLowerCase()];
+        const isPressingRight = gameControls.keys[this.controls.right] || gameControls.keys[this.controls.right.toLowerCase()];
         
         // Reset de detectie van verandering in bewegingsrichting
         this.movingDirectionChanged = false;
@@ -385,40 +371,14 @@ class Player {
             this.velX *= 0.995; // Zeer lichte vertraging
         }
         
-        // Springen als op de grond - nu ook met spatiebalk
-        // Bepaal of de speler specifiek omhoog indrukt, afhankelijk van welke speler het is
-        const playerSpecificUp = this.name === "Speler 1" ? 
-            (gameControls.keys['w'] || gameControls.keys['W']) : 
-            (gameControls.keys['ArrowUp']);
-        
-        // Controleer of spatie is toegestaan voor deze speler (alleen voor Player 1 of beide)
-        const spaceAllowed = this.name === "Speler 1" || gameCore.gameState.allowBothPlayersSpace;
-        
-        // Kijk of de speler omhoog ingedrukt heeft OF de spatiebalk (indien toegestaan)
-        if (((playerSpecificUp || gameControls.keys[this.controls.up] || gameControls.keys[this.controls.up.toLowerCase()]) || 
-             (spaceAllowed && gameControls.keys[' '])) && this.onGround) {
+        // Springen als op de grond
+        if ((gameControls.keys[this.controls.up] || gameControls.keys[this.controls.up.toLowerCase()]) && this.onGround) {
             this.velY = this.jumpPower * timeScaleFactor;
             this.onGround = false;
-            
-            // Debug info voor springen
-            if (gameCore && gameCore.gameState && gameCore.gameState.debugLevel >= 1) {
-                console.log(`JUMP DEBUG - Player: ${this.name}, Animal: ${this.animalType}, Controls.up: ${this.controls.up}`);
-                console.log(`Current key states - playerSpecific:${playerSpecificUp}, up:${gameControls.keys[this.controls.up]}, lowercase:${gameControls.keys[this.controls.up.toLowerCase()]}, space:${gameControls.keys[' ']}`);
-            }
             
             // Speel springgeluid
             if (typeof gameAudio !== 'undefined' && typeof gameAudio.playSound === 'function') {
                 gameAudio.playSound('jump', 0.3);
-            }
-        }
-        
-        // Debug info tonen voor gamepad debugging (buiten de sprong zelf)
-        if (gameCore && gameCore.gameState && gameCore.gameState.debugLevel >= 2 && getFrameCount() % 60 === 0) {
-            // Wanneer er een controller is verbonden, log de status van toetsen voor deze speler
-            if (gameControls && gameControls.gamepadConnected) {
-                const upKey = this.controls.up;
-                console.log(`GAMEPAD DEBUG - Player: ${this.name}, Controls.up: ${upKey}`);
-                console.log(`Keys state: up(${upKey}):${gameControls.keys[upKey]}, w:${gameControls.keys['w']}, ArrowUp:${gameControls.keys['ArrowUp']}, onGround:${this.onGround}`);
             }
         }
         
@@ -443,51 +403,30 @@ class Player {
             this.canSwitch = true; // Reset wanneer knop losgelaten
         }
         
-        // Activeer klauwen voor kat wanneer spatiebalk of controller-knop wordt ingedrukt
+        // Activeer klauwen voor kat wanneer spatiebalk wordt ingedrukt
         if (this.animalType === "CAT") {
             // Always ensure canClaw is initialized
             if (this.canClaw === undefined) {
                 this.canClaw = true;
             }
             
-            // Player-specifieke knop definiëren op basis van de speler - gebruik ClawKey of Y knop op controller
-            // Speler 1 gebruikt C of linker Ctrl
-            // Speler 2 gebruikt rechter Ctrl
-            const playerSpecificClawKey = this.name === "Speler 1" ? 
-                (gameControls.keys['c'] || gameControls.keys['C'] || gameControls.keys['ControlLeft']) : 
-                (gameControls.keys['ControlRight']);
-            
-            // Debug voor klauwen status
-            if (gameCore && gameCore.gameState && gameCore.gameState.debugLevel >= 2 && getFrameCount() % 60 === 0) {
-                if (this.animalType === "CAT") {
-                    console.log(`CAT CLAW DEBUG - Player: ${this.name}, canClaw: ${this.canClaw}, clawActive: ${this.clawActive}`);
-                }
-            }
-            
-            // Bij het indrukken van spatiebalk of controller-knop: activeer klauwen als dat kan
+            // Bij het indrukken van spatiebalk: activeer klauwen als dat kan
             // We gebruiken key down/up om te zorgen dat de actie maar één keer uitgevoerd wordt
-            // bij het indrukken van de knop, niet bij het ingedrukt houden
-            const spaceOrController = gameControls.keys[' '] || playerSpecificClawKey;
-            
-            if (spaceOrController && !this.spaceKeyWasDown && !this.clawActive && this.canClaw) {
+            // bij het indrukken van de spatiebalk, niet bij het ingedrukt houden
+            if (gameControls.keys[' '] && !this.spaceKeyWasDown && !this.clawActive && this.canClaw) {
                 this.clawActive = true;
-                this.clawTimer = 70; // Klauwen actief voor 70 frames (~1.2 seconden)
+                this.clawTimer = 70; // Klauwen actief voor 30 frames (halve seconde)
                 this.canClaw = false; // Kan pas opnieuw gebruiken na afkoelen
-                
-                // Debug info als klauwen gebruikt worden
-                if (gameCore && gameCore.gameState && gameCore.gameState.debugLevel >= 1) {
-                    console.log(`Kat klauwen geactiveerd door ${this.name}`);
-                }
                 
                 // Speel klauwgeluid (gewoon, niet als loop)
                 if (typeof gameAudio !== 'undefined' && typeof gameAudio.playSound === 'function') {
                     gameAudio.playSound('claw', 0.5);
                 }
                 
-                // Markeer dat de knop ingedrukt was
+                // Markeer dat de spatiebalk ingedrukt was
                 this.spaceKeyWasDown = true;
-            } else if (!spaceOrController) {
-                // Reset als de knop is losgelaten
+            } else if (!gameControls.keys[' ']) {
+                // Reset als de spatiebalk is losgelaten
                 this.spaceKeyWasDown = false;
                 
                 // Force reset if cat can't claw for too long
@@ -1095,26 +1034,13 @@ class Player {
             const peakPhase = 180; // Middle 3 seconds (180 frames)
             const decreasePhase = 60; // Last second (60 frames)
             
-            // Player-specifieke knoppen op gamepad voor vuurspuwen (B-knop of RB-knop)
-            // Speler 1: X-toets, Speler 2: Z-toets
-            const playerSpecificFireKey = this.name === "Speler 1" ? 
-                (gameControls.keys['x'] || gameControls.keys['X']) : 
-                (gameControls.keys['z'] || gameControls.keys['Z']);
-                
-            // Debug voor vuurspuwen
-            if (gameCore && gameCore.gameState && gameCore.gameState.debugLevel >= 2 && getFrameCount() % 120 === 0) {
-                console.log(`FIRE DEBUG - Player: ${this.name}, canBreatheFire: ${this.canBreatheFire}, active: ${this.fireBreathActive}, timer: ${this.fireBreathTimer}`);
-            }
-                
-            // Activeer vuurspuwen met spatiebalk of controller
-            const fireButtonPressed = (this.name === "Speler 1" && gameControls.keys[' ']) || playerSpecificFireKey;
-            
-            if (fireButtonPressed) {
-                // When fire button is first pressed, start the timer
+            // Activeer vuurspuwen met spatiebalk
+            if (gameControls.keys[' ']) {
+                // When space is first pressed, start the timer
                 if (!this.fireBreathActive) {
                     this.fireBreathActive = true;
                     this.fireBreathTimer = maxTime; // 5 seconds of fire breath
-                    console.log(`Fire breath activated by ${this.name}! Timer set to 5 seconds`);
+                    console.log("Fire breath activated! Timer set to 5 seconds");
                     
                     // Speel vuurgeluid
                     if (typeof gameAudio !== 'undefined' && typeof gameAudio.playSound === 'function') {
@@ -1178,7 +1104,7 @@ class Player {
                     collectibles.splice(index, 1);
                     this.canBreatheFire = true;
                     this.fireBreathActive = false; // Track if fire has been used yet
-                    gameCore.gameState.message = "Vuur! Je kunt nu vuur spuwen met SPATIE of met de A-knop op je controller!";
+                    gameCore.gameState.message = "Vuur! Je kunt nu vuur spuwen met SPATIE!";
                     
                     // Speel verzamelgeluid
                     if (typeof gameAudio !== 'undefined' && typeof gameAudio.playSound === 'function') {
@@ -1769,23 +1695,13 @@ class Player {
      * Check if the digging button for this player is currently pressed
      */
     isDigButtonPressed() {
-        // Debug voor graafactie
-        if (gameCore && gameCore.gameState && gameCore.gameState.debugLevel >= 2 && getFrameCount() % 60 === 0) {
-            if (this.animalType === "MOLE" && (
-                (this.name === "Speler 1" && gameControls.keys['digPlayer1']) || 
-                (this.name === "Speler 2" && gameControls.keys['digPlayer2'])
-            )) {
-                console.log(`DIG DEBUG - Player: ${this.name}, Action detected! Controls.dig: ${this.controls.dig}`);
-            }
-        }
-        
-        // Speler 1 gebruikt digPlayer1 actie OF direct AltLeft
+        // Speler 1 gebruikt ALLEEN digPlayer1 actie
         if (this.name === "Speler 1") {
-            return gameControls.keys['digPlayer1'] || gameControls.keys['AltLeft'];
+            return gameControls.keys['digPlayer1'];
         }
-        // Speler 2 gebruikt digPlayer2 actie OF direct AltRight
+        // Speler 2 gebruikt ALLEEN digPlayer2 actie
         else if (this.name === "Speler 2") {
-            return gameControls.keys['digPlayer2'] || gameControls.keys['AltRight']; 
+            return gameControls.keys['digPlayer2']; 
         }
         
         // Fallback naar de configuratie in controls
