@@ -413,7 +413,8 @@ class Player {
             // Bij het indrukken van spatiebalk: activeer klauwen als dat kan
             // We gebruiken key down/up om te zorgen dat de actie maar één keer uitgevoerd wordt
             // bij het indrukken van de spatiebalk, niet bij het ingedrukt houden
-            if (gameControls.keys[' '] && !this.spaceKeyWasDown && !this.clawActive && this.canClaw) {
+            // BELANGRIJK: Activeer klauwen NIET als het level voltooid is - level completion heeft prioriteit
+            if (gameControls.keys[' '] && !this.spaceKeyWasDown && !this.clawActive && this.canClaw && !gameCore.levelCompleted) {
                 this.clawActive = true;
                 this.clawTimer = 70; // Klauwen actief voor 30 frames (halve seconde)
                 this.canClaw = false; // Kan pas opnieuw gebruiken na afkoelen
@@ -425,8 +426,9 @@ class Player {
                 
                 // Markeer dat de spatiebalk ingedrukt was
                 this.spaceKeyWasDown = true;
-            } else if (!gameControls.keys[' ']) {
-                // Reset als de spatiebalk is losgelaten
+            } else if (!gameControls.keys[' '] || gameCore.levelCompleted) {
+                // Reset als de spatiebalk is losgelaten OF als het level voltooid is
+                // (zodat level completion altijd kan worden getriggerd)
                 this.spaceKeyWasDown = false;
                 
                 // Force reset if cat can't claw for too long
