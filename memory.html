@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Huisdieren Redders - Memory Spel</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="memory.css">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+</head>
+<body>
+    <h1>Huisdieren Redders - Memory Spel</h1>
+    
+    <div class="memory-container" id="memory-container">
+        <div class="score-display" id="memory-score">Score: 0</div>
+        <div class="level-display" id="memory-level">Level 101</div>
+        <div class="time-display" id="memory-time">Tijd: 60</div>
+        <div class="moves-display" id="memory-moves">Zetten: 0</div>
+        <div class="keyboard-hint">Gebruik pijltjestoetsen of WASD + SPATIE</div>
+        <div id="memory-grid">
+            <!-- Kaarten worden hier dynamisch ingevoegd -->
+        </div>
+        <div id="level-complete-message" class="level-message" style="display: none;">
+            <h2>Level Voltooid!</h2>
+            <p>Score: <span id="final-score">0</span></p>
+            <button id="continue-button">Ga verder</button>
+        </div>
+    </div>
+    
+    <div class="control-buttons">
+        <button id="help-button" title="Help / Instructies"><span>❓</span></button>
+        <button id="fullscreen-button" title="Volledig scherm"><span>⛶</span></button>
+        <button id="map-button" title="Terug naar wereldkaart" onclick="window.location.href='map.html'"><span>🗺️</span></button>
+    </div>
+    
+    <!-- Instructies popup -->
+    <div id="instructions-popup" class="popup-dialog">
+        <div class="popup-content">
+            <div class="popup-header">
+                <h3>Memory Spel Instructies</h3>
+                <span class="close-popup">&times;</span>
+            </div>
+            <div class="popup-body">
+                <p><strong>Welkom bij het Memory Spel!</strong></p>
+                <p>In dit spel moet je kaarten met dezelfde afbeelding vinden.</p>
+                <p><strong>Hoe speel je:</strong></p>
+                <p>1. Klik op een kaart om deze om te draaien OF</p>
+                <p>2. Gebruik de pijltjestoetsen of WASD om te navigeren en druk op SPATIE of ENTER om een kaart om te draaien.</p>
+                <p>3. Selecteer een tweede kaart om te zien of ze overeenkomen.</p>
+                <p>4. Als de kaarten overeenkomen, blijven ze omgedraaid.</p>
+                <p>5. Als de kaarten niet overeenkomen, worden ze weer omgedraaid.</p>
+                <p>6. Het doel is om alle kaarten te matchen in zo min mogelijk zetten.</p>
+                <p><strong>Score berekening:</strong></p>
+                <p>- Basis: 100 punten voor het voltooien</p>
+                <p>- Minder beurten = meer punten</p>
+                <p>- Je tijd wordt bijgehouden, maar er is geen tijdslimiet</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Laad de game scripts -->
+    <script src="game-core.js"></script>
+    <script src="game-audio.js"></script>
+    <script src="map-data.js"></script>
+    <script src="memory.js"></script>
+    
+    <script>
+        // Instructies popup functionaliteit
+        function toggleInstructionsPopup() {
+            const popup = document.getElementById('instructions-popup');
+            
+            if (popup.style.display === 'flex') {
+                popup.style.display = 'none';
+            } else {
+                popup.style.display = 'flex';
+            }
+        }
+        
+        // Open instructies als op de help-knop wordt geklikt
+        document.getElementById('help-button').addEventListener('click', toggleInstructionsPopup);
+        
+        // Sluit popup als op het kruisje wordt geklikt
+        document.querySelector('.close-popup').addEventListener('click', toggleInstructionsPopup);
+        
+        // Sluit popup als buiten de popup wordt geklikt
+        document.getElementById('instructions-popup').addEventListener('click', function(event) {
+            if (event.target === this) {
+                toggleInstructionsPopup();
+            }
+        });
+        
+        // Fullscreen functionaliteit
+        document.addEventListener('DOMContentLoaded', function() {
+            const fullscreenButton = document.getElementById('fullscreen-button');
+            const memoryContainer = document.getElementById('memory-container');
+            
+            // Controleer of fullscreen API beschikbaar is
+            const fullscreenAvailable = !!(
+                document.fullscreenEnabled || 
+                document.webkitFullscreenEnabled || 
+                document.mozFullScreenEnabled ||
+                document.msFullscreenEnabled
+            );
+            
+            // Als fullscreen niet beschikbaar is, verberg de knop
+            if (!fullscreenAvailable) {
+                fullscreenButton.style.display = 'none';
+            }
+            
+            // Fullscreen in- en uitschakelen
+            fullscreenButton.addEventListener('click', function() {
+                if (!document.fullscreenElement && 
+                    !document.webkitFullscreenElement && 
+                    !document.mozFullScreenElement && 
+                    !document.msFullscreenElement) {
+                    
+                    // Ga naar fullscreen modus
+                    if (memoryContainer.requestFullscreen) {
+                        memoryContainer.requestFullscreen();
+                    } else if (memoryContainer.webkitRequestFullscreen) {
+                        memoryContainer.webkitRequestFullscreen();
+                    } else if (memoryContainer.mozRequestFullScreen) {
+                        memoryContainer.mozRequestFullScreen();
+                    } else if (memoryContainer.msRequestFullscreen) {
+                        memoryContainer.msRequestFullscreen();
+                    }
+                    
+                    // Update knop icon
+                    fullscreenButton.innerHTML = '<span>⮻</span>';
+                    
+                    // Verwijder focus van de knop
+                    fullscreenButton.blur();
+                } else {
+                    // Verlaat fullscreen modus
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    } else if (document.webkitExitFullscreen) {
+                        document.webkitExitFullscreen();
+                    } else if (document.mozCancelFullScreen) {
+                        document.mozCancelFullScreen();
+                    } else if (document.msExitFullscreen) {
+                        document.msExitFullscreen();
+                    }
+                    
+                    // Update knop icon
+                    fullscreenButton.innerHTML = '<span>⛶</span>';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

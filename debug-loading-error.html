@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Game Loading Error</title>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <h1>Debug Game Loading Error</h1>
+    <div id="output"></div>
+
+    <script>
+    // Debug output functie
+    function log(message) {
+        const output = document.getElementById('output');
+        const line = document.createElement('div');
+        line.textContent = message;
+        output.appendChild(line);
+        console.log(message);
+    }
+
+    // De fout doet zich voor omdat gameEntities.updateEnemies gebruikt wordt voordat player1/player2 globaal beschikbaar zijn.
+    // We gaan deze specifieke situatie hier reproduceren:
+
+    window.gameCore = {
+        currentLevel: 0,
+        gameState: { running: true }
+    };
+
+    window.levels = [
+        {
+            name: "Test Level",
+            platforms: [],
+            traps: [],
+            collectibles: [],
+            puppy: null
+        }
+    ];
+
+    window.gameEntities = {
+        updatePuppy: function() { 
+            log("updatePuppy()"); 
+            // Stel dat updatePuppy() probeert de puppy te laten reageren op player1
+            // Als de volgende regels uitgevoerd worden voordat player1 globaal beschikbaar is,
+            // krijg je een TypeError: Cannot read property 'x' of undefined
+            if (player1 && player1.x) { // Hier zou player1 undefined zijn
+                log(`Player1 position: ${player1.x}, ${player1.y}`);
+            } else {
+                log("player1 is niet beschikbaar als globale variabele");
+            }
+        },
+        
+        updateEnemies: function(players) {
+            log(`updateEnemies() called with ${players ? players.length : 0} players`);
+            
+            // Simuleer een verwjzing naar player1 direct, zonder window. prefix
+            // Dit kan gebeuren als gameLoop() wordt uitgevoerd voordat loadLevel() klaar is
+            try {
+                log("Trying to access player1 directly (this should fail):");
+                log(`Player1 x: ${player1.x}`); // Dit zou de TypeError moeten veroorzaken
+            } catch (e) {
+                log(`Error accessing player1 directly: ${e.message}`);
+            }
+            
+            // Deze manier zou wel moeten werken, aangezien we window.player1 gebruiken en dit paramters zijn
+            try {
+                if (players && players.length > 0) {
+                    log("Accessing player1 via function parameters: ");
+                    log(`First player x: ${players[0].x}`);
+                }
+            } catch (e) {
+                log(`Error with players parameter: ${e.message}`);
+            }
+            
+            // Probeer nu window.player1 te gebruiken
+            try {
+                log("Trying to access via window.player1:");
+                if (window.player1) {
+                    log(`Window player1 x: ${window.player1.x}`);
+                } else {
+                    log("window.player1 is not defined yet");
+                }
+            } catch (e) {
+                log(`Error with window.player1: ${e.message}`);
+            }
+        }
+    };
+
+    // Simuleer een game load sequence met race condition
+    function simulateGameStart() {
+        log("Step 1: Game initialization begins");
+        
+        // Normale volgorde zou zijn:
+        // 1. Load game files (spel code wordt in deferr/async script tags geladen)
+        // 2. initializeGameWhenReady() controleert of alle componenten beschikbaar zijn
+        // 3. init() wordt aangeroepen
+        // 4. Binnen init() wordt loadLevel() aangeroepen om een level te laden
+        // 5. loadLevel() maakt window.player1 en window.player2 aan
+        // 6. gameLoop() wordt gestart en roept gameEntities.updateEnemies() aan met window.player1 en 2
+        
+        // Maar stel dat door een race condition, de gameLoop begint voordat loadLevel() klaar is
+        
+        log("Step 2: Simulate calling gameLoop before loadLevel is done");
+        // Probeer eerst direct player1 te gebruiken - dit moet de TypeError veroorzaken
+        try {
+            gameEntities.updateEnemies([player1, player2]);
+        } catch (e) {
+            log(`Error in pre-load gameLoop: ${e.message}`);
+        }
+        
+        log("Step 3: Now properly load players");
+        // Nu "laden" we het level en maken we de global player vars aan
+        window.player1 = {
+            x: 100,
+            y: 100,
+            name: "Player 1"
+        };
+        
+        window.player2 = {
+            x: 200,
+            y: 200,
+            name: "Player 2"
+        };
+        
+        log("Step 4: Try game loop again with window prefixed players");
+        // Nu moet updateEnemies wel werken als we window.player1/2 gebruiken
+        try {
+            gameEntities.updateEnemies([window.player1, window.player2]);
+            log("Success! Game loop works properly with window.player1 and window.player2");
+        } catch (e) {
+            log(`Error in post-load gameLoop: ${e.message}`);
+        }
+    }
+
+    // Start debug test
+    window.onload = function() {
+        log("Starting error reproduction test");
+        simulateGameStart();
+    };
+    </script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "name": "animal-rescue",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Een leuk platform-puzzelspel voor een ouder en kind om samen te spelen! In dit spel werken verschillende dieren samen om puzzels op te lossen, een puppy te redden en uitdagingen te overwinnen.",
+  "main": "check-syntax.js",
+  "scripts": {},
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.56.1",
+    "@types/node": "^24.9.1",
+    "http-server": "^14.1.1"
+  }
+}

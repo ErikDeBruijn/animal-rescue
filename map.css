@@ -1,0 +1,224 @@
+/* map.css - Styling voor de wereldkaart */
+
+.map-container {
+    position: relative;
+    width: 1024px;
+    height: 1024px;
+    margin: 0 auto;
+    overflow: hidden;
+    border: 2px solid #333;
+    border-radius: 5px;
+    background-color: #a7d7f9; /* Fallback color */
+    background-image: url('adventure-map-background.jpg');
+    background-size: cover;
+    background-position: center;
+}
+
+.map-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    background-size: cover;
+    background-position: center;
+}
+
+.start-marker {
+    position: absolute;
+    top: 80px;
+    left: 70px;
+    width: 70px;
+    height: 70px;
+    background-color: #f44336;
+    border-radius: 50%;
+    border: 4px solid white;
+    color: white;
+    font-size: 20px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+    z-index: 3;
+}
+
+.memory-card-icon {
+    position: absolute;
+    width: 30px;
+    height: 40px;
+    background-color: #4CAF50; /* Green card back */
+    border-radius: 4px;
+    border: 2px solid #388E3C;
+    box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.3);
+    z-index: 1.5;
+}
+
+.memory-card-stack {
+    position: absolute;
+    z-index: 1.5;
+}
+
+.level-node {
+    position: absolute;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 35px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+    z-index: 2; /* Above paths */
+}
+
+.level-node:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.level-locked {
+    background-color: #999;
+    color: #555;
+    cursor: not-allowed;
+}
+
+.level-unlocked {
+    background-color: #2196F3; /* Blue for unlocked but not completed */
+    color: white;
+}
+
+.level-completed {
+    background-color: #4CAF50; /* Green for completed levels */
+    color: white;
+}
+
+.level-current {
+    background-color: #FF9800;
+    color: white;
+    animation: pulse 1.5s infinite;
+}
+
+/* Special styling for Level 1 */
+#level-1 {
+    background-color: #f44336 !important;
+    color: white;
+    border: 2px solid white;
+    font-weight: bold;
+    font-size: 10px;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.7), 0 2px 6px rgba(0, 0, 0, 0.3);
+    z-index: 4; /* Above other nodes */
+}
+
+#level-1::before {
+    content: "START";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.memory-level {
+    background: linear-gradient(135deg, #673AB7 50%, #9C27B0 50%);
+    color: white;
+    font-weight: bold;
+    border: 2px dashed #FFC107;
+    font-size: 1.2em;
+    box-shadow: 0 0 10px rgba(255, 193, 7, 0.5);
+}
+
+.memory-level.level-completed {
+    background: linear-gradient(135deg, #4CAF50 50%, #673AB7 50%);
+    border: 2px dashed #FFC107;
+}
+
+.memory-level.level-unlocked {
+    background: linear-gradient(135deg, #2196F3 50%, #673AB7 50%);
+    border: 2px dashed #FFC107;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.level-path {
+    position: absolute;
+    height: 5px;
+    background-color: #666;
+    z-index: 0; /* Behind nodes */
+    transform-origin: center left; /* For proper rotation */
+    display: none; /* Hide paths in the game map */
+}
+
+/* Only show paths in editor mode */
+.editor-mode .level-path {
+    display: block;
+}
+
+.path-completed {
+    background-color: #4CAF50; /* Green for completed paths */
+}
+
+.path-available {
+    background-color: #2196F3; /* Blue for available but not completed paths */
+}
+
+.path-locked {
+    background-color: #999; /* Gray for locked paths */
+    opacity: 0.5;
+    border-style: dashed;
+    border-width: 1px;
+    border-color: #666;
+    background: repeating-linear-gradient(
+        to right,
+        #999,
+        #999 5px,
+        transparent 5px,
+        transparent 10px
+    );
+}
+
+#player-character {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: #FF4500; /* Brighter orange */
+    z-index: 1000; /* Above everything */
+    transition: left 0.3s, top 0.3s;
+    box-shadow: 0 0 20px #FF4500, 0 0 10px #FFF, 0 0 30px rgba(255, 69, 0, 0.8); /* Enhanced glow effect */
+    border: 2px solid white;
+    pointer-events: none; /* So clicks go through to map */
+}
+
+.score-display {
+    position: fixed;
+    top: 70px;
+    right: 10px;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-weight: bold;
+    z-index: 1000;
+}
+
+.controls-help {
+    position: fixed;
+    bottom: 10px;
+    left: 10px;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 5px 15px;
+    border-radius: 5px;
+    z-index: 1000;
+}

@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Huisdieren Redders</title>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+</head>
+<body>
+    <h1>Huisdieren Redders</h1>
+    <!-- Instructies als popup dialog -->
+    <div id="instructions-popup" class="popup-dialog">
+        <div class="popup-content">
+            <div class="popup-header">
+                <h3>Instructies</h3>
+                <span class="close-popup">&times;</span>
+            </div>
+            <div class="popup-body">
+                <p><strong>Missie:</strong> 🐶 Red de puppy van de vijanden voordat je de ster verzamelt!</p>
+                <p>Speler 1: <span class="key">W</span><span class="key">A</span><span class="key">S</span><span class="key">D</span> om te bewegen, <span class="key">Shift</span> om van dier te wisselen</p>
+                <p>Speler 2: <span class="key">↑</span><span class="key">←</span><span class="key">↓</span><span class="key">→</span> om te bewegen, <span class="key">Shift</span> om van dier te wisselen</p>
+                <p><strong>Dieren speciale eigenschappen:</strong></p>
+                <p>🐿️ Eekhoorn: Kan hoog springen en in bomen klimmen</p>
+                <p>🐢 Schildpad: Kan zwemmen door water</p>
+                <p>🦄 Eenhoorn: Kan vliegen (met <span class="key">↑</span> of <span class="key">W</span>) en kan op wolkenplatforms staan</p>
+                <p>🐱 Kat: Kan klauwen gebruiken (met <span class="key">Spatie</span>) om vijanden aan te vallen</p>
+                <p>🦔 Mol: Kan tunnels graven (met <span class="key">G</span> of <span class="key">Ctrl</span>) om door muren/grond te komen</p>
+                <p>🔴 Trampolines: Druk <span class="key">↓</span> in om op te laden en hoger te springen!</p>
+                <p><strong>Pas op voor:</strong> 🦁 Leeuwen en 🐉 Draken - bij aanraking ga je dood! Draken spuwen vuur aan het einde van hun patrol.</p>
+                <p><strong>Verzamel items:</strong> ⭐ Sterren om het level te voltooien, 🌶️ Pepertjes om tijdelijk vuur te kunnen spuwen</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Intro scherm met feature image -->
+    <div id="intro-screen" class="popup-dialog">
+        <div class="popup-content intro-content">
+            <div class="popup-header">
+                <h3>Welkom bij Huisdieren Redders!</h3>
+                <span class="close-popup close-intro">&times;</span>
+            </div>
+            <div class="popup-body intro-body">
+                <img src="feature-image.png" alt="Huisdieren Redders" class="feature-image">
+                <div class="intro-buttons">
+                    <button id="start-game-button" class="intro-button">Start Spel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="player-info">
+        <div class="player-box player1" id="player1-info">
+            <h3>Speler 1</h3>
+            <p id="player1-animal">Eekhoorn 🐿️</p>
+        </div>
+        <div class="player-box player2" id="player2-info">
+            <h3>Speler 2</h3>
+            <p id="player2-animal">Schildpad 🐢</p>
+        </div>
+        <div class="level-info">
+            <h3 id="current-level">Level 1: Start</h3>
+            <p id="game-score">Score: 0</p>
+        </div>
+        <!-- Container voor beschikbare dieren wordt hier dynamisch ingevoegd -->
+    </div>
+    
+    <div class="control-buttons">
+        <button id="help-button" title="Help / Instructies"><span>❓</span></button>
+        <button id="fullscreen-button" title="Volledig scherm"><span>⛶</span></button>
+        <button id="map-button" title="Wereldkaart" onclick="window.location.href='map.html'"><span>🗺️</span></button>
+    </div>
+    <div id="game-container">
+        <canvas id="gameCanvas" width="800" height="450"></canvas>
+    </div>
+    
+    <!-- Admin Panel voor tests (alleen zichtbaar in dev mode) -->
+    <!-- DEV_MODE_PLACEHOLDER -->
+    <div class="admin-panel" id="adminPanel">
+        <h3>Test Panel</h3>
+        <button class="test-button" id="testSwitchButton">Test Dier Wisselen</button>
+        <button class="test-button" id="testWaterButton">Test Zwemmen</button>
+        <button class="test-button" id="testPlatformButton">Test Platforms</button>
+        <button class="test-button" id="testUnicornPlatformButton">Test Eenhoorn Platform Collisions</button>
+        <button class="test-button" id="testAllButton">Voer Alle Tests Uit</button>
+    </div>
+    
+    <!-- Laad de game modules in de juiste volgorde voor afhankelijkheden -->
+    <script src="levels.js"></script>
+    <script src="map-data.js"></script>
+    <script src="game-core.js"></script>
+    <script src="game-controls.js"></script>
+    <script src="game-entities.js"></script>
+    <script src="game-rendering.js"></script>
+    <script src="game-audio.js"></script>
+    
+    <!-- Character modules in juiste volgorde laden -->
+    <script src="game-characters-npcs.js"></script>
+    <script src="game-characters-players.js"></script>
+    <script src="game-characters-effects.js"></script>
+    <script src="game-characters-core.js"></script>
+
+    <!-- Map functies laden voor kaart overgang -->
+    <script src="map.js"></script>
+    
+    <!-- Laad de hoofdgame code en testen als laatste -->
+    <script src="game.js"></script>
+    <script src="tests-automated.js"></script>
+    
+    <script>
+        // Admin panel functionaliteit - zonder cookie check omdat de server dit nu regelt
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            // Controleer op editor link
+            const editorLink = document.getElementById('editor-link');
+            
+            // De admin toggle kan alleen bestaan als we in dev mode zijn, dus controleer eerst of die bestaat
+            const adminToggle = document.getElementById('adminToggle');
+            
+            if (adminToggle) {
+                // Alleen de eventlistener toevoegen als het element bestaat (DEV mode)
+                adminToggle.addEventListener('click', function() {
+                    document.getElementById('adminPanel').classList.toggle('visible');
+                });
+                
+                // Maak level selector dropdown (alleen in DEV mode)
+                createLevelSelector();
+            } else {
+                // In productie mode: zorg dat het admin panel verborgen blijft
+                const adminPanel = document.getElementById('adminPanel');
+                if (adminPanel) {
+                    adminPanel.style.display = 'none';
+                }
+            }
+            
+            // Functie om level selector dropdown te maken
+            function createLevelSelector() {
+                // Maak een container voor de level selector
+                const selectorContainer = document.createElement('div');
+                selectorContainer.style.marginTop = '10px';
+                selectorContainer.style.display = 'flex';
+                selectorContainer.style.alignItems = 'center';
+                selectorContainer.style.justifyContent = 'center';
+                
+                // Maak een label
+                const label = document.createElement('label');
+                label.textContent = 'Level: ';
+                label.style.marginRight = '5px';
+                label.style.color = 'white';
+                label.style.fontWeight = 'bold';
+                
+                // Maak de dropdown
+                const levelSelector = document.createElement('select');
+                levelSelector.id = 'level-selector';
+                
+                // Toevoegen aan document
+                selectorContainer.appendChild(label);
+                selectorContainer.appendChild(levelSelector);
+                document.getElementById('adminPanel').appendChild(selectorContainer);
+                
+                // Vul de dropdown met levels
+                window.addEventListener('levelsLoaded', function() {
+                    if (window.levels) {
+                        // Leeg eerst de dropdown
+                        levelSelector.innerHTML = '';
+                        
+                        // Voeg alle levels toe
+                        window.levels.forEach((level, index) => {
+                            const option = document.createElement('option');
+                            option.value = index;
+                            option.textContent = `${index + 1}: ${level.name}`;
+                            levelSelector.appendChild(option);
+                        });
+                        
+                        // Zet op huidig level
+                        levelSelector.value = gameCore.currentLevel;
+                        
+                        // Event listener voor wanneer de selectie verandert
+                        levelSelector.addEventListener('change', function() {
+                            const levelIndex = parseInt(this.value);
+                            if (!isNaN(levelIndex) && levelIndex >= 0 && levelIndex < window.levels.length) {
+                                window.loadLevel(levelIndex);
+                            }
+                        });
+                    }
+                });
+            }
+        });
+        
+        // Instructies popup functionaliteit
+        function toggleInstructionsPopup() {
+            const popup = document.getElementById('instructions-popup');
+            
+            if (popup.style.display === 'flex') {
+                popup.style.display = 'none';
+            } else {
+                popup.style.display = 'flex';
+            }
+        }
+        
+        // Open de instructies wanneer op de help-knop wordt geklikt
+        document.getElementById('help-button').addEventListener('click', toggleInstructionsPopup);
+        
+        // Sluit de popup wanneer op het kruisje wordt geklikt
+        document.querySelector('.close-popup').addEventListener('click', toggleInstructionsPopup);
+        
+        // Sluit de popup ook wanneer er buiten de popup wordt geklikt
+        document.getElementById('instructions-popup').addEventListener('click', function(event) {
+            if (event.target === this) {
+                toggleInstructionsPopup();
+            }
+        });
+        
+        // Admin panel functionaliteit wordt nu geregeld in de bovenstaande DOMContentLoaded event
+        
+        // Test knoppen
+        document.getElementById('testSwitchButton').addEventListener('click', function() {
+            TestSuite.testAnimalSwitching();
+            console.log(TestSuite.generateReport());
+        });
+        
+        document.getElementById('testWaterButton').addEventListener('click', function() {
+            TestSuite.testSwimming();
+            console.log(TestSuite.generateReport());
+        });
+        
+        document.getElementById('testPlatformButton').addEventListener('click', function() {
+            TestSuite.testPlatformCollisions();
+            console.log(TestSuite.generateReport());
+        });
+        
+        document.getElementById('testUnicornPlatformButton').addEventListener('click', function() {
+            TestSuite.testUnicornPlatformCollisions();
+            console.log(TestSuite.generateReport());
+        });
+        
+        document.getElementById('testAllButton').addEventListener('click', function() {
+            TestSuite.runAllTests();
+            console.log(TestSuite.generateReport());
+        });
+    </script>
+    
+    <!-- Auto-reload notification -->
+    <div id="reload-notification">
+        <h3>Updates beschikbaar</h3>
+        <p>Er zijn updates voor het spel beschikbaar.</p>
+        <button onclick="window.location.reload()">Nu herladen</button>
+        <button onclick="document.getElementById('reload-notification').style.display = 'none';">Later</button>
+    </div>
+    
+    <script>
+        // Fullscreen functionaliteit
+        document.addEventListener('DOMContentLoaded', function() {
+            const fullscreenButton = document.getElementById('fullscreen-button');
+            const gameContainer = document.getElementById('game-container');
+            const gameCanvas = document.getElementById('gameCanvas');
+            
+            // Controleer of fullscreen API beschikbaar is
+            const fullscreenAvailable = !!(
+                document.fullscreenEnabled || 
+                document.webkitFullscreenEnabled || 
+                document.mozFullScreenEnabled ||
+                document.msFullscreenEnabled
+            );
+            
+            // Als fullscreen niet beschikbaar is, verberg de knop
+            if (!fullscreenAvailable) {
+                fullscreenButton.style.display = 'none';
+            }
+            
+            // Functie om schaling toe te passen
+            function applyFullscreenScaling(enterFullscreen) {
+                if (enterFullscreen) {
+                    // Bereken de maximale scaling factor die past op het scherm
+                    const scaleFactor = Math.min(
+                        Math.floor(window.innerWidth / gameCanvas.width),
+                        Math.floor(window.innerHeight / gameCanvas.height)
+                    );
+                    
+                    // Zorg dat de scaling factor minstens 1 is en bij voorkeur 3
+                    const finalScale = Math.min(3, Math.max(1, scaleFactor));
+                    
+                    console.log("Fullscreen scaling factor:", finalScale);
+                    
+                    // Canvas centreren in het scherm
+                    gameContainer.style.display = 'flex';
+                    gameContainer.style.justifyContent = 'center';
+                    gameContainer.style.alignItems = 'center';
+                    
+                    // Direct stijl toepassen op het canvas
+                    gameCanvas.style.transform = 'scale(' + finalScale + ')';
+                    gameCanvas.style.transformOrigin = 'center';
+                    gameCanvas.style.imageRendering = 'pixelated';
+                    gameCanvas.style.margin = '0 auto'; // Horizontaal centreren
+                } else {
+                    // Reset stijlen
+                    gameCanvas.style.transform = 'none';
+                    gameCanvas.style.transformOrigin = 'center';
+                    gameCanvas.style.imageRendering = 'auto';
+                    gameCanvas.style.margin = '0';
+                    
+                    // Reset container stijlen
+                    gameContainer.style.display = '';
+                    gameContainer.style.justifyContent = '';
+                    gameContainer.style.alignItems = '';
+                }
+            }
+            
+            // Fullscreen in- en uitschakelen
+            fullscreenButton.addEventListener('click', function() {
+                if (!document.fullscreenElement && 
+                    !document.webkitFullscreenElement && 
+                    !document.mozFullScreenElement && 
+                    !document.msFullscreenElement) {
+                    
+                    // Ga naar fullscreen modus
+                    if (gameContainer.requestFullscreen) {
+                        gameContainer.requestFullscreen();
+                    } else if (gameContainer.webkitRequestFullscreen) {
+                        gameContainer.webkitRequestFullscreen();
+                    } else if (gameContainer.mozRequestFullScreen) {
+                        gameContainer.mozRequestFullScreen();
+                    } else if (gameContainer.msRequestFullscreen) {
+                        gameContainer.msRequestFullscreen();
+                    }
+                    
+                    // Schalingsfactor toepassen
+                    applyFullscreenScaling(true);
+                    
+                    // Update knop icon
+                    fullscreenButton.innerHTML = '<span>⮻</span>';
+                    
+                    // Verwijder focus van de knop om te voorkomen dat spatie de knop activeert
+                    fullscreenButton.blur();
+                } else {
+                    // Verlaat fullscreen modus
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    } else if (document.webkitExitFullscreen) {
+                        document.webkitExitFullscreen();
+                    } else if (document.mozCancelFullScreen) {
+                        document.mozCancelFullScreen();
+                    } else if (document.msExitFullscreen) {
+                        document.msExitFullscreen();
+                    }
+                    
+                    // Reset schalingsfactor
+                    applyFullscreenScaling(false);
+                    
+                    // Update knop icon
+                    fullscreenButton.innerHTML = '<span>⛶</span>';
+                }
+            });
+            
+            // Luister naar fullscreen veranderingen
+            document.addEventListener('fullscreenchange', updateFullscreenButton);
+            document.addEventListener('webkitfullscreenchange', updateFullscreenButton);
+            document.addEventListener('mozfullscreenchange', updateFullscreenButton);
+            document.addEventListener('MSFullscreenChange', updateFullscreenButton);
+            
+            function updateFullscreenButton() {
+                if (!document.fullscreenElement && 
+                    !document.webkitFullscreenElement && 
+                    !document.mozFullScreenElement && 
+                    !document.msFullscreenElement) {
+                    // Niet in fullscreen modus
+                    fullscreenButton.innerHTML = '<span>⛶</span>';
+                    applyFullscreenScaling(false);
+                } else {
+                    // In fullscreen modus
+                    fullscreenButton.innerHTML = '<span>⮻</span>';
+                    applyFullscreenScaling(true);
+                    
+                    // Verwijder focus van de knop om te voorkomen dat spatie de knop activeert
+                    fullscreenButton.blur();
+                }
+            }
+            
+            // Luister naar resize events om de schaal aan te passen in fullscreen modus
+            window.addEventListener('resize', function() {
+                if (document.fullscreenElement || 
+                    document.webkitFullscreenElement || 
+                    document.mozFullScreenElement || 
+                    document.msFullscreenElement) {
+                    // Pas de schaal opnieuw aan als de venstergrootte verandert in fullscreen
+                    applyFullscreenScaling(true);
+                }
+            });
+        });
+        
+        // WebSocket connection for reload notifications
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof io !== 'undefined') {
+                const socket = io();
+                
+                socket.on('reload_needed', function(data) {
+                    console.log('Reload notification received:', data);
+                    
+                    // Toon welke bestanden er gewijzigd zijn
+                    if (data.modified_files && data.modified_files.length > 0) {
+                        console.log('Gewijzigde bestanden:', data.modified_files.join(', '));
+                        
+                        // Update de melding met welke bestanden er gewijzigd zijn
+                        let message = '';
+                        if (data.modified_files.includes('index.html') || data.modified_files.includes('game.js') || 
+                            data.modified_files.includes('game-entities.js') || data.modified_files.includes('game-rendering.js')) {
+                            message = 'Er zijn updates voor het spel beschikbaar.';
+                        } else if (data.modified_files.includes('levels.js')) {
+                            message = 'Er zijn nieuwe levels beschikbaar.';
+                        } else {
+                            message = 'Er zijn updates beschikbaar.';
+                        }
+                        
+                        const notificationText = document.querySelector('#reload-notification p');
+                        if (notificationText) {
+                            notificationText.textContent = message;
+                        }
+                    }
+                    
+                    // Toon de notificatie
+                    document.getElementById('reload-notification').style.display = 'block';
+                });
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,389 @@
+/* Main Styles */
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+    background-color: #8ecbf5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100vh;
+}
+
+.nav-link {
+    position: fixed;
+    top: 60px; /* Moved below the other buttons */
+    right: 10px;
+    background-color: #45882f;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-weight: bold;
+    z-index: 101;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.nav-link:hover {
+    background-color: #5aa93f;
+}
+
+canvas {
+    border: 4px solid #45882f;
+    border-radius: 8px;
+    margin-top: 20px;
+    background-color: #c2f0c2;
+}
+
+h1, h2, h3 {
+    color: #45882f;
+    text-shadow: 2px 2px #fff;
+    margin-bottom: 0;
+}
+
+button {
+    background-color: #45882f;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 5px 10px;
+    margin: 5px;
+    cursor: pointer;
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+}
+
+button:hover {
+    background-color: #5aa93f;
+}
+
+/* Popup dialog styles */
+.popup-dialog {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1001;
+    align-items: center;
+    justify-content: center;
+}
+
+.popup-content {
+    background-color: white;
+    width: 80%;
+    max-width: 800px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.popup-header {
+    background-color: #45882f;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 10px 10px 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.popup-header h3 {
+    margin: 0;
+    color: white;
+    text-shadow: 1px 1px #333;
+}
+
+.close-popup {
+    font-size: 24px;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.popup-body {
+    padding: 20px;
+    overflow-y: auto;
+    max-height: 70vh;
+}
+
+.popup-body p {
+    margin: 8px 0;
+}
+
+/* Stijl voor toetsaanduidingen */
+.key {
+    display: inline-block;
+    background-color: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 2px 6px;
+    font-family: monospace;
+    font-size: 0.9em;
+    font-weight: bold;
+    color: #333;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    margin: 0 2px;
+}
+
+/* Player info styles */
+.player-info {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 800px;
+    margin: 5px auto;
+    text-align: center;
+    flex-wrap: wrap;
+}
+
+.player-box {
+    flex: 1;
+    margin: 0 10px;
+    padding: 5px 10px;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    font-weight: bold;
+}
+
+.available-animals {
+    width: auto;
+    margin: 2px 5px;
+    padding: 3px 5px;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    font-size: 0.9em;
+}
+
+.animals-title {
+    margin: 0 5px 0 0;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+.animal-icon {
+    margin: 0 3px;
+    display: flex;
+    align-items: center;
+}
+
+.game-mode-info {
+    margin-left: 5px;
+    font-style: italic;
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+.player1 {
+    margin-right: auto;
+}
+
+.player2 {
+    margin-left: auto;
+}
+
+.level-info {
+    text-align: center;
+    flex: 1;
+}
+
+#game-score {
+    color: #FF8C00;
+    font-weight: bold;
+    margin-top: 5px;
+}
+
+/* Admin panel styles */
+.admin-panel {
+    position: fixed;
+    top: 100px; /* Moved lower to avoid overlapping with other elements */
+    right: 10px;
+    background-color: rgba(255, 255, 255, 0.8);
+    border: 2px solid #333;
+    border-radius: 8px;
+    padding: 10px;
+    z-index: 100;
+    display: none;
+}
+
+.admin-panel.visible {
+    display: block;
+}
+
+.test-button {
+    background-color: #4CAF50;
+    border: none;
+    color: white;
+    padding: 8px 16px;
+    text-align: center;
+    text-decoration: none;
+    font-size: 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin: 5px 0;
+    width: 100%;
+}
+
+.admin-toggle {
+    position: fixed;
+    top: 105px; /* Adjusted to be next to the level editor link */
+    right: 170px; /* Positioned to the left of the level editor link */
+    background-color: #ff9800;
+    border: none;
+    color: white;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 30px;
+    cursor: pointer;
+    z-index: 101;
+}
+
+/* Auto-reload notification */
+#reload-notification {
+    display: none; 
+    position: fixed; 
+    bottom: 20px; 
+    right: 20px; 
+    background-color: rgba(69, 136, 47, 0.9); 
+    color: white; 
+    padding: 15px; 
+    border-radius: 8px; 
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2); 
+    z-index: 1000; 
+    max-width: 300px;
+}
+
+#reload-notification h3 {
+    margin-top: 0;
+}
+
+#reload-notification button {
+    background-color: white; 
+    color: #45882f; 
+    border: none; 
+    padding: 8px 15px; 
+    border-radius: 4px; 
+    cursor: pointer; 
+    font-weight: bold; 
+    margin-top: 5px;
+}
+
+#reload-notification button:last-child {
+    background-color: transparent; 
+    color: white; 
+    border: 1px solid white; 
+    margin-left: 5px;
+}
+
+/* Control buttons container */
+.control-buttons {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 10px;
+    z-index: 1000;
+}
+
+/* Control button stijl */
+#fullscreen-button, #help-button {
+    background-color: #45882f;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+}
+
+#fullscreen-button:hover, #help-button:hover {
+    background-color: #5aa93f;
+}
+
+/* Fullscreen icon styling */
+#fullscreen-button span {
+    font-size: 20px;
+    margin-right: 5px;
+}
+
+/* Game container stijl */
+#game-container {
+    position: relative;
+    margin-top: 20px;
+}
+
+/* Fullscreen specifieke stijlen */
+#game-container:fullscreen,
+#game-container:-webkit-full-screen,
+#game-container:-moz-full-screen,
+#game-container:-ms-fullscreen {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #8ecbf5;
+    overflow: hidden;
+}
+
+/* Intro scherm stijlen */
+.intro-content {
+    max-width: 850px;
+}
+
+.intro-body {
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.feature-image {
+    width: 100%;
+    height: auto;
+    max-height: 70vh;
+    object-fit: contain;
+    border-radius: 0 0 10px 10px;
+}
+
+.intro-buttons {
+    width: 100%;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    background-color: rgba(255, 255, 255, 0.8);
+}
+
+.intro-button {
+    padding: 12px 25px;
+    font-size: 20px;
+    background-color: #45882f;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    font-weight: bold;
+}
+
+.intro-button:hover {
+    background-color: #5aa93f;
+    transform: scale(1.05);
+}

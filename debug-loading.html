@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Game Loading</title>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <h1>Debug Game Loading</h1>
+    <div id="output"></div>
+
+    <script>
+    // Debug output functie
+    function log(message) {
+        const output = document.getElementById('output');
+        const line = document.createElement('div');
+        line.textContent = message;
+        output.appendChild(line);
+        console.log(message);
+    }
+
+    // Mock game componenten
+    window.gameCore = {
+        getStartLevel: function() { return 0; },
+        currentLevel: 0,
+        GROUND_LEVEL: 500,
+        animalTypes: {
+            "SQUIRREL": { name: "Eekhoorn", width: 30, height: 30, jumpPower: -15, speed: 5, color: "brown" },
+            "TURTLE": { name: "Schildpad", width: 30, height: 30, jumpPower: -10, speed: 3, color: "green" },
+            "UNICORN": { name: "Eenhoorn", width: 30, height: 30, jumpPower: -12, speed: 4, color: "pink" }
+        },
+        gameState: { running: true, gameOver: false },
+        updateEditorLink: function() {}
+    };
+
+    window.gameControls = {
+        controls: {
+            player1: { up: "w", down: "s", left: "a", right: "d" },
+            player2: { up: "ArrowUp", down: "ArrowDown", left: "ArrowLeft", right: "ArrowRight" }
+        },
+        setupInputListeners: function() {},
+        keys: {}
+    };
+
+    window.gameEntities = {
+        Player: class Player {
+            constructor(x, y, controls, name, animalType) {
+                this.x = x;
+                this.y = y;
+                this.controls = controls;
+                this.name = name;
+                this.animalType = animalType;
+                log(`Created player: ${name} at (${x},${y}) with animal ${animalType}`);
+            }
+            resetLives() { log(`${this.name}: resetLives()`); }
+            updatePlayerInfoUI() { log(`${this.name}: updatePlayerInfoUI()`); }
+            resetToStart() { log(`${this.name}: resetToStart()`); }
+        },
+        updatePuppy: function() { log("updatePuppy()"); },
+        updateEnemies: function(players) { 
+            log(`updateEnemies() with players: ${players.map(p => p.name).join(', ')}`);
+        }
+    };
+
+    window.gameRendering = {
+        drawBackground: function() {},
+        drawPlatform: function() {},
+        drawTrap: function() {},
+        drawEnemies: function() {},
+        drawPuppy: function() {},
+        drawCollectible: function() {},
+        drawGround: function() {},
+        drawPlayer: function(player) { log(`drawPlayer(${player.name})`); }
+    };
+
+    // Mock levels
+    window.levels = [
+        {
+            name: "Test Level",
+            startPositions: [
+                { x: 100, y: 100 },
+                { x: 200, y: 100 }
+            ],
+            platforms: [],
+            traps: [],
+            enemies: [],
+            collectibles: [],
+            puppy: null
+        }
+    ];
+
+    // Simuleer loadLevel functie - vergelijkbaar met die in game.js
+    function loadLevel(levelIndex) {
+        log(`Loading level ${levelIndex}`);
+        
+        // Stel het huidige level in
+        window.gameCore.currentLevel = levelIndex;
+        
+        // Haal level data op
+        const level = window.levels[levelIndex];
+        const startPositions = level.startPositions;
+        const allowedAnimals = level.allowedAnimals || ["SQUIRREL", "TURTLE", "UNICORN"];
+
+        log(`Level animals: ${allowedAnimals.join(', ')}`);
+        
+        // Bepaal de dieren voor de spelers
+        let player1Animal, player2Animal;
+        
+        // Kies het eerste beschikbare dier voor speler 1
+        player1Animal = allowedAnimals[0];
+        
+        // Kies een ander dier voor speler 2 indien mogelijk
+        if (allowedAnimals.length > 1) {
+            player2Animal = allowedAnimals[1];
+        } else {
+            // Als er maar één diersoort beschikbaar is, krijgen beide spelers hetzelfde dier
+            player2Animal = allowedAnimals[0];
+        }
+
+        log(`Player 1 animal: ${player1Animal}, Player 2 animal: ${player2Animal}`);
+
+        try {
+            // Maak spelers aan met hun controls en begindiertypes
+            log("Creating player 1");
+            window.player1 = new window.gameEntities.Player(
+                startPositions[0].x, startPositions[0].y, 
+                window.gameControls.controls.player1, "Speler 1", player1Animal
+            );
+            
+            // Als er meer dan 1 diersoort beschikbaar is, maak speler 2 aan
+            if (allowedAnimals.length > 1) {
+                log("Creating player 2");
+                window.player2 = new window.gameEntities.Player(
+                    startPositions[1].x, startPositions[1].y,
+                    window.gameControls.controls.player2, "Speler 2", player2Animal
+                );
+            } else {
+                log("Creating dummy player 2");
+                // Anders maken we een dummy speler die niet zichtbaar wordt gerenderd
+                window.player2 = {
+                    x: -100, y: -100, // Buiten het scherm
+                    width: 0, height: 0,
+                    name: "Dummy Speler 2",
+                    update: function() {}, // Lege update functie
+                    resetLives: function() { log("Dummy Player 2: resetLives()"); },
+                    updatePlayerInfoUI: function() { log("Dummy Player 2: updatePlayerInfoUI()"); },
+                    resetToStart: function() {},
+                    collidesWithObject: function() { return false; }
+                };
+            }
+
+            log("Players created successfully");
+            
+            // Reset levens en andere statussen voor beide spelers
+            try {
+                window.player1.resetLives();
+                window.player2.resetLives();
+                log("Reset lives successful");
+            } catch (e) {
+                log(`Error in resetLives: ${e.message}`);
+            }
+            
+            // Simuleer een game loop
+            try {
+                simulateGameLoop();
+                log("Game loop simulation successful");
+            } catch (e) {
+                log(`Error in game loop: ${e.message}`);
+            }
+        } catch (e) {
+            log(`Error in loadLevel: ${e.message}`);
+            log(`Error stack: ${e.stack}`);
+        }
+    }
+
+    // Simuleer een simpele game loop
+    function simulateGameLoop() {
+        log("Beginning game loop simulation");
+        
+        // Update de puppy en vijanden - dit zou de fout moeten reproduceren als de fix niet correct is
+        try {
+            log("Calling updatePuppy()");
+            window.gameEntities.updatePuppy();
+            
+            log("Calling updateEnemies()");
+            window.gameEntities.updateEnemies([window.player1, window.player2]);
+            
+            log("Calling drawPlayer() for both players");
+            window.gameRendering.drawPlayer(window.player1);
+            if (window.player2) window.gameRendering.drawPlayer(window.player2);
+            
+            log("Game loop cycle completed successfully");
+        } catch (e) {
+            log(`Error in game loop cycle: ${e.message}`);
+            log(`Error stack: ${e.stack}`);
+        }
+    }
+
+    // Start debug test
+    window.onload = function() {
+        log("Starting debug test");
+        loadLevel(0);
+    };
+    </script>
+</body>
+</html>
