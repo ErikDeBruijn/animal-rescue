@@ -178,3 +178,11 @@ cython_debug/
 .pypirc
 .idea/vcs.xml
 .DS_Store
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
