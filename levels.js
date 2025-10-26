@@ -216,13 +216,14 @@ function getLevels(GROUND_LEVEL) {    return [
         {
     name: "Spring samen!!!",
     music: "level-vii-short-258782.mp3",
+    theme: "night",
     allowedAnimals: ["SQUIRREL","TURTLE","CAT"],
     startPositions: [
         {x: 50, y: 350},
         {x: 100, y: 350}
     ],
     platforms: [
-
+        {x: 277, y: 377, width: 100, height: 20, type: "ICE"}
     ],
     traps: [
 
@@ -238,7 +239,7 @@ function getLevels(GROUND_LEVEL) {    return [
         saved: false
     },
     collectibles: [
-        {x: 85, y: 264, width: 30, height: 30}
+        {x: 85, y: 264, width: 30, height: 30, type: "STAR"}
     ]
 },
         {
@@ -685,9 +686,9 @@ function getLevels(GROUND_LEVEL) {    return [
     ],
     platforms: [
         {x: 207, y: 177, width: 121, height: 221, type: "CLIMB"},
-        {x: 212, y: 157, width: 100, height: 20, type: "TRAMPOLINE"},
+        {x: 223, y: 147, width: 100, height: 20, type: "TRAMPOLINE"},
         {x: 128, y: 369, width: 100, height: 20, type: "TRAMPOLINE"},
-        {x: 464, y: 133, width: 219, height: 101, type: "WATER"},
+        {x: 477, y: 137, width: 219, height: 101, type: "WATER"},
         {x: 87, y: 327, width: 25, height: 20, type: "NUMBER", numberValue: 81},
         {x: 32, y: 329, width: 25, height: 20, type: "NUMBER", numberValue: 70}
     ],
@@ -695,7 +696,7 @@ function getLevels(GROUND_LEVEL) {    return [
 
     ],
     enemies: [
-
+        {x: 593, y: 183, width: 40, height: 35, type: "PIRANHA", patrolDistance: 100, speed: 1}
     ],
     puppy: {
         x: 350, 
@@ -883,11 +884,13 @@ function getLevels(GROUND_LEVEL) {    return [
         {x: 29, y: 368, width: 30, height: 30, type: "PEPPER"},
         {x: 376, y: 98, width: 30, height: 30, type: "STAR"}
     ],
-    mathProblem: {
-        equation: "6+6=",
-        answer: "12",
-        userAnswer: ""
-    }
+    mathProblems: [
+        {
+            equation: "6+6=",
+            answer: "12",
+            userAnswer: ""
+        }
+    ]
 },
         {
     name: "Nieuw Level",
@@ -928,6 +931,71 @@ function getLevels(GROUND_LEVEL) {    return [
             answer: "27",
             userAnswer: ""
         }
+    ]
+},
+        {
+    name: "Wat makkelijk!!!",
+    music: "default.mp3",
+    theme: "night",
+    allowedAnimals: ["SQUIRREL","TURTLE","UNICORN","CAT","MOLE"],
+    startPositions: [
+        {x: 50, y: 350},
+        {x: 100, y: 350}
+    ],
+    platforms: [
+
+    ],
+    traps: [
+
+    ],
+    enemies: [
+
+    ],
+    puppy: {
+        x: 34, 
+        y: 371, 
+        width: 30, 
+        height: 25, 
+        saved: false
+    },
+    collectibles: [
+        {x: 86, y: 369, width: 30, height: 30, type: "STAR"}
+    ]
+},
+        {
+    name: "Hoi!",
+    music: "level-vii-short-258782.mp3",
+    theme: "night",
+    allowedAnimals: ["TURTLE","UNICORN","MOLE"],
+    startPositions: [
+        {x: 50, y: 350},
+        {x: 100, y: 350}
+    ],
+    platforms: [
+        {x: 128, y: 64, width: 100, height: 20, type: "WATER"},
+        {x: 125, y: 88, width: 100, height: 20, type: "CLOUD"}
+    ],
+    traps: [
+
+    ],
+    enemies: [
+        {x: 533, y: 355, width: 50, height: 40, type: "LION", patrolDistance: 100, speed: 1}
+    ],
+    puppy: {
+        x: 127, 
+        y: 40, 
+        width: 100, 
+        height: 20, 
+        saved: false
+    },
+    collectibles: [
+        {x: 80, y: 371, width: 30, height: 30, type: "PEPPER"},
+        {x: 32, y: 367, width: 30, height: 30, type: "PEPPER"},
+        {x: 35, y: 365, width: 30, height: 30, type: "DOGFOOD"},
+        {x: 78, y: 367, width: 30, height: 30, type: "DOGFOOD"},
+        {x: 31, y: 365, width: 30, height: 30, type: "HOURGLASS"},
+        {x: 81, y: 368, width: 30, height: 30, type: "HOURGLASS"},
+        {x: 156, y: 136, width: 30, height: 30, type: "STAR"}
     ]
 }
     ];
