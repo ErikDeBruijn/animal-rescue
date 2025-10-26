@@ -1,7 +1,6 @@
 // @ts-check
 import { test, expect } from '@playwright/test';
-
-const BASE_URL = 'http://localhost:5050';
+import { BASE_URL } from './test-config.js';
 
 test.describe('World Map', () => {
   test('should open and close help popup', async ({ page }) => {

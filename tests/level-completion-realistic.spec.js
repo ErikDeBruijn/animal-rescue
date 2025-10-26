@@ -1,7 +1,6 @@
 // @ts-check
 import { test, expect } from '@playwright/test';
-
-const BASE_URL = 'http://localhost:5050';
+import { BASE_URL } from './test-config.js';
 
 test.describe('Level Completion - Realistic Scenario', () => {
   test('should complete level and navigate to map when all collectibles are collected', async ({ page }) => {

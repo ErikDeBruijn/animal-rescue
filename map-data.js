@@ -123,7 +123,8 @@ const DEFAULT_MAP_DATA = {
 // Export the data to be used in other files
 window.mapData = {
     AVAILABLE_MAPS: AVAILABLE_MAPS,
-    currentMap: DEFAULT_MAP_DATA.currentMap,
+    // Check localStorage for saved currentMap, otherwise use default
+    currentMap: localStorage.getItem('currentMap') || DEFAULT_MAP_DATA.currentMap,
     LEVEL_POSITIONS: [...DEFAULT_MAP_DATA.maps.map1.LEVEL_POSITIONS],
     PATH_CONNECTIONS: [...DEFAULT_MAP_DATA.maps.map1.PATH_CONNECTIONS],
     maps: JSON.parse(JSON.stringify(DEFAULT_MAP_DATA.maps)), // Deep copy
@@ -147,6 +148,14 @@ window.mapData = {
             this.LEVEL_POSITIONS = [...this.maps[mapId].LEVEL_POSITIONS];
             this.PATH_CONNECTIONS = [...this.maps[mapId].PATH_CONNECTIONS];
             
+            // Save the current map to localStorage so it persists across page reloads
+            localStorage.setItem('currentMap', mapId);
+            
+            // If we're on the map page, update the background
+            if (typeof updateMapBackground === 'function') {
+                updateMapBackground();
+            }
+            
             // Return true to indicate successful switch
             return true;
         }
@@ -167,7 +176,13 @@ window.mapData = {
             PATH_CONNECTIONS: [...this.PATH_CONNECTIONS]
         };
         
+        // IMPORTANT: The server expects the format with LEVEL_POSITIONS and PATH_CONNECTIONS directly
+        // We need to make sure these fields are at the top level of the object
         const mapDataJSON = {
+            // These fields must be present for server validation
+            LEVEL_POSITIONS: this.LEVEL_POSITIONS,
+            PATH_CONNECTIONS: this.PATH_CONNECTIONS,
+            // Also include new data structure for future-proofing the format
             currentMap: this.currentMap,
             maps: this.maps
         };
@@ -216,16 +231,27 @@ window.mapData = {
                         mapData: mapDataJSON
                     }),
                 })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}, text: ${response.statusText}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     if (data.success) {
-                        console.log("Map data saved to server");
+                        console.log("Map data saved to server successfully");
                         return true;
                     } else {
                         console.error("Error saving map data to server:", data.error);
-                        // Als er een server error is, toch true teruggeven zodat de UI niet breekt
+                        alert("Error saving map data: " + data.error);
+                        // Return true to prevent UI from breaking
                         return true;
                     }
+                })
+                .catch(error => {
+                    console.error("Error saving map data to server:", error);
+                    alert("Error saving map data: " + error.message);
+                    return false;
                 });
             })
             .catch(error => {
@@ -241,27 +267,61 @@ window.mapData = {
             .then(response => response.json())
             .then(result => {
                 if (result.success && result.data) {
-                    // Update our data with the loaded data
-                    if (result.data.maps) {
+                    // Check if we have the new format with maps structure
+                    if (result.data.maps && result.data.currentMap) {
+                        console.log("Loading new multi-map format data");
                         this.maps = result.data.maps;
-                    }
-                    
-                    if (result.data.currentMap) {
                         this.currentMap = result.data.currentMap;
-                    }
-                    
-                    // Load the current map data
-                    if (this.maps[this.currentMap]) {
-                        if (this.maps[this.currentMap].LEVEL_POSITIONS) {
-                            this.LEVEL_POSITIONS = this.maps[this.currentMap].LEVEL_POSITIONS;
+                        
+                        // Load the current map data
+                        if (this.maps[this.currentMap]) {
+                            if (this.maps[this.currentMap].LEVEL_POSITIONS) {
+                                this.LEVEL_POSITIONS = [...this.maps[this.currentMap].LEVEL_POSITIONS];
+                            }
+                            
+                            if (this.maps[this.currentMap].PATH_CONNECTIONS) {
+                                this.PATH_CONNECTIONS = [...this.maps[this.currentMap].PATH_CONNECTIONS];
+                            }
+                        }
+                    } 
+                    // Otherwise, load the legacy format (direct LEVEL_POSITIONS and PATH_CONNECTIONS)
+                    else {
+                        console.log("Loading legacy format map data");
+                        
+                        // Update our data with the loaded data
+                        if (result.data.LEVEL_POSITIONS) {
+                            this.LEVEL_POSITIONS = [...result.data.LEVEL_POSITIONS];
+                            // Also update the map1 data
+                            this.maps['map1'].LEVEL_POSITIONS = [...result.data.LEVEL_POSITIONS];
                         }
                         
-                        if (this.maps[this.currentMap].PATH_CONNECTIONS) {
-                            this.PATH_CONNECTIONS = this.maps[this.currentMap].PATH_CONNECTIONS;
+                        if (result.data.PATH_CONNECTIONS) {
+                            this.PATH_CONNECTIONS = [...result.data.PATH_CONNECTIONS];
+                            // Also update the map1 data
+                            this.maps['map1'].PATH_CONNECTIONS = [...result.data.PATH_CONNECTIONS];
+                        }
+                        
+                        // Set current map to map1 for legacy data unless we have a stored map
+                        const storedMap = localStorage.getItem('currentMap');
+                        if (storedMap && this.maps[storedMap]) {
+                            this.currentMap = storedMap;
+                            // Make sure we load the correct map data
+                            if (this.maps[this.currentMap]) {
+                                this.LEVEL_POSITIONS = [...this.maps[this.currentMap].LEVEL_POSITIONS];
+                                this.PATH_CONNECTIONS = [...this.maps[this.currentMap].PATH_CONNECTIONS];
+                            }
+                        } else {
+                            this.currentMap = 'map1';
                         }
                     }
                     
                     console.log("Map data loaded from server");
+                    
+                    // If we're on the map page, make sure to update the background image
+                    if (typeof updateMapBackground === 'function') {
+                        updateMapBackground();
+                    }
+                    
                     return true;
                 } else {
                     console.error("Error loading map data from server:", result.error || "Unknown error");
